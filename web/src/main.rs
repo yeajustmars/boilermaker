@@ -110,6 +110,9 @@ fn MainNavDropdownMenu() -> Element {
                 onmouseleave: move |_| {
                     *MAIN_DROPDOWN_OPEN_STATE.write() = false;
                 },
+                onclick: move |_| {
+                    *MAIN_DROPDOWN_OPEN_STATE.write() = false;
+                },
                 class: "absolute left-0 top-13 w-48 bg-white dark:bg-neutral-900 rounded shadow-lg border border-l-0 border-t-0 border-neutral-300 dark:border-neutral-700 z-10 text-sm ",
                 Link { class: link_style, to: Route::Home {},
                     i { class: "fa-solid fa-house" }
