@@ -11,3 +11,10 @@ html {
     font-size: 0.5rem;
     line-height: 1rem;
 }
+
+code {
+    font-family: "Fira Code", monospace;
+    font-optical-sizing: auto;
+    font-weight: 200;
+    font-style: normal;
+}

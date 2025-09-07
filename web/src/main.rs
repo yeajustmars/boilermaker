@@ -2,7 +2,7 @@ use dioxus::prelude::*;
 
 use views::{
     constants::{FAVICON, MAIN_CSS, TAILWIND_CSS},
-    Home, Search, Templates,
+    Docs, GetInvolved, Home, Search, Templates,
 };
 
 mod views;
@@ -13,8 +13,12 @@ enum Route {
     #[layout(Layout)]
         #[route("/")]
         Home {},
+        #[route("/docs")]
+        Docs {},
         #[route("/templates")]
         Templates {},
+        #[route("/get-involved")]
+        GetInvolved {},
 }
 
 fn main() {
@@ -25,6 +29,7 @@ fn main() {
 fn App() -> Element {
     rsx! {
         document::Link { rel: "icon", href: FAVICON }
+        document::Title { "Boilermaker - Project Templates Made Easy" }
         link { rel: "preconnect", href: "https://fonts.googleapis.com" }
         link {
             rel: "preconnect",
@@ -47,7 +52,7 @@ fn Layout() -> Element {
     rsx! {
         div {
             id: "layout",
-            class: "min-h-screen bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200",
+            class: "min-h-screen bg-white text-neutral-800 dark:bg-neutral-900 dark:text-neutral-200",
             Navbar {}
 
             Outlet::<Route> {}
@@ -106,17 +111,21 @@ fn MainNavDropdownMenu() -> Element {
                     *MAIN_DROPDOWN_OPEN_STATE.write() = false;
                 },
                 class: "absolute left-0 top-13 w-48 bg-white dark:bg-neutral-900 rounded shadow-lg border border-l-0 border-t-0 border-neutral-300 dark:border-neutral-700 z-10 text-sm ",
-                a { class: link_style, href: "/",
+                Link { class: link_style, to: Route::Home {},
                     i { class: "fa-solid fa-house" }
                     span { class: "ml-2", "Home" }
                 }
-                a { class: link_style, href: "/templates",
+                Link { class: link_style, to: Route::Templates {},
                     i { class: "fa-solid fa-note-sticky" }
                     span { class: "ml-2", "Templates" }
                 }
-                a { class: link_style, href: "/docs",
+                Link { class: link_style, to: Route::Docs {},
                     i { class: "fa-solid fa-file-code" }
                     span { class: "ml-2", "Docs" }
+                }
+                Link { class: link_style, to: Route::GetInvolved {},
+                    i { class: "fa-solid fa-hands-helping" }
+                    span { class: "ml-2", "Get Involved" }
                 }
             }
         }

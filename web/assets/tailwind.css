@@ -683,6 +683,12 @@
       background-color: var(--color-neutral-900);
     }
   }
+  .dark\:bg-gradient-to-b {
+    @media (prefers-color-scheme: dark) {
+      --tw-gradient-position: to bottom in oklab;
+      background-image: linear-gradient(var(--tw-gradient-stops));
+    }
+  }
   .dark\:from-neutral-800 {
     @media (prefers-color-scheme: dark) {
       --tw-gradient-from: var(--color-neutral-800);
