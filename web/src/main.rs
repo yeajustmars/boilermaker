@@ -110,6 +110,7 @@ fn MainNavDropdownMenu() -> Element {
                 onmouseleave: move |_| {
                     *MAIN_DROPDOWN_OPEN_STATE.write() = false;
                 },
+                //TODO: put dropdown close in closure to avoid repetition
                 onclick: move |_| {
                     *MAIN_DROPDOWN_OPEN_STATE.write() = false;
                 },
