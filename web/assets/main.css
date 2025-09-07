@@ -1,0 +1,13 @@
+body,
+html {
+    font-family: "Roboto", Tahoma, Geneva, Verdana, sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 200;
+    font-style: normal;
+    font-variation-settings: "wdth" 100;
+}
+
+.text-xxs {
+    font-size: 0.5rem;
+    line-height: 1rem;
+}

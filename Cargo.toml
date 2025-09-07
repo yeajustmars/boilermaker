@@ -1,0 +1,22 @@
+[workspace]
+resolver = "2"
+members = ["api", "cli", "web"]
+
+[workspace.dependencies]
+dioxus = { version = "0.6.3" }
+indoc = "2.0.6"
+
+# workspace
+api = { path = "api" }
+
+[profile]
+
+[profile.wasm-dev]
+inherits = "dev"
+opt-level = 1
+
+[profile.server-dev]
+inherits = "dev"
+
+[profile.android-dev]
+inherits = "dev"
