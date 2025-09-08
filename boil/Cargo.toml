@@ -1,0 +1,18 @@
+[package]
+name = "boil"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+
+# External
+clap = { workspace = true }
+color-eyre = { workspace = true }
+gitoxide = { workspace = true }
+tracing = { workspace = true }
+tracing-error = { workspace = true }
+tracing-subscriber = { workspace = true }
+uuid = { workspace = true }
+
+# Internal
+util = { workspace = true }
