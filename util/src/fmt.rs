@@ -1,5 +1,5 @@
-// pub const BOLD: &str = r"\033[1m";
-// pub const ITAL: &str = r"\033[3m";
+pub const BOLD: &str = r"\033[1m";
+pub const ITAL: &str = r"\033[3m";
 // pub const BLUE: &str = r"\033[0;34m";
 // pub const RED: &str = r"\033[0;31m";
 // pub const CYAN: &str = r"\033[0;36m";
@@ -8,4 +8,4 @@
 // pub const PURPLE: &str = r"\033[0;35m";
 // pub const DARKGRAY: &str = r"\033[1;30m";
 // pub const LIGHTGRAY: &str = r"\033[0;37m";
-// pub const NC: &str = r"\033[0m";
+pub const NC: &str = r"\033[0m";

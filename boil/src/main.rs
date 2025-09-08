@@ -40,9 +40,9 @@ fn main() -> Result<()> {
 
     //TODO: add setup from config file (user-provided or default)
     if let Some(config_path) = cli.config.as_deref() {
-        info!("ⓘ Value for config: {}", config_path.display());
+        info!("ⓘ  Value for config: {}", config_path.display());
     } else {
-        info!("ⓘ No config file found at `{CONFIG_FILE}`. Using defaults.");
+        warn!("❗ No config file found at `{CONFIG_FILE}`. Using defaults.");
     }
 
     //TODO: Add tracing for --debug flag
@@ -58,14 +58,15 @@ fn main() -> Result<()> {
     if let Some(command) = cli.command {
         match command {
             Commands::List(list_cmd) => {
+                //TODO: move into list::List command implementation
                 if list_cmd.public {
-                    info!("Listing public items...");
+                    info!("ⓘ  Listing public items...");
                     Ok(())
                 } else if list_cmd.private {
-                    info!("Listing private items...");
+                    info!("ⓘ  Listing private items...");
                     Ok(())
                 } else {
-                    info!("Listing all items...");
+                    info!("ⓘ  Listing all items...");
                     Ok(())
                 }
             }
@@ -81,7 +82,7 @@ fn main() -> Result<()> {
         }
     } else {
         //TODO: default to printing help menu if no command is provided
-        warn!("No command provided. Use --help for more information.");
+        warn!("❗ No command provided. Use --help for more information.");
         Ok(())
     }
 }
