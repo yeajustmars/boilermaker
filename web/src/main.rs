@@ -1,11 +1,10 @@
 use dioxus::prelude::*;
 
+mod views;
 use views::{
     constants::{FAVICON, MAIN_CSS, TAILWIND_CSS},
     Docs, GetInvolved, Home, Search, Templates,
 };
-
-mod views;
 
 #[derive(Debug, Clone, Routable, PartialEq)]
 #[rustfmt::skip]
