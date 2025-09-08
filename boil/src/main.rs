@@ -86,6 +86,7 @@ fn main() -> Result<()> {
     }
 }
 
+//TODO: set default tracing level to WARN and allow override via CLI args and/or config file
 pub fn init_tracing() -> Result<()> {
     let fmt_layer = fmt::layer()
         .event_format(fmt::format().compact())
