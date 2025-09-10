@@ -9,6 +9,9 @@ use tracing_subscriber::fmt;
 use tracing_subscriber::prelude::*;
 
 mod commands;
+mod config;
+
+use config::get_config;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -29,31 +32,16 @@ enum Commands {
     Test(commands::test::Test),
 }
 
-//TODO: implement config file
-const CONFIG_FILE: &str = "~/.config/boilermaker/boilermaker.toml";
-
+#[tracing::instrument]
 fn main() -> Result<()> {
     color_eyre::install().expect("Failed to install color_eyre");
-    init_tracing()?;
 
     let cli = Cli::parse();
 
-    //TODO: add setup from config file (user-provided or default)
-    if let Some(config_path) = cli.config.as_deref() {
-        info!("ⓘ  Value for config: {}", config_path.display());
-    } else {
-        warn!("❗ No config file found at `{CONFIG_FILE}`. Using defaults.");
-    }
+    init_tracing(cli.debug)?;
 
-    //TODO: Add tracing for --debug flag
-    // You can see how many times a particular flag or argument occurred
-    // Note, only flags can have multiple occurrences
-    match cli.debug {
-        0 => info!("Debug mode is off"),
-        1 => info!("Debug mode is kind of on"),
-        2 => info!("Debug mode is on"),
-        _ => info!("Don't be crazy"),
-    }
+    let config = get_config(cli.config.as_deref())?;
+    println!("config: {:#?}", config);
 
     if let Some(command) = cli.command {
         match command {
@@ -87,13 +75,28 @@ fn main() -> Result<()> {
     }
 }
 
-//TODO: set default tracing level to WARN and allow override via CLI args and/or config file
-pub fn init_tracing() -> Result<()> {
-    let fmt_layer = fmt::layer()
-        .event_format(fmt::format().compact())
-        .without_time()
-        .with_target(false)
-        .with_level(true);
+#[tracing::instrument]
+pub fn init_tracing(debug_level: u8) -> Result<()> {
+    //TODO: Add more specific formatting for each debug level (0-4)
+    let fmt_layer: Box<dyn tracing_subscriber::Layer<_> + Send + Sync> = match debug_level {
+        1..=4 => Box::new(
+            fmt::layer()
+                .event_format(fmt::format().pretty())
+                .with_thread_ids(true)
+                .with_thread_names(true)
+                .with_target(true)
+                .with_level(true)
+                .with_file(true)
+                .with_line_number(true),
+        ),
+        _ => Box::new(
+            fmt::layer()
+                .event_format(fmt::format().compact())
+                .without_time()
+                .with_target(false)
+                .with_level(true),
+        ),
+    };
 
     //TODO: add ability to configure log level via CLI args and/or config file
     let filter_layer = EnvFilter::try_from_default_env().or_else(|_| EnvFilter::try_new("info"))?;

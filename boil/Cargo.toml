@@ -8,7 +8,10 @@ edition = "2024"
 # External
 clap = { workspace = true }
 color-eyre = { workspace = true }
+dirs = { workspace = true }
 gitoxide = { workspace = true }
+lazy_static = { workspace = true }
+toml = { workspace = true }
 tracing = { workspace = true }
 tracing-error = { workspace = true }
 tracing-subscriber = { workspace = true }

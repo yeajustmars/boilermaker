@@ -18,8 +18,8 @@ pub fn Home() -> Element {
         Hero {}
         div { class: "py-4 px-2",
             p {
-                "Boilermaker is a small template management system that helps you quickly set up programming projects"
-                " with sensible defaults and configurations. It is written in Rust but the templates themselves are otherwise language-agnostic."
+                "Boilermaker is a thin project management system that helps you quickly set up programming projects"
+                " with sensible defaults and configurations. It is written in Rust but the templates themselves are language-agnostic."
                 "You either choose from one of the "
                 Link { class: LINK_STYLE, to: Route::Templates {}, "public templates" }
                 "or plug in your own for later reuse."
@@ -54,7 +54,6 @@ pub fn Hero() -> Element {
                 span {
                     "Welcome to Boilermaker!"
                     img { class: "inline h-10 w-10 ml-2", src: FAVICON }
-                
                 }
             }
             p { class: "mt-4 text-lg italic",

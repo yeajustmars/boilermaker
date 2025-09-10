@@ -6,10 +6,13 @@ members = ["api", "boil", "util", "web"]
 clap = { version = "4.5.47", features = ["derive"] }
 color-eyre = "0.6.5"
 dioxus = { version = "0.6.3" }
+dirs = "6.0.0"
 gitoxide = "0.45.0"
 indoc = "2.0.6"
+lazy_static = "1.5.0"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.143"
+toml = "0.9.5"
 tracing = { version = "0.1.41", features = ["log"] }
 tracing-error = "0.2.1"
 tracing-subscriber = { version = "0.3.20", features = [

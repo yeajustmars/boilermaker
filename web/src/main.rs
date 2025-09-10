@@ -61,14 +61,16 @@ fn Layout() -> Element {
 
 static MAIN_DROPDOWN_OPEN_STATE: GlobalSignal<bool> = Signal::global(|| false);
 
+fn close_main_dropdown() {
+    *MAIN_DROPDOWN_OPEN_STATE.write() = false;
+}
+
 #[component]
 pub fn Navbar() -> Element {
     rsx! {
         div {
             id: "navbar",
-            onmouseleave: move |_| {
-                *MAIN_DROPDOWN_OPEN_STATE.write() = false;
-            },
+            onmouseleave: move |_| close_main_dropdown(),
             class: "flex flex-row space-x-4 p-2 items-center justify-between bg-gradient-to-b from-white to-neutral-100 dark:from-neutral-800 dark:to-neutral-900 border-b border-solid border-neutral-300 dark:border-neutral-950 text-neutral-600 dark:text-neutral-300",
 
             div { class: "w-1/4 text-2xl",
@@ -107,11 +109,11 @@ fn MainNavDropdownMenu() -> Element {
         if is_open {
             div {
                 onmouseleave: move |_| {
-                    *MAIN_DROPDOWN_OPEN_STATE.write() = false;
+                    close_main_dropdown();
                 },
                 //TODO: put dropdown close in closure to avoid repetition
                 onclick: move |_| {
-                    *MAIN_DROPDOWN_OPEN_STATE.write() = false;
+                    close_main_dropdown();
                 },
                 class: "absolute left-0 top-13 w-48 bg-white dark:bg-neutral-900 rounded shadow-lg border border-l-0 border-t-0 border-neutral-300 dark:border-neutral-700 z-10 text-sm ",
                 Link { class: link_style, to: Route::Home {},
