@@ -11,6 +11,7 @@ color-eyre = { workspace = true }
 dirs = { workspace = true }
 gitoxide = { workspace = true }
 lazy_static = { workspace = true }
+nu-ansi-term = { workspace = true }
 toml = { workspace = true }
 tracing = { workspace = true }
 tracing-error = { workspace = true }

@@ -32,15 +32,15 @@ pub fn get_config_path(config_path: Option<&Path>) -> Result<Option<&Path>> {
                 path.display()
             )));
         } else {
-            info!("ⓘ  Using provided config file: `{}`.", path.display());
+            info!(" Using provided config file: `{}`.", path.display());
             Ok(Some(path))
         }
     } else if fs::exists(SYS_CONFIG_FILE.as_str()).unwrap() {
         let path = Path::new(SYS_CONFIG_FILE.as_str());
-        info!("ⓘ  Using system config file: `{}`.", path.display());
+        info!("Using system config file: `{}`.", path.display());
         Ok(Some(path))
     } else {
-        info!("ⓘ  Using default config.");
+        info!(" Using default config.");
         Ok(None)
     }
 }
