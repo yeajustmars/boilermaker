@@ -1,0 +1,15 @@
+[boilermaker]
+
+[boilermaker.project]
+name = "hello-world"
+description = "A simple hello world example using Boilermaker"
+# TODO: remove example code and/or test against GitHub
+repository = "https://github.com/yeajustmars/boilermaker/templates/hello-world"
+version = "0.1.0"
+authors = ["yeajustmars <yeajustmars@gmail.com>"]
+tags = ["boilermaker", "example", "hello-world"]
+website = "https://boilermaker.dev/templates/hello-world"
+license = "MIT"
+
+[boilermaker.variables]
+welcome_message = "Hello, World!"

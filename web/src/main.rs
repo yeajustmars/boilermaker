@@ -6,6 +6,9 @@ use views::{
     Docs, GetInvolved, Home, Search, Templates,
 };
 
+//TODO: 1. [ ] Add a WASM-compiled playground for users to develop templates directly in the browser
+//TODO: 2. [ ] Add a user login system to save favorite templates and settings
+
 #[derive(Debug, Clone, Routable, PartialEq)]
 #[rustfmt::skip]
 enum Route {
