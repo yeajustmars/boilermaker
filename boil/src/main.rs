@@ -13,6 +13,7 @@ use config::get_system_config;
 
 //TODO: 1. [ ] add custom macro for logging to reduce icon/symbol duplication, etc (possibly just a function?)
 //TODO: 2. [ ] add ability to use YAML for config files as well as TOML
+//TODO: 3. [ ] move all (or most) main logic into lib.rs
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]

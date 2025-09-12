@@ -26,15 +26,11 @@ pub(crate) struct New {
     pub subdir: Option<String>,
 }
 
-pub fn clone_git_repo(
-    _sys_config: &toml::Value,
-    cmd: &New,
-) -> Result<(PathBuf, toml::Value, Repository)> {
-    let base_path = env::temp_dir().join(&cmd.name);
-    info!("Cloning into temporary directory: {}", base_path.display());
+fn clone_to_repo_root(repo_root: &PathBuf, cmd: &New) -> Result<Repository> {
+    info!("Cloning into temporary directory: {}", repo_root.display());
 
-    if base_path.exists() {
-        fs::remove_dir_all(&base_path)?;
+    if repo_root.exists() {
+        fs::remove_dir_all(&repo_root)?;
     }
 
     let mut fetch_opts = FetchOptions::new();
@@ -47,19 +43,38 @@ pub fn clone_git_repo(
         repo_builder.branch(branch);
     }
 
-    let repo = repo_builder.clone(&cmd.template, &base_path)?;
+    let repo = repo_builder.clone(&cmd.template, &repo_root)?;
+    Ok(repo)
+}
 
-    // TODO: see if it's possible to do a sparse checkout with git2
-    let local_path = if let Some(subdir) = cmd.subdir.as_deref() {
-        base_path.join(subdir).to_owned()
-    } else {
-        base_path.to_owned()
-    };
-    println!("Final local path: {}", local_path.display());
+// TODO: see if it's possible to do a sparse checkout with git2
+fn make_template_root_dir(repo_root: &PathBuf, cmd: &New) -> PathBuf {
+    match &cmd.subdir {
+        Some(subdir) => repo_root.join(subdir),
+        None => repo_root.to_owned(),
+    }
+}
 
-    let tpl_config_path = &local_path.join("boilermaker.toml");
+// TODO: should we be using PathBuf or just Path here?
+pub fn clone_git_repo(
+    _sys_config: &toml::Value,
+    cmd: &New,
+) -> Result<(PathBuf, toml::Value, Repository)> {
+    let repo_root = env::temp_dir().join(&cmd.name);
+    println!("repo_root: {}", repo_root.display());
+    let tpl_root = make_template_root_dir(&repo_root, cmd);
+    println!("tpl_root: {}", tpl_root.display());
+    let tpl_config_path = &tpl_root.join("boilermaker.toml");
     let tpl_config = get_template_config(tpl_config_path.as_path())?;
 
+    println!("============================================================= x");
+    let x = tpl_config.get("boilermaker");
+    println!("tpl_config.boilermaker: {:#?}", x);
+    println!("------------------------------------------------------------- x");
+
+    let repo = clone_to_repo_root(&repo_root, cmd)?;
+
+    /*
     let lang = if let Some(lang) = &cmd.lang {
         lang.clone()
     } else if let Some(default_lang) = tpl_config.get("default_language").and_then(|v| v.as_str()) {
@@ -70,7 +85,11 @@ pub fn clone_git_repo(
         ));
     };
 
-    Ok((local_path, tpl_config, repo))
+    let tpl_files_path = false;
+    let tpl_files = false;
+     */
+
+    Ok((tpl_root, tpl_config, repo))
 }
 
 #[tracing::instrument]
@@ -79,10 +98,10 @@ pub fn create_new(sys_config: &toml::Value, cmd: &New) -> Result<()> {
     info!("Name: {}", cmd.name);
     info!("Template: {}", cmd.template);
 
-    let (local_path, tpl_config, repo) = clone_git_repo(sys_config, &cmd)?;
-    println!("----> local_path: {}", local_path.display());
+    let (tpl_root, tpl_config, repo) = clone_git_repo(sys_config, &cmd)?;
+    println!("----> tpl_root: {}", tpl_root.display());
     println!("----> repo path: {}", repo.path().display());
-    println!("----> tpl_config: {:#?}", tpl_config);
+    // println!("----> tpl_config: {:#?}", tpl_config);
 
     Ok(())
 }
