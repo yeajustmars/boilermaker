@@ -4,10 +4,11 @@
 name = "hello-world"
 description = "A simple hello world example using Boilermaker"
 # TODO: remove example code and/or test against GitHub
-repository = "https://github.com/yeajustmars/boilermaker/templates/hello-world"
+repository = "https://github.com/yeajustmars/boilermaker"
+subdir = "examples/hello-world"
 version = "0.1.0"
 authors = ["yeajustmars <yeajustmars@gmail.com>"]
-tags = ["boilermaker", "example", "hello-world"]
+keywords = ["boilermaker", "example"]
 website = "https://boilermaker.dev/templates/hello-world"
 license = "MIT"
 
