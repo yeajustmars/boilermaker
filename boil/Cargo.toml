@@ -8,7 +8,9 @@ edition = "2024"
 # External
 clap = { workspace = true }
 color-eyre = { workspace = true }
+colored = { workspace = true }            # TODO: pick one of colored or nu-ansi-term
 dirs = { workspace = true }
+fs_extra = { workspace = true }
 git2 = { workspace = true }
 lazy_static = { workspace = true }
 nu-ansi-term = { workspace = true }

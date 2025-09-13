@@ -2,7 +2,10 @@ use std::{env, fs, path::PathBuf};
 
 use clap::Parser;
 use color_eyre::{Result, eyre::eyre};
+// use colored::Colorize;
+use fs_extra::copy_items_with_progress;
 use git2::{FetchOptions, Repository, build::RepoBuilder};
+// use nu_ansi_term::Style; // TODO: possibly replace nu_ansi_term with colored
 use toml;
 use tracing::info;
 
@@ -34,13 +37,10 @@ fn make_template_root_dir(repo_root: &PathBuf, cmd: &New) -> PathBuf {
     }
 }
 
+// TODO: add local .cache dir that doesn't need to copy every time (maybe 10 minutes?)
 #[tracing::instrument]
-fn clone_to_repo_root(repo_root: &PathBuf, cmd: &New) -> Result<Repository> {
-    info!("Cloning into temporary directory: {}", repo_root.display());
-
-    if repo_root.exists() {
-        fs::remove_dir_all(&repo_root)?;
-    }
+fn clone_repo(src_root: &PathBuf, cmd: &New) -> Result<Repository> {
+    info!("Cloning into temporary directory: {}", src_root.display());
 
     let mut fetch_opts = FetchOptions::new();
     fetch_opts.depth(1);
@@ -52,7 +52,7 @@ fn clone_to_repo_root(repo_root: &PathBuf, cmd: &New) -> Result<Repository> {
         repo_builder.branch(branch);
     }
 
-    let repo = repo_builder.clone(&cmd.template, &repo_root)?;
+    let repo = repo_builder.clone(&cmd.template, &src_root)?;
     Ok(repo)
 }
 
@@ -60,16 +60,22 @@ fn clone_to_repo_root(repo_root: &PathBuf, cmd: &New) -> Result<Repository> {
 pub struct TemplateContext {
     lang: String,
     repo_root: PathBuf,
-    template_root: PathBuf,
-    template_files_path: PathBuf,
+    src_root: PathBuf,
+    target_root: PathBuf,
 }
 
 #[tracing::instrument]
 pub fn get_template(_sys_config: &toml::Value, cmd: &New) -> Result<TemplateContext> {
     let repo_root = env::temp_dir().join(&cmd.name);
-    let _repo = clone_to_repo_root(&repo_root, cmd)?;
 
-    let template_root = make_template_root_dir(&repo_root, cmd);
+    if repo_root.exists() {
+        fs::remove_dir_all(&repo_root)?;
+    }
+
+    let src_root = repo_root.join("src");
+    let _repo = clone_repo(&src_root, cmd)?;
+
+    let template_root = make_template_root_dir(&src_root, cmd);
 
     let cfg_path = template_root.join("boilermaker.toml");
     let cfg = config::get_template_config(cfg_path.as_path())?;
@@ -88,11 +94,30 @@ pub fn get_template(_sys_config: &toml::Value, cmd: &New) -> Result<TemplateCont
 
     let template_files_path = template_root.join(&lang);
 
+    let target_root = repo_root.join("target");
+    match fs::create_dir(&target_root) {
+        Ok(_) => info!("Created target directory: {}", target_root.display()),
+        Err(e) => return Err(eyre!("Failed to create target directory: {e}")),
+    }
+    match copy_items_with_progress(
+        &[template_files_path],
+        &target_root,
+        &fs_extra::dir::CopyOptions::new(),
+        |progress| {
+            info!("Copied {} bytes", progress.copied_bytes);
+            fs_extra::dir::TransitProcessResult::ContinueOrAbort
+        },
+    ) {
+        Ok(_) => info!("Copied template files to target directory"),
+        Err(e) => return Err(eyre!("Failed to copy template files: {e}")),
+    }
+    let target_root = target_root.join(&lang);
+
     Ok(TemplateContext {
         lang: lang.clone(),
         repo_root,
-        template_root,
-        template_files_path,
+        src_root,
+        target_root,
     })
 }
 
