@@ -74,8 +74,6 @@ pub fn get_template(_sys_config: &toml::Value, cmd: &New) -> Result<TemplateCont
     let cfg_path = template_root.join("boilermaker.toml");
     let cfg = config::get_template_config(cfg_path.as_path())?;
 
-    println!("---->  cfg: {:#?}", cfg);
-
     let lang = if let Some(lang_option) = &cmd.lang {
         info!("Using `--lang` from command line: {}", lang_option);
         lang_option.clone()
