@@ -6,7 +6,7 @@ use git2::{FetchOptions, Repository, build::RepoBuilder};
 use toml;
 use tracing::info;
 
-use crate::config::get_template_config;
+use crate::config;
 
 #[derive(Debug, Parser)]
 pub(crate) struct New {
@@ -26,6 +26,15 @@ pub(crate) struct New {
     pub subdir: Option<String>,
 }
 
+// TODO: see if it's possible to do a sparse checkout with git2
+fn make_template_root_dir(repo_root: &PathBuf, cmd: &New) -> PathBuf {
+    match &cmd.subdir {
+        Some(subdir) => repo_root.join(subdir),
+        None => repo_root.to_owned(),
+    }
+}
+
+#[tracing::instrument]
 fn clone_to_repo_root(repo_root: &PathBuf, cmd: &New) -> Result<Repository> {
     info!("Cloning into temporary directory: {}", repo_root.display());
 
@@ -47,49 +56,46 @@ fn clone_to_repo_root(repo_root: &PathBuf, cmd: &New) -> Result<Repository> {
     Ok(repo)
 }
 
-// TODO: see if it's possible to do a sparse checkout with git2
-fn make_template_root_dir(repo_root: &PathBuf, cmd: &New) -> PathBuf {
-    match &cmd.subdir {
-        Some(subdir) => repo_root.join(subdir),
-        None => repo_root.to_owned(),
-    }
+#[derive(Debug)]
+pub struct TemplateContext {
+    lang: String,
+    repo_root: PathBuf,
+    template_root: PathBuf,
+    template_files_path: PathBuf,
 }
 
-// TODO: should we be using PathBuf or just Path here?
-pub fn clone_git_repo(
-    _sys_config: &toml::Value,
-    cmd: &New,
-) -> Result<(PathBuf, toml::Value, Repository)> {
+#[tracing::instrument]
+pub fn get_template(_sys_config: &toml::Value, cmd: &New) -> Result<TemplateContext> {
     let repo_root = env::temp_dir().join(&cmd.name);
-    println!("repo_root: {}", repo_root.display());
-    let tpl_root = make_template_root_dir(&repo_root, cmd);
-    println!("tpl_root: {}", tpl_root.display());
-    let tpl_config_path = &tpl_root.join("boilermaker.toml");
-    let tpl_config = get_template_config(tpl_config_path.as_path())?;
+    let _repo = clone_to_repo_root(&repo_root, cmd)?;
 
-    println!("============================================================= x");
-    let x = tpl_config.get("boilermaker");
-    println!("tpl_config.boilermaker: {:#?}", x);
-    println!("------------------------------------------------------------- x");
+    let template_root = make_template_root_dir(&repo_root, cmd);
 
-    let repo = clone_to_repo_root(&repo_root, cmd)?;
+    let cfg_path = template_root.join("boilermaker.toml");
+    let cfg = config::get_template_config(cfg_path.as_path())?;
 
-    /*
-    let lang = if let Some(lang) = &cmd.lang {
-        lang.clone()
-    } else if let Some(default_lang) = tpl_config.get("default_language").and_then(|v| v.as_str()) {
-        default_lang.to_string()
+    println!("---->  cfg: {:#?}", cfg);
+
+    let lang = if let Some(lang_option) = &cmd.lang {
+        info!("Using `--lang` from command line: {}", lang_option);
+        lang_option.clone()
+    } else if let Some(default_lang) = cfg.boilermaker.project.default_lang {
+        info!("Using `default_lang` from template config: {default_lang}");
+        default_lang
     } else {
-        return Err(color_eyre::eyre::eyre!(
-            "Language not specified and no default_language in config"
+        return Err(eyre!(
+            "Can't find language. Pass `--lang` option or add `default_lang` to `boilermaker.toml`."
         ));
     };
 
-    let tpl_files_path = false;
-    let tpl_files = false;
-     */
+    let template_files_path = template_root.join(&lang);
 
-    Ok((tpl_root, tpl_config, repo))
+    Ok(TemplateContext {
+        lang: lang.clone(),
+        repo_root,
+        template_root,
+        template_files_path,
+    })
 }
 
 #[tracing::instrument]
@@ -98,10 +104,8 @@ pub fn create_new(sys_config: &toml::Value, cmd: &New) -> Result<()> {
     info!("Name: {}", cmd.name);
     info!("Template: {}", cmd.template);
 
-    let (tpl_root, tpl_config, repo) = clone_git_repo(sys_config, &cmd)?;
-    println!("----> tpl_root: {}", tpl_root.display());
-    println!("----> repo path: {}", repo.path().display());
-    // println!("----> tpl_config: {:#?}", tpl_config);
+    let ctx = get_template(sys_config, &cmd)?;
+    println!("---->  ctx: {:#?}", ctx);
 
     Ok(())
 }

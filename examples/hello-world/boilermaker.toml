@@ -3,10 +3,9 @@
 [boilermaker.project]
 name = "hello-world"
 description = "A simple hello world example using Boilermaker"
-# TODO: remove example code and/or test against GitHub
+default_lang = "rust"
 repository = "https://github.com/yeajustmars/boilermaker"
 subdir = "examples/hello-world"
-default_lang = "rust"
 version = "0.1.0"
 authors = ["yeajustmars <yeajustmars@gmail.com>"]
 keywords = ["boilermaker", "example"]

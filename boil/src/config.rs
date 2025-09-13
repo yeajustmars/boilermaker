@@ -46,6 +46,11 @@ pub fn get_system_config_path(config_path: Option<&Path>) -> Result<Option<&Path
     }
 }
 
+// TODO: return BoilermakerSysConfig struct for get_system_config (instead of generic toml::Value)
+// pub struct BoilermakerSysConfig {
+
+// }
+
 //TODO: add ability for config to be in YAML as well as TOML
 //TODO: remove Option<&Path>.
 #[tracing::instrument]
@@ -60,10 +65,10 @@ pub fn get_system_config(config_path: Option<&Path>) -> Result<Value> {
 }
 
 #[tracing::instrument]
-pub fn get_template_config(config_path: &Path) -> Result<Value> {
+pub fn get_template_config(config_path: &Path) -> Result<BoilermakerConfig> {
     if config_path.exists() {
         let config_content = fs::read_to_string(config_path)?;
-        let config: toml::Value = toml::from_str(&config_content)?;
+        let config: BoilermakerConfig = toml::from_str(&config_content)?;
         Ok(config)
     } else {
         Err(color_eyre::eyre::eyre!(
@@ -74,15 +79,26 @@ pub fn get_template_config(config_path: &Path) -> Result<Value> {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct TemplateConfig {
-    pub variables: Option<TemplateVariables>,
+pub struct BoilermakerConfig {
+    pub boilermaker: BoilermakerConfigRoot,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct TemplateVariables {
-    pub default_language: Option<String>,
-    pub project_name: Option<String>,
-    pub author: Option<String>,
-    pub year: Option<String>,
+pub struct BoilermakerConfigRoot {
+    pub project: BoilermakerConfigProject,
+    pub variables: Option<toml::Value>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BoilermakerConfigProject {
+    pub name: String,
+    pub repository: String,
+    pub subdir: Option<String>,
+    pub version: Option<String>,
+    pub default_lang: Option<String>,
+    pub description: Option<String>,
+    pub authors: Option<Vec<String>>,
     pub license: Option<String>,
+    pub keywords: Option<Vec<String>>,
+    pub website: Option<String>,
 }
