@@ -96,14 +96,14 @@ pub struct BoilermakerConfigRoot {
 
 #[derive(Debug, Deserialize)]
 pub struct BoilermakerConfigProject {
-    pub name: String,
-    pub repository: String,
-    pub subdir: Option<String>,
-    pub version: Option<String>,
+    // pub name: String,
+    // pub repository: String,
+    // pub subdir: Option<String>,
+    // pub version: Option<String>,
     pub default_lang: Option<String>,
-    pub description: Option<String>,
-    pub authors: Option<Vec<String>>,
-    pub license: Option<String>,
-    pub keywords: Option<Vec<String>>,
-    pub website: Option<String>,
+    // pub description: Option<String>,
+    // pub authors: Option<Vec<String>>,
+    // pub license: Option<String>,
+    // pub keywords: Option<Vec<String>>,
+    // pub website: Option<String>,
 }

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, env, fs, hash::Hash, path::PathBuf};
+use std::{collections::HashMap, env, fs, path::PathBuf};
 
 use clap::Parser;
 use color_eyre::{Result, eyre::eyre};
@@ -183,7 +183,7 @@ pub fn render_template_files(template_files: Vec<PathBuf>, ctx: &TemplateContext
         jinja.add_template_owned(name.clone(), content)?;
 
         let template = jinja.get_template(&name)?;
-        let rendered: String = template.render(minijinja::context! { ..ctx.vars.to_owned() })?;
+        let rendered = template.render(minijinja::context! { ..ctx.vars.to_owned() })?;
 
         fs::write(&file_path, rendered)?;
         info!("Rendered template file: {}", file_path.display());
