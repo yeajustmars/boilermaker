@@ -66,6 +66,23 @@ pub struct TemplateContext {
 }
 
 #[tracing::instrument]
+fn get_lang(cmd: &New, cfg: &BoilermakerConfig) -> Result<String> {
+    if let Some(lang_option) = &cmd.lang {
+        info!("Using `--lang` from command line: {}", lang_option);
+        return Ok(lang_option.clone());
+    }
+
+    if let Some(default_lang) = &cfg.boilermaker.project.default_lang {
+        info!("Using `default_lang` from template config: {default_lang}");
+        return Ok(default_lang.clone());
+    }
+
+    return Err(eyre!(
+        "Can't find language. Pass `--lang` option or add `default_lang` to `boilermaker.toml`."
+    ));
+}
+
+#[tracing::instrument]
 fn copy_files_to_target(
     template_files_path: &PathBuf,
     lang: &str,
@@ -90,7 +107,7 @@ fn copy_files_to_target(
     info!("Copying template files for language '{}'...", lang);
     match copy_items_with_progress(
         &files,
-        &target_root,
+        &target_dir,
         &fs_extra::dir::CopyOptions::new(),
         |progress| {
             info!("\tCopied {} bytes", progress.copied_bytes);
@@ -105,23 +122,6 @@ fn copy_files_to_target(
     }
 
     Ok(())
-}
-
-#[tracing::instrument]
-fn get_lang(cmd: &New, cfg: &BoilermakerConfig) -> Result<String> {
-    if let Some(lang_option) = &cmd.lang {
-        info!("Using `--lang` from command line: {}", lang_option);
-        return Ok(lang_option.clone());
-    }
-
-    if let Some(default_lang) = &cfg.boilermaker.project.default_lang {
-        info!("Using `default_lang` from template config: {default_lang}");
-        return Ok(default_lang.clone());
-    }
-
-    return Err(eyre!(
-        "Can't find language. Pass `--lang` option or add `default_lang` to `boilermaker.toml`."
-    ));
 }
 
 #[tracing::instrument]
