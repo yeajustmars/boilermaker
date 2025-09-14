@@ -9,7 +9,7 @@ use git2::{FetchOptions, Repository, build::RepoBuilder};
 use toml;
 use tracing::info;
 
-use crate::config;
+use crate::config::{BoilermakerConfig, get_template_config};
 
 #[derive(Debug, Parser)]
 pub(crate) struct New {
@@ -62,67 +62,99 @@ pub struct TemplateContext {
     repo_root: PathBuf,
     src_root: PathBuf,
     target_root: PathBuf,
+    target_dir: PathBuf,
+}
+
+#[tracing::instrument]
+fn copy_files_to_target(
+    template_files_path: &PathBuf,
+    lang: &str,
+    target_root: &PathBuf,
+    target_dir: &PathBuf,
+) -> Result<()> {
+    match fs::create_dir(&target_root) {
+        Ok(_) => info!("Created target directory: {}", target_root.display()),
+        Err(e) => return Err(eyre!("Failed to create target directory: {e}")),
+    }
+
+    match fs::create_dir(&target_dir) {
+        Ok(_) => info!("Created target directory: {}", target_dir.display()),
+        Err(e) => return Err(eyre!("Failed to create target directory: {e}")),
+    }
+
+    let files_iter = fs::read_dir(&template_files_path)?;
+    let files: Vec<PathBuf> = files_iter
+        .filter_map(|entry| entry.ok().map(|e| e.path()))
+        .collect();
+
+    info!("Copying template files for language '{}'...", lang);
+    match copy_items_with_progress(
+        &files,
+        &target_root,
+        &fs_extra::dir::CopyOptions::new(),
+        |progress| {
+            info!("\tCopied {} bytes", progress.copied_bytes);
+            fs_extra::dir::TransitProcessResult::ContinueOrAbort
+        },
+    ) {
+        Ok(_) => info!(
+            "Copied template files to target directory: {}",
+            target_root.display()
+        ),
+        Err(e) => return Err(eyre!("Failed to copy template files: {e}")),
+    }
+
+    Ok(())
+}
+
+#[tracing::instrument]
+fn get_lang(cmd: &New, cfg: &BoilermakerConfig) -> Result<String> {
+    if let Some(lang_option) = &cmd.lang {
+        info!("Using `--lang` from command line: {}", lang_option);
+        return Ok(lang_option.clone());
+    }
+
+    if let Some(default_lang) = &cfg.boilermaker.project.default_lang {
+        info!("Using `default_lang` from template config: {default_lang}");
+        return Ok(default_lang.clone());
+    }
+
+    return Err(eyre!(
+        "Can't find language. Pass `--lang` option or add `default_lang` to `boilermaker.toml`."
+    ));
 }
 
 #[tracing::instrument]
 pub fn get_template(_sys_config: &toml::Value, cmd: &New) -> Result<TemplateContext> {
     let repo_root = env::temp_dir().join(&cmd.name);
+    let src_root = repo_root.join("src");
+    let template_root = make_template_root_dir(&src_root, cmd);
+    let cfg_path = template_root.join("boilermaker.toml");
+    let cfg: BoilermakerConfig = get_template_config(cfg_path.as_path())?;
+    let lang = get_lang(&cmd, &cfg)?;
+    let target_root = repo_root.join("target");
+    let target_dir = target_root.join(&lang);
+    let template_files_path = template_root.join(&lang);
 
     if repo_root.exists() {
         fs::remove_dir_all(&repo_root)?;
     }
-
-    let src_root = repo_root.join("src");
     let _repo = clone_repo(&src_root, cmd)?;
+    let _ = copy_files_to_target(&template_files_path, &lang, &target_root, &target_dir)?;
 
-    let template_root = make_template_root_dir(&src_root, cmd);
-
-    let cfg_path = template_root.join("boilermaker.toml");
-    let cfg = config::get_template_config(cfg_path.as_path())?;
-
-    let lang = if let Some(lang_option) = &cmd.lang {
-        info!("Using `--lang` from command line: {}", lang_option);
-        lang_option.clone()
-    } else if let Some(default_lang) = cfg.boilermaker.project.default_lang {
-        info!("Using `default_lang` from template config: {default_lang}");
-        default_lang
-    } else {
-        return Err(eyre!(
-            "Can't find language. Pass `--lang` option or add `default_lang` to `boilermaker.toml`."
-        ));
-    };
-
-    let template_files_path = template_root.join(&lang);
-
-    let target_root = repo_root.join("target");
-    match fs::create_dir(&target_root) {
-        Ok(_) => info!("Created target directory: {}", target_root.display()),
-        Err(e) => return Err(eyre!("Failed to create target directory: {e}")),
-    }
-    match copy_items_with_progress(
-        &[template_files_path],
-        &target_root,
-        &fs_extra::dir::CopyOptions::new(),
-        |progress| {
-            info!("Copied {} bytes", progress.copied_bytes);
-            fs_extra::dir::TransitProcessResult::ContinueOrAbort
-        },
-    ) {
-        Ok(_) => info!("Copied template files to target directory"),
-        Err(e) => return Err(eyre!("Failed to copy template files: {e}")),
-    }
-    let target_root = target_root.join(&lang);
+    // let target_root = target_root.join(&lang);
 
     Ok(TemplateContext {
         lang: lang.clone(),
         repo_root,
         src_root,
         target_root,
+        target_dir,
     })
 }
 
 #[tracing::instrument]
-pub fn create_new(sys_config: &toml::Value, cmd: &New) -> Result<()> {
+pub fn new(sys_config: &toml::Value, cmd: &New) -> Result<()> {
     info!("Creating new project...");
     info!("Name: {}", cmd.name);
     info!("Template: {}", cmd.template);

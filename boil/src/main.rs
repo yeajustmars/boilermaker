@@ -60,7 +60,7 @@ fn main() -> Result<()> {
                     Ok(())
                 }
             }
-            Commands::New(cmd) => new::create_new(&sys_config, &cmd),
+            Commands::New(cmd) => new::new(&sys_config, &cmd),
             Commands::Test(test_cmd) => {
                 if test_cmd.list {
                     info!("Listing tests...");
