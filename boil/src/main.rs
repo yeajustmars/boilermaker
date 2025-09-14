@@ -8,6 +8,7 @@ mod commands;
 mod config;
 mod logging;
 
+use commands::{list, new, test};
 use config::get_config;
 
 //TODO: 1. [ ] add custom macro for logging to reduce icon/symbol duplication, etc (possibly just a function?)
@@ -19,7 +20,7 @@ struct Cli {
     #[arg(short, long, value_name = "~/.config/boilermaker/boilermaker.toml")]
     config: Option<PathBuf>,
 
-    #[arg(short, long, action = clap::ArgAction::Count)]
+    #[arg(short = 'D', long, action = clap::ArgAction::Count)]
     debug: u8,
 
     #[command(subcommand)]
@@ -28,8 +29,9 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    List(commands::list::List),
-    Test(commands::test::Test),
+    List(list::List),
+    New(new::New),
+    Test(test::Test),
 }
 
 #[tracing::instrument]
@@ -57,6 +59,7 @@ fn main() -> Result<()> {
                     Ok(())
                 }
             }
+            Commands::New(new_cmd) => new::create_new(&new_cmd),
             Commands::Test(test_cmd) => {
                 if test_cmd.list {
                     info!("Listing tests...");

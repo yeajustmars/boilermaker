@@ -30,7 +30,7 @@ All three of these together comprise a `Boilermaker Template` (capital `T`).
 <a name="structure"></a>
 # Structure 
 
-> _You can see a basic example in this repo at `examples/hello-world`.
+> _You can see a basic example in this repo at `examples/hello-world`._
 
 The structure of a Boilermaker Template is pretty straight forward. You have the  following as a 
 directory that can be cloned and then processed:
@@ -38,14 +38,28 @@ directory that can be cloned and then processed:
 ```
 TEMPLATE_NAME/
     boilermaker.toml
-    template/
-        ... file or full directory tree of files ...
+    LANGUAGE_1/
+        template/
+            ... file or directory tree of files ...
+    LANGUAGE_N/
+        template/
+            ... file or directory tree of files ...
 ```
 
-That's it! The `boilermaker.toml` file is for project configuration and variables that will be 
-interpolated into the text files under the `template/` directory. What exists under the template 
-directory is completely up to you. By default, all text files will be processed through the 
-rendering engine, executing all logic and replacing all variable placeholders with their values.
+That's about it! 
+
+The `boilermaker.toml` file is for project configuration and variables that will be 
+interpolated into the text files under the `template/LANGUAGE` directory. What exists under the 
+template directory is completely up to you. By default, all text files will be processed through 
+the rendering engine, executing all logic and replacing all variable placeholders with their values.
+
+## A note on the `LANGUAGE` subdirectory
+
+As you can see above, the format for a Boilermaker Template is `TEMPLATE_NAME/LANGUAGE`. This one 
+restriction of requiring this directory means that you can have implementations of your template 
+in multiple langauges. This directory must exist and it must be lowercase so that the `boil` 
+command knows how to find the template files. Regardless of language, a single `boilermaker.toml` 
+file will work for all language implementations.
 
 <a name="templates"></a>
 # Templates
