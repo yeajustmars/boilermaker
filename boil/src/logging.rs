@@ -25,11 +25,11 @@ where
     ) -> std::fmt::Result {
         //TODO: filter out some events based on level
         match *event.metadata().level() {
-            Level::TRACE => write!(&mut writer, "{} ", Color::Purple.paint(TRACE_STR))?,
-            Level::DEBUG => write!(&mut writer, "{} ", Color::Blue.paint(DEBUG_STR))?,
-            Level::INFO => write!(&mut writer, "{} ", Color::Green.paint(INFO_STR))?,
+            Level::INFO => write!(&mut writer, "{} ", Color::Blue.paint(INFO_STR))?,
             Level::WARN => write!(&mut writer, "{} ", Color::Yellow.paint(WARN_STR))?,
             Level::ERROR => write!(&mut writer, "{} ", Color::Red.paint(ERROR_STR))?,
+            Level::TRACE => write!(&mut writer, "{} ", Color::Purple.paint(TRACE_STR))?,
+            Level::DEBUG => write!(&mut writer, "{} ", Color::Purple.paint(DEBUG_STR))?,
         }
 
         ctx.format_fields(writer.by_ref(), event)?;

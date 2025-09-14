@@ -9,10 +9,11 @@ mod config;
 mod logging;
 
 use commands::{list, new, test};
-use config::get_config;
+use config::get_system_config;
 
 //TODO: 1. [ ] add custom macro for logging to reduce icon/symbol duplication, etc (possibly just a function?)
 //TODO: 2. [ ] add ability to use YAML for config files as well as TOML
+//TODO: 3. [ ] move all (or most) main logic into lib.rs
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -42,7 +43,7 @@ fn main() -> Result<()> {
 
     logging::init_tracing(cli.debug)?;
 
-    let _config = get_config(cli.config.as_deref())?;
+    let sys_config = get_system_config(cli.config.as_deref())?;
 
     if let Some(command) = cli.command {
         match command {
@@ -59,7 +60,7 @@ fn main() -> Result<()> {
                     Ok(())
                 }
             }
-            Commands::New(new_cmd) => new::create_new(&new_cmd),
+            Commands::New(cmd) => new::new(&sys_config, &cmd),
             Commands::Test(test_cmd) => {
                 if test_cmd.list {
                     info!("Listing tests...");
