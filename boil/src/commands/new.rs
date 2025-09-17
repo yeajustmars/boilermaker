@@ -1,4 +1,8 @@
-use std::{collections::HashMap, env, fs, path::PathBuf};
+use std::{
+    collections::HashMap,
+    env, fs,
+    path::{Path, PathBuf},
+};
 
 use clap::Parser;
 use color_eyre::{Result, eyre::eyre};
@@ -209,10 +213,24 @@ pub fn new(sys_config: &toml::Value, cmd: &New) -> Result<()> {
         return Err(eyre!("💥 Failed to render template files: {e}"));
     }
 
-    match fs::rename(&ctx.target_dir, &ctx.output_dir) {
+    let output_dir = &ctx.output_dir;
+
+    if !&output_dir.is_dir() {
+        match fs::create_dir_all(&output_dir) {
+            Ok(_) => info!("Created output directory: {}", output_dir.display()),
+            Err(e) => return Err(eyre!("💥 Failed to create output directory: {e}")),
+        }
+    } else {
+        return Err(eyre!(
+            "💥 Output directory already exists: {}",
+            output_dir.display()
+        ));
+    }
+
+    match fs::rename(&ctx.target_dir, &output_dir) {
         Ok(_) => info!(
             "Moved project to output directory: {}",
-            ctx.output_dir.display()
+            output_dir.display()
         ),
         Err(e) => return Err(eyre!("💥 Failed to move project to output directory: {e}")),
     }
