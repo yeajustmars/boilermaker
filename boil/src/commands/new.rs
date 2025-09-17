@@ -18,18 +18,16 @@ use crate::config::{BoilermakerConfig, get_template_config};
 pub(crate) struct New {
     #[arg(required = true)]
     pub name: String,
-
     #[arg(short, long)]
     pub template: String,
-
     #[arg(short, long)]
     pub lang: Option<String>,
-
     #[arg(short, long)]
     pub branch: Option<String>,
-
     #[arg(short = 'd', long)]
     pub subdir: Option<String>,
+    #[arg(short, long)]
+    pub output: Option<String>,
 }
 
 // TODO: see if it's possible to do a sparse checkout with git2
@@ -134,6 +132,7 @@ pub struct TemplateContext {
     src_root: PathBuf,
     target_root: PathBuf,
     target_dir: PathBuf,
+    output_dir: PathBuf,
     template_files: Vec<PathBuf>,
     vars: HashMap<String, String>,
 }
@@ -162,12 +161,18 @@ pub fn get_template(_sys_config: &toml::Value, cmd: &New) -> Result<TemplateCont
         None => HashMap::new(),
     };
 
+    let output_dir = match &cmd.output {
+        Some(dir) => PathBuf::from(dir),
+        None => env::current_dir()?.join(&cmd.name),
+    };
+
     Ok(TemplateContext {
         lang: lang.to_owned(),
         repo_root,
         src_root,
         target_root,
         target_dir,
+        output_dir,
         template_files,
         vars,
     })
@@ -199,9 +204,19 @@ pub fn new(sys_config: &toml::Value, cmd: &New) -> Result<()> {
     info!("Template: {}", cmd.template);
 
     let ctx = get_template(sys_config, &cmd)?;
-    println!("---->  ctx: {:#?}", ctx);
 
-    let _ = render_template_files(ctx.template_files.clone(), &ctx)?;
+    if let Err(e) = render_template_files(ctx.template_files.clone(), &ctx) {
+        return Err(eyre!("💥 Failed to render template files: {e}"));
+    }
 
+    match fs::rename(&ctx.target_root, &ctx.output_dir) {
+        Ok(_) => info!(
+            "Moved project to output directory: {}",
+            ctx.output_dir.display()
+        ),
+        Err(e) => return Err(eyre!("💥 Failed to move project to output directory: {e}")),
+    }
+
+    info!("All set. Happy hacking! 🚀");
     Ok(())
 }
