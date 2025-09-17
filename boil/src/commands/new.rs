@@ -6,20 +6,25 @@ use toml;
 use tracing::info;
 
 use crate::template;
-use crate::template::TemplateCommand;
+use crate::template::{BOILERMAKER_TEMPLATES_DIR, TemplateCommand};
 
 #[derive(Debug, Parser)]
 pub(crate) struct New {
     #[arg(required = true)]
     pub name: String,
+
     #[arg(short, long)]
     pub template: String,
+
     #[arg(short, long)]
     pub lang: Option<String>,
+
     #[arg(short, long)]
     pub branch: Option<String>,
+
     #[arg(short = 'd', long)]
     pub subdir: Option<String>,
+
     #[arg(short, long)]
     pub output: Option<String>,
 }
@@ -50,27 +55,7 @@ pub fn new(sys_config: &toml::Value, cmd: &New) -> Result<()> {
         return Err(eyre!("💥 Failed to render template files: {e}"));
     }
 
-    let output_dir = &ctx.output_dir;
-
-    if !&output_dir.is_dir() {
-        match fs::create_dir_all(&output_dir) {
-            Ok(_) => info!("Created output directory: {}", output_dir.display()),
-            Err(e) => return Err(eyre!("💥 Failed to create output directory: {e}")),
-        }
-    } else {
-        return Err(eyre!(
-            "💥 Output directory already exists: {}",
-            output_dir.display()
-        ));
-    }
-
-    match fs::rename(&ctx.target_dir, &output_dir) {
-        Ok(_) => info!(
-            "Moved project to output directory: {}",
-            output_dir.display()
-        ),
-        Err(e) => return Err(eyre!("💥 Failed to move project to output directory: {e}")),
-    }
+    let _ = template::move_to_output_dir(&ctx)?;
 
     info!("All set. Happy hacking! 🚀");
     Ok(())

@@ -4,6 +4,7 @@ use color_eyre::{Result, eyre::eyre};
 // use colored::Colorize;
 use fs_extra::copy_items_with_progress;
 use git2::{FetchOptions, Repository, build::RepoBuilder};
+use lazy_static::lazy_static;
 use minijinja;
 // use nu_ansi_term::Style; // TODO: possibly replace nu_ansi_term with colored
 use serde::{Deserialize, Serialize};
@@ -13,7 +14,13 @@ use walkdir::WalkDir;
 
 use crate::config::{BoilermakerConfig, get_template_config};
 
+// TODO: move to a constants mod
+lazy_static! {
+    pub static ref BOILERMAKER_TEMPLATES_DIR: PathBuf = make_boilermaker_template_dir().unwrap();
+}
+
 // TODO: see if it's possible to do a sparse checkout with git2
+#[tracing::instrument]
 pub fn make_template_root_dir(repo_root: &PathBuf, cmd: &TemplateCommand) -> PathBuf {
     match &cmd.subdir {
         Some(subdir) => repo_root.join(subdir),
@@ -124,6 +131,12 @@ pub struct TemplateContext {
 pub fn get_template(_sys_config: &toml::Value, cmd: &TemplateCommand) -> Result<TemplateContext> {
     let repo_root = env::temp_dir().join(&cmd.name);
     let src_root = repo_root.join("src");
+
+    if repo_root.exists() {
+        fs::remove_dir_all(&repo_root)?;
+    }
+    let _repo = clone_repo(&src_root, cmd)?;
+
     let template_root = make_template_root_dir(&src_root, cmd);
     let cfg_path = template_root.join("boilermaker.toml");
     let cfg: BoilermakerConfig = get_template_config(cfg_path.as_path())?;
@@ -131,11 +144,6 @@ pub fn get_template(_sys_config: &toml::Value, cmd: &TemplateCommand) -> Result<
     let template_files_path = template_root.join(&lang);
     let target_root = repo_root.join("target");
     let target_dir = target_root.join(&lang);
-
-    if repo_root.exists() {
-        fs::remove_dir_all(&repo_root)?;
-    }
-    let _repo = clone_repo(&src_root, cmd)?;
     let template_files =
         copy_files_to_target(&template_files_path, &lang, &target_root, &target_dir)?;
 
@@ -178,6 +186,49 @@ pub fn render_template_files(template_files: Vec<PathBuf>, ctx: &TemplateContext
     }
 
     Ok(())
+}
+
+#[tracing::instrument]
+pub fn move_to_output_dir(ctx: &TemplateContext) -> Result<()> {
+    let output_dir = &ctx.output_dir;
+
+    if !&output_dir.is_dir() {
+        match fs::create_dir_all(&output_dir) {
+            Ok(_) => info!("Created output directory: {}", output_dir.display()),
+            Err(e) => return Err(eyre!("💥 Failed to create output directory: {e}")),
+        }
+    } else {
+        return Err(eyre!(
+            "💥 Output directory already exists: {}",
+            output_dir.display()
+        ));
+    }
+
+    match fs::rename(&ctx.target_dir, &output_dir) {
+        Ok(_) => info!(
+            "Moved project to output directory: {}",
+            output_dir.display()
+        ),
+        Err(e) => return Err(eyre!("💥 Failed to move project to output directory: {e}")),
+    }
+
+    Ok(())
+}
+
+#[tracing::instrument]
+pub fn make_boilermaker_template_dir() -> Result<PathBuf> {
+    let home_dir = dirs::home_dir().ok_or_else(|| eyre!("Can't find home directory"))?;
+    let templates_dir = home_dir.join(".boilermaker").join("templates");
+
+    if !templates_dir.exists() {
+        fs::create_dir_all(&templates_dir)?;
+        info!(
+            "Created boilermaker templates directory: {}",
+            templates_dir.display()
+        );
+    }
+
+    Ok(templates_dir)
 }
 
 #[derive(Debug)]
