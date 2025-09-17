@@ -1,8 +1,4 @@
-use std::{
-    collections::HashMap,
-    env, fs,
-    path::{Path, PathBuf},
-};
+use std::{collections::HashMap, env, fs, path::PathBuf};
 
 use clap::Parser;
 use color_eyre::{Result, eyre::eyre};
