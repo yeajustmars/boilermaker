@@ -1,14 +1,15 @@
 use std::path::PathBuf;
 
-use clap::{Parser, Subcommand};
+use clap::{Command, Parser, Subcommand};
 use color_eyre::eyre::Result;
 use tracing::{info, warn};
 
 mod commands;
 mod config;
 mod logging;
+mod template;
 
-use commands::{list, new, test};
+use commands::{add, list, new, test};
 use config::get_system_config;
 
 //TODO: 1. [ ] add custom macro for logging to reduce icon/symbol duplication, etc (possibly just a function?)
@@ -30,6 +31,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    Add(add::Add),
     List(list::List),
     New(new::New),
     Test(test::Test),
@@ -47,8 +49,9 @@ fn main() -> Result<()> {
 
     if let Some(command) = cli.command {
         match command {
+            Commands::Add(cmd) => add::add(&sys_config, &cmd),
+            //TODO: move into list::List command implementation
             Commands::List(list_cmd) => {
-                //TODO: move into list::List command implementation
                 if list_cmd.public {
                     info!("Listing public items...");
                     Ok(())
