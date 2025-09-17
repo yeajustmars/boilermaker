@@ -2,14 +2,15 @@ use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 use color_eyre::eyre::Result;
-use tracing::{info, warn};
+use tracing::warn;
 
 mod commands;
 mod config;
+mod local_cache;
 mod logging;
 mod template;
 
-use commands::{add, list, new, test};
+use commands::{add, new};
 use config::get_system_config;
 
 //TODO: 1. [ ] add custom macro for logging to reduce icon/symbol duplication, etc (possibly just a function?)
@@ -32,13 +33,12 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     Add(add::Add),
-    List(list::List),
     New(new::New),
-    Test(test::Test),
 }
 
+#[tokio::main]
 #[tracing::instrument]
-fn main() -> Result<()> {
+async fn main() -> Result<()> {
     color_eyre::install().expect("Failed to install color_eyre");
 
     let cli = Cli::parse();
@@ -49,34 +49,13 @@ fn main() -> Result<()> {
 
     if let Some(command) = cli.command {
         match command {
-            Commands::Add(cmd) => add::add(&sys_config, &cmd),
-            //TODO: move into list::List command implementation
-            Commands::List(list_cmd) => {
-                if list_cmd.public {
-                    info!("Listing public items...");
-                    Ok(())
-                } else if list_cmd.private {
-                    info!("Listing private items...");
-                    Ok(())
-                } else {
-                    info!("Listing all items...");
-                    Ok(())
-                }
-            }
-            Commands::New(cmd) => new::new(&sys_config, &cmd),
-            Commands::Test(test_cmd) => {
-                if test_cmd.list {
-                    info!("Listing tests...");
-                    Ok(())
-                } else {
-                    info!("Running tests...");
-                    Ok(())
-                }
-            }
+            Commands::Add(cmd) => add::add(&sys_config, &cmd).await?,
+            Commands::New(cmd) => new::new(&sys_config, &cmd).await?,
         }
     } else {
         //TODO: default to printing help menu if no command is provided
         warn!("❗ No command provided. Use --help for more information.");
-        Ok(())
     }
+
+    Ok(())
 }

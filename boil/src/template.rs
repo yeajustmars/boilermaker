@@ -30,7 +30,7 @@ pub fn make_template_root_dir(repo_root: &PathBuf, cmd: &TemplateCommand) -> Pat
 
 // TODO: add local .cache dir that doesn't need to copy every time (maybe 10 minutes?)
 #[tracing::instrument]
-pub fn clone_repo(src_root: &PathBuf, cmd: &TemplateCommand) -> Result<Repository> {
+pub async fn clone_repo(src_root: &PathBuf, cmd: &TemplateCommand) -> Result<Repository> {
     info!("Cloning into temporary directory: {}", src_root.display());
 
     let mut fetch_opts = FetchOptions::new();
@@ -65,7 +65,7 @@ pub fn get_lang(cmd: &TemplateCommand, cfg: &BoilermakerConfig) -> Result<String
 }
 
 #[tracing::instrument]
-pub fn copy_files_to_target(
+pub async fn copy_files_to_target(
     template_files_path: &PathBuf,
     lang: &str,
     target_root: &PathBuf,
@@ -128,14 +128,17 @@ pub struct TemplateContext {
 }
 
 #[tracing::instrument]
-pub fn get_template(_sys_config: &toml::Value, cmd: &TemplateCommand) -> Result<TemplateContext> {
+pub async fn get_template(
+    _sys_config: &toml::Value,
+    cmd: &TemplateCommand,
+) -> Result<TemplateContext> {
     let repo_root = env::temp_dir().join(&cmd.name);
     let src_root = repo_root.join("src");
 
     if repo_root.exists() {
         fs::remove_dir_all(&repo_root)?;
     }
-    let _repo = clone_repo(&src_root, cmd)?;
+    let _repo = clone_repo(&src_root, cmd).await?;
 
     let template_root = make_template_root_dir(&src_root, cmd);
     let cfg_path = template_root.join("boilermaker.toml");
@@ -145,7 +148,7 @@ pub fn get_template(_sys_config: &toml::Value, cmd: &TemplateCommand) -> Result<
     let target_root = repo_root.join("target");
     let target_dir = target_root.join(&lang);
     let template_files =
-        copy_files_to_target(&template_files_path, &lang, &target_root, &target_dir)?;
+        copy_files_to_target(&template_files_path, &lang, &target_root, &target_dir).await?;
 
     let vars: HashMap<String, String> = match &cfg.boilermaker.variables {
         Some(m) => m.to_owned(),
@@ -170,7 +173,10 @@ pub fn get_template(_sys_config: &toml::Value, cmd: &TemplateCommand) -> Result<
 }
 
 #[tracing::instrument]
-pub fn render_template_files(template_files: Vec<PathBuf>, ctx: &TemplateContext) -> Result<()> {
+pub async fn render_template_files(
+    template_files: Vec<PathBuf>,
+    ctx: &TemplateContext,
+) -> Result<()> {
     let mut jinja = minijinja::Environment::new();
 
     for file_path in template_files {
@@ -189,7 +195,7 @@ pub fn render_template_files(template_files: Vec<PathBuf>, ctx: &TemplateContext
 }
 
 #[tracing::instrument]
-pub fn move_to_output_dir(ctx: &TemplateContext) -> Result<()> {
+pub async fn move_to_output_dir(ctx: &TemplateContext) -> Result<()> {
     let output_dir = &ctx.output_dir;
 
     if !&output_dir.is_dir() {

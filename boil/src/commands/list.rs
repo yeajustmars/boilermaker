@@ -1,3 +1,4 @@
+/*
 use clap::Parser;
 
 #[derive(Parser)]
@@ -7,3 +8,4 @@ pub(crate) struct List {
     #[arg(short = 'p', long)]
     pub private: bool,
 }
+ */

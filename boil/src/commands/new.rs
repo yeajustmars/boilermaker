@@ -3,31 +3,26 @@ use color_eyre::{Result, eyre::eyre};
 use toml;
 use tracing::info;
 
-use crate::template;
-use crate::template::TemplateCommand;
+use crate::template::{TemplateCommand, get_template, move_to_output_dir, render_template_files};
 
 #[derive(Debug, Parser)]
 pub(crate) struct New {
     #[arg(required = true)]
     pub name: String,
-
     #[arg(short, long)]
     pub template: String,
-
     #[arg(short, long)]
     pub lang: Option<String>,
-
     #[arg(short, long)]
     pub branch: Option<String>,
-
     #[arg(short = 'd', long)]
     pub subdir: Option<String>,
-
     #[arg(short, long)]
     pub output: Option<String>,
 }
 
 impl From<&New> for TemplateCommand {
+    #[tracing::instrument]
     fn from(cmd: &New) -> Self {
         Self {
             name: cmd.name.to_owned(),
@@ -41,19 +36,19 @@ impl From<&New> for TemplateCommand {
 }
 
 #[tracing::instrument]
-pub fn new(sys_config: &toml::Value, cmd: &New) -> Result<()> {
+pub async fn new(sys_config: &toml::Value, cmd: &New) -> Result<()> {
     info!("Creating new project...");
     info!("Name: {}", cmd.name);
     info!("Template: {}", cmd.template);
 
     let cmd = TemplateCommand::from(cmd);
-    let ctx = template::get_template(sys_config, &cmd)?;
+    let ctx = get_template(sys_config, &cmd).await?;
 
-    if let Err(e) = template::render_template_files(ctx.template_files.clone(), &ctx) {
+    if let Err(e) = render_template_files(ctx.template_files.clone(), &ctx).await {
         return Err(eyre!("💥 Failed to render template files: {e}"));
     }
 
-    let _ = template::move_to_output_dir(&ctx)?;
+    let _ = move_to_output_dir(&ctx).await?;
 
     info!("All set. Happy hacking! 🚀");
     Ok(())

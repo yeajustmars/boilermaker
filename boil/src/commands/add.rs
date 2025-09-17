@@ -6,6 +6,7 @@ use clap::Parser;
 use color_eyre::Result;
 use tracing::info;
 
+use crate::local_cache::{BOILERMAKER_LOCAL_CACHE_PATH, LocalCache};
 use crate::template;
 use crate::template::{BOILERMAKER_TEMPLATES_DIR, TemplateCommand};
 
@@ -26,6 +27,7 @@ pub(crate) struct Add {
 }
 
 impl From<&Add> for TemplateCommand {
+    #[tracing::instrument]
     fn from(cmd: &Add) -> Self {
         Self {
             name: cmd.name.to_owned(),
@@ -39,13 +41,13 @@ impl From<&Add> for TemplateCommand {
 }
 
 #[tracing::instrument]
-pub fn add(sys_config: &toml::Value, cmd: &Add) -> Result<()> {
+pub async fn add(sys_config: &toml::Value, cmd: &Add) -> Result<()> {
     info!("Adding template: {}", &cmd.name);
     info!("Name: {}", cmd.name);
     info!("Template: {}", cmd.template);
 
+    /*
     let mut cmd = TemplateCommand::from(cmd);
-
     if cmd.output.is_none() {
         cmd.output = Some(
             BOILERMAKER_TEMPLATES_DIR
@@ -56,6 +58,8 @@ pub fn add(sys_config: &toml::Value, cmd: &Add) -> Result<()> {
         );
     }
 
+    let local_cache = LocalCache::new(BOILERMAKER_LOCAL_CACHE_PATH.to_str().unwrap()).await?;
+
     let ctx = template::get_template(sys_config, &cmd)?;
 
     let output_dir = PathBuf::from(cmd.output.as_ref().unwrap());
@@ -64,6 +68,7 @@ pub fn add(sys_config: &toml::Value, cmd: &Add) -> Result<()> {
     }
 
     let _ = template::move_to_output_dir(&ctx)?;
+     */
 
     Ok(())
 }
