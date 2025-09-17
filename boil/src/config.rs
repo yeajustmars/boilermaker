@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
@@ -83,22 +84,26 @@ pub struct BoilermakerConfig {
     pub boilermaker: BoilermakerConfigRoot,
 }
 
+// TODO: decide on whether variables are allowed to be nested or not.
+// TODO: decide on whether variables should allow aggregate types (arrays, tables) or just simple key-value pairs.
+// NOTE: Probably yes to the latter.
 #[derive(Debug, Deserialize)]
 pub struct BoilermakerConfigRoot {
     pub project: BoilermakerConfigProject,
-    pub variables: Option<toml::Value>,
+    // pub variables: Option<toml::Value>,
+    pub variables: Option<HashMap<String, String>>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct BoilermakerConfigProject {
-    pub name: String,
-    pub repository: String,
-    pub subdir: Option<String>,
-    pub version: Option<String>,
+    // pub name: String,
+    // pub repository: String,
+    // pub subdir: Option<String>,
+    // pub version: Option<String>,
     pub default_lang: Option<String>,
-    pub description: Option<String>,
-    pub authors: Option<Vec<String>>,
-    pub license: Option<String>,
-    pub keywords: Option<Vec<String>>,
-    pub website: Option<String>,
+    // pub description: Option<String>,
+    // pub authors: Option<Vec<String>>,
+    // pub license: Option<String>,
+    // pub keywords: Option<Vec<String>>,
+    // pub website: Option<String>,
 }
