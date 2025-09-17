@@ -1,12 +1,10 @@
-use std::fs;
-
 use clap::Parser;
 use color_eyre::{Result, eyre::eyre};
 use toml;
 use tracing::info;
 
 use crate::template;
-use crate::template::{BOILERMAKER_TEMPLATES_DIR, TemplateCommand};
+use crate::template::TemplateCommand;
 
 #[derive(Debug, Parser)]
 pub(crate) struct New {

@@ -1,3 +1,6 @@
+use std::fs;
+use std::path::PathBuf;
+
 use clap::Parser;
 
 use color_eyre::Result;
@@ -55,8 +58,9 @@ pub fn add(sys_config: &toml::Value, cmd: &Add) -> Result<()> {
 
     let ctx = template::get_template(sys_config, &cmd)?;
 
-    if cmd.output.exists() {
-        fs::remove_dir_all(&cmd.output)?;
+    let output_dir = PathBuf::from(cmd.output.as_ref().unwrap());
+    if output_dir.exists() {
+        fs::remove_dir_all(&output_dir)?;
     }
 
     let _ = template::move_to_output_dir(&ctx)?;

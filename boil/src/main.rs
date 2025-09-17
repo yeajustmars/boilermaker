@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use clap::{Command, Parser, Subcommand};
+use clap::{Parser, Subcommand};
 use color_eyre::eyre::Result;
 use tracing::{info, warn};
 
