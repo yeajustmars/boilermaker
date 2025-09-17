@@ -209,7 +209,7 @@ pub fn new(sys_config: &toml::Value, cmd: &New) -> Result<()> {
         return Err(eyre!("💥 Failed to render template files: {e}"));
     }
 
-    match fs::rename(&ctx.target_root, &ctx.output_dir) {
+    match fs::rename(&ctx.target_dir, &ctx.output_dir) {
         Ok(_) => info!(
             "Moved project to output directory: {}",
             ctx.output_dir.display()
