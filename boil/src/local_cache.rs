@@ -103,7 +103,7 @@ impl LocalCache {
                     return Err(eyre!(
                         [
                             "💥 Template already exists in local cache.",
-                            "(There is a unique connstraint for: name, repo, branch, subdir)",
+                            "(There is a unique connstraint for: name + repo + branch + subdir)",
                         ]
                         .join(" ")
                     ));
