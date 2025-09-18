@@ -7,8 +7,9 @@ use color_eyre::Result;
 use tracing::info;
 
 use crate::local_cache::{BOILERMAKER_LOCAL_CACHE_PATH, LocalCache};
-use crate::template;
-use crate::template::{BOILERMAKER_TEMPLATES_DIR, TemplateCommand};
+use crate::template::{
+    BOILERMAKER_TEMPLATES_DIR, TemplateCommand, get_template, move_to_output_dir,
+};
 
 #[derive(Debug, Parser)]
 pub(crate) struct Add {
@@ -46,7 +47,6 @@ pub async fn add(sys_config: &toml::Value, cmd: &Add) -> Result<()> {
     info!("Name: {}", cmd.name);
     info!("Template: {}", cmd.template);
 
-    /*
     let mut cmd = TemplateCommand::from(cmd);
     if cmd.output.is_none() {
         cmd.output = Some(
@@ -58,17 +58,25 @@ pub async fn add(sys_config: &toml::Value, cmd: &Add) -> Result<()> {
         );
     }
 
-    let local_cache = LocalCache::new(BOILERMAKER_LOCAL_CACHE_PATH.to_str().unwrap()).await?;
+    let ctx = get_template(sys_config, &cmd).await?;
 
-    let ctx = template::get_template(sys_config, &cmd)?;
-
+    // TODO: decide if output_dir should be cleared automatically if exists.
     let output_dir = PathBuf::from(cmd.output.as_ref().unwrap());
     if output_dir.exists() {
         fs::remove_dir_all(&output_dir)?;
     }
 
-    let _ = template::move_to_output_dir(&ctx)?;
-     */
+    let local_cache_path = BOILERMAKER_LOCAL_CACHE_PATH.to_str().unwrap();
+    let local_cache = LocalCache::new(local_cache_path).await?;
+
+    if !local_cache.template_table_exists().await? {
+        local_cache.create_template_table().await?;
+    }
+
+    let new_id = local_cache.add_template(cmd).await?;
+    info!("Added template with ID: {}", new_id);
+
+    let _ = move_to_output_dir(&ctx).await?;
 
     Ok(())
 }

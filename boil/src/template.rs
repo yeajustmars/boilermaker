@@ -132,6 +132,19 @@ pub async fn get_template(
     _sys_config: &toml::Value,
     cmd: &TemplateCommand,
 ) -> Result<TemplateContext> {
+    let output_dir = match &cmd.output {
+        Some(dir) => PathBuf::from(dir),
+        None => env::current_dir()?.join(&cmd.name),
+    };
+
+    // TODO: add option to force overwrite existing output dir
+    if output_dir.exists() {
+        return Err(eyre!(
+            "💥 Output path exists, will not overwrite: {}",
+            output_dir.display()
+        ));
+    }
+
     let repo_root = env::temp_dir().join(&cmd.name);
     let src_root = repo_root.join("src");
 
@@ -153,11 +166,6 @@ pub async fn get_template(
     let vars: HashMap<String, String> = match &cfg.boilermaker.variables {
         Some(m) => m.to_owned(),
         None => HashMap::new(),
-    };
-
-    let output_dir = match &cmd.output {
-        Some(dir) => PathBuf::from(dir),
-        None => env::current_dir()?.join(&cmd.name),
     };
 
     Ok(TemplateContext {
@@ -198,16 +206,18 @@ pub async fn render_template_files(
 pub async fn move_to_output_dir(ctx: &TemplateContext) -> Result<()> {
     let output_dir = &ctx.output_dir;
 
-    if !&output_dir.is_dir() {
+    if output_dir.exists() {
+        return Err(eyre!(
+            "💥 Output path exists, will not overwrite: {}",
+            output_dir.display()
+        ));
+    }
+
+    if output_dir.is_dir() {
         match fs::create_dir_all(&output_dir) {
             Ok(_) => info!("Created output directory: {}", output_dir.display()),
             Err(e) => return Err(eyre!("💥 Failed to create output directory: {e}")),
         }
-    } else {
-        return Err(eyre!(
-            "💥 Output directory already exists: {}",
-            output_dir.display()
-        ));
     }
 
     match fs::rename(&ctx.target_dir, &output_dir) {

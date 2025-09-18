@@ -6,6 +6,8 @@ use sqlx::sqlite::{SqliteConnectOptions, SqlitePool};
 use std::path::PathBuf;
 use tracing::info;
 
+use crate::template::TemplateCommand;
+
 // TODO: move to a constants mod
 lazy_static! {
     pub static ref BOILERMAKER_LOCAL_CACHE_PATH: PathBuf =
@@ -34,18 +36,31 @@ impl LocalCache {
     }
 
     #[tracing::instrument]
-    pub async fn initialize(&self) -> Result<()> {
+    pub async fn template_table_exists(&self) -> Result<bool> {
+        let row: (i64,) = sqlx::query_as(
+            r#"
+            SELECT COUNT(name) FROM sqlite_master WHERE type='table' AND name='template';
+            "#,
+        )
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(row.0 > 0)
+    }
+
+    #[tracing::instrument]
+    pub async fn create_template_table(&self) -> Result<()> {
         // TODO: move to migration
         sqlx::query(
             r#"
             CREATE TABLE IF NOT EXISTS template (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
-                template TEXT NOT NULL,
                 lang TEXT,
                 branch TEXT,
                 subdir TEXT,
-                output TEXT NOT NULL
+                output_dir TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
             "#,
         )
@@ -54,6 +69,25 @@ impl LocalCache {
 
         Ok(())
     }
+
+    #[tracing::instrument]
+    pub async fn add_template(&self, template: TemplateCommand) -> Result<i64> {
+        let result = sqlx::query(
+            r#"
+            INSERT INTO template (name, lang, branch, subdir, output_dir)
+            VALUES (?, ?, ?, ?, ?);
+            "#,
+        )
+        .bind(template.name)
+        .bind(template.lang)
+        .bind(template.branch)
+        .bind(template.subdir)
+        .bind(template.output)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(result.last_insert_rowid())
+    }
 }
 
 #[tracing::instrument]
@@ -61,21 +95,24 @@ pub fn make_boilermaker_local_cache_path() -> Result<PathBuf> {
     let home_dir = dirs::home_dir().ok_or_else(|| eyre!("Can't find home directory"))?;
     let local_cache_path = home_dir.join(".boilermaker").join("local_cache.db");
 
-    if !local_cache_path.exists() {
-        match OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .open(&local_cache_path)
-        {
-            Ok(_) => (),
-            Err(e) => return Err(eyre!("💥 Failed to create local cache file: {}", e)),
-        };
+    match OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&local_cache_path)
+    {
+        Ok(_) => {
+            info!(
+                "Created boilermaker local cache file: {}",
+                local_cache_path.display()
+            );
+            Ok(local_cache_path)
+        }
+        Err(e) => {
+            if e.kind() == std::io::ErrorKind::AlreadyExists {
+                return Ok(local_cache_path);
+            } else {
+                return Err(eyre!("💥 Failed to create local cache file: {}", e));
+            }
+        }
     }
-
-    info!(
-        "Created boilermaker local cache directory: {}",
-        local_cache_path.display()
-    );
-
-    Ok(local_cache_path)
 }
