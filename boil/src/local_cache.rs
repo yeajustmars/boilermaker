@@ -15,7 +15,6 @@ lazy_static! {
 #[derive(Debug)]
 pub struct LocalCache {
     pub pool: SqlitePool,
-    pub path: String,
 }
 
 #[derive(Debug)]
@@ -37,14 +36,12 @@ impl LocalCache {
 
         let pool = SqlitePool::connect_with(options).await?;
 
-        Ok(LocalCache {
-            pool,
-            path: path.to_owned(),
-        })
+        Ok(LocalCache { pool })
     }
 
     #[tracing::instrument]
     pub async fn template_table_exists(&self) -> Result<bool> {
+        // TODO: rewrite with compile-time macros in sqlx
         let row: (i64,) = sqlx::query_as(
             r#"
             SELECT COUNT(name) FROM sqlite_master WHERE type='table' AND name='template';
@@ -59,6 +56,7 @@ impl LocalCache {
     #[tracing::instrument]
     pub async fn create_template_table(&self) -> Result<()> {
         // TODO: move to migration
+        // TODO: rewrite with compile-time macros in sqlx
         sqlx::query(
             r#"
             CREATE TABLE IF NOT EXISTS template (
@@ -82,6 +80,7 @@ impl LocalCache {
 
     #[tracing::instrument]
     pub async fn add_template(&self, template: TemplateRow) -> Result<i64> {
+        // TODO: rewrite with compile-time macros in sqlx
         let result = sqlx::query(
             r#"
             INSERT INTO template (name, lang, template_dir, repo, branch, subdir)
