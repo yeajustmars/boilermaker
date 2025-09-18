@@ -44,7 +44,6 @@ impl From<&Add> for TemplateCommand {
 #[tracing::instrument]
 pub async fn add(sys_config: &toml::Value, cmd: &Add) -> Result<()> {
     info!("Adding template: {}", &cmd.name);
-    info!("Name: {}", cmd.name);
     info!("Template: {}", cmd.template);
 
     let mut cmd = TemplateCommand::from(cmd);
