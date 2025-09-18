@@ -6,8 +6,6 @@ use sqlx::sqlite::{SqliteConnectOptions, SqlitePool};
 use std::path::PathBuf;
 use tracing::info;
 
-use crate::template::TemplateCommand;
-
 // TODO: move to a constants mod
 lazy_static! {
     pub static ref BOILERMAKER_LOCAL_CACHE_PATH: PathBuf =
@@ -18,6 +16,16 @@ lazy_static! {
 pub struct LocalCache {
     pub pool: SqlitePool,
     pub path: String,
+}
+
+#[derive(Debug)]
+pub struct TemplateRow {
+    pub name: String,
+    pub lang: String,
+    pub template_dir: String,
+    pub repo: String,
+    pub branch: Option<String>,
+    pub subdir: Option<String>,
 }
 
 impl LocalCache {
@@ -57,10 +65,12 @@ impl LocalCache {
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 lang TEXT,
+                template_dir TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                repo TEXT,
                 branch TEXT,
                 subdir TEXT,
-                output_dir TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                UNIQUE (name, repo, branch, subdir)
             );
             "#,
         )
@@ -71,22 +81,38 @@ impl LocalCache {
     }
 
     #[tracing::instrument]
-    pub async fn add_template(&self, template: TemplateCommand) -> Result<i64> {
+    pub async fn add_template(&self, template: TemplateRow) -> Result<i64> {
         let result = sqlx::query(
             r#"
-            INSERT INTO template (name, lang, branch, subdir, output_dir)
-            VALUES (?, ?, ?, ?, ?);
+            INSERT INTO template (name, lang, template_dir, repo, branch, subdir)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6);
             "#,
         )
         .bind(template.name)
         .bind(template.lang)
+        .bind(template.template_dir)
+        .bind(template.repo)
         .bind(template.branch)
         .bind(template.subdir)
-        .bind(template.output)
         .execute(&self.pool)
-        .await?;
+        .await;
 
-        Ok(result.last_insert_rowid())
+        match result {
+            Ok(result) => Ok(result.last_insert_rowid()),
+            Err(e) => {
+                if e.to_string().contains("code: 2067") {
+                    return Err(eyre!(
+                        [
+                            "💥 Template already exists in local cache.",
+                            "(There is a unique connstraint for: name, repo, branch, subdir)",
+                        ]
+                        .join(" ")
+                    ));
+                } else {
+                    return Err(eyre!("💥 Failed to add template to local cache: {}", e));
+                }
+            }
+        }
     }
 }
 

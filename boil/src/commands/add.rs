@@ -6,7 +6,7 @@ use clap::Parser;
 use color_eyre::Result;
 use tracing::info;
 
-use crate::local_cache::{BOILERMAKER_LOCAL_CACHE_PATH, LocalCache};
+use crate::local_cache::{BOILERMAKER_LOCAL_CACHE_PATH, LocalCache, TemplateRow};
 use crate::template::{
     BOILERMAKER_TEMPLATES_DIR, TemplateCommand, get_template, move_to_output_dir,
 };
@@ -23,8 +23,10 @@ pub(crate) struct Add {
     pub branch: Option<String>,
     #[arg(short = 'd', long)]
     pub subdir: Option<String>,
-    #[arg(short, long)]
-    pub output: Option<String>,
+    #[arg(short, long = "output-dir")]
+    pub output_dir: Option<String>,
+    #[arg(short = 'O', long, default_value_t = false)]
+    pub overwrite: bool,
 }
 
 impl From<&Add> for TemplateCommand {
@@ -36,7 +38,36 @@ impl From<&Add> for TemplateCommand {
             branch: cmd.branch.to_owned(),
             subdir: cmd.subdir.to_owned(),
             lang: cmd.lang.to_owned(),
-            output: cmd.output.to_owned(),
+            output_dir: cmd.output_dir.to_owned(),
+            overwrite: cmd.overwrite,
+        }
+    }
+}
+
+impl From<&Add> for TemplateRow {
+    #[tracing::instrument]
+    fn from(cmd: &Add) -> Self {
+        Self {
+            name: cmd.name.to_owned(),
+            lang: cmd.lang.to_owned().unwrap_or_default(),
+            template_dir: cmd.output_dir.to_owned().unwrap_or_default(),
+            repo: cmd.template.to_owned(),
+            branch: cmd.branch.to_owned(),
+            subdir: cmd.subdir.to_owned(),
+        }
+    }
+}
+
+impl From<&TemplateCommand> for TemplateRow {
+    #[tracing::instrument]
+    fn from(cmd: &TemplateCommand) -> Self {
+        Self {
+            name: cmd.name.to_owned(),
+            lang: cmd.lang.to_owned().unwrap_or_default(),
+            template_dir: cmd.output_dir.to_owned().unwrap_or_default(),
+            repo: cmd.template.to_owned(),
+            branch: cmd.branch.to_owned(),
+            subdir: cmd.subdir.to_owned(),
         }
     }
 }
@@ -47,8 +78,8 @@ pub async fn add(sys_config: &toml::Value, cmd: &Add) -> Result<()> {
     info!("Template: {}", cmd.template);
 
     let mut cmd = TemplateCommand::from(cmd);
-    if cmd.output.is_none() {
-        cmd.output = Some(
+    if cmd.output_dir.is_none() {
+        cmd.output_dir = Some(
             BOILERMAKER_TEMPLATES_DIR
                 .join(&cmd.name)
                 .to_str()
@@ -60,7 +91,7 @@ pub async fn add(sys_config: &toml::Value, cmd: &Add) -> Result<()> {
     let ctx = get_template(sys_config, &cmd).await?;
 
     // TODO: decide if output_dir should be cleared automatically if exists.
-    let output_dir = PathBuf::from(cmd.output.as_ref().unwrap());
+    let output_dir = PathBuf::from(cmd.output_dir.as_ref().unwrap());
     if output_dir.exists() {
         fs::remove_dir_all(&output_dir)?;
     }
@@ -72,7 +103,14 @@ pub async fn add(sys_config: &toml::Value, cmd: &Add) -> Result<()> {
         local_cache.create_template_table().await?;
     }
 
-    let new_id = local_cache.add_template(cmd).await?;
+    // TODO: look at using a single struct for both TemplateCommand and TemplateContext
+    if cmd.lang.is_none() {
+        cmd.lang = Some(ctx.lang.to_owned());
+    }
+
+    let row = TemplateRow::from(&cmd);
+
+    let new_id = local_cache.add_template(row).await?;
     info!("Added template with ID: {}", new_id);
 
     let _ = move_to_output_dir(&ctx).await?;

@@ -19,6 +19,17 @@ lazy_static! {
     pub static ref BOILERMAKER_TEMPLATES_DIR: PathBuf = make_boilermaker_template_dir().unwrap();
 }
 
+#[derive(Debug)]
+pub(crate) struct TemplateCommand {
+    pub name: String,
+    pub template: String,
+    pub lang: Option<String>,
+    pub branch: Option<String>,
+    pub subdir: Option<String>,
+    pub output_dir: Option<String>,
+    pub overwrite: bool,
+}
+
 // TODO: see if it's possible to do a sparse checkout with git2
 #[tracing::instrument]
 pub fn make_template_root_dir(repo_root: &PathBuf, cmd: &TemplateCommand) -> PathBuf {
@@ -125,6 +136,7 @@ pub struct TemplateContext {
     pub output_dir: PathBuf,
     pub template_files: Vec<PathBuf>,
     pub vars: HashMap<String, String>,
+    pub overwrite: bool,
 }
 
 #[tracing::instrument]
@@ -132,15 +144,15 @@ pub async fn get_template(
     _sys_config: &toml::Value,
     cmd: &TemplateCommand,
 ) -> Result<TemplateContext> {
-    let output_dir = match &cmd.output {
+    let output_dir = match &cmd.output_dir {
         Some(dir) => PathBuf::from(dir),
         None => env::current_dir()?.join(&cmd.name),
     };
 
     // TODO: add option to force overwrite existing output dir
-    if output_dir.exists() {
+    if output_dir.exists() && !cmd.overwrite {
         return Err(eyre!(
-            "💥 Output path exists, will not overwrite: {}",
+            "💥 Output dir path exists: {}. (Pass --overwrite to force.)",
             output_dir.display()
         ));
     }
@@ -177,6 +189,7 @@ pub async fn get_template(
         output_dir,
         template_files,
         vars,
+        overwrite: cmd.overwrite,
     })
 }
 
@@ -208,7 +221,7 @@ pub async fn move_to_output_dir(ctx: &TemplateContext) -> Result<()> {
 
     if output_dir.exists() {
         return Err(eyre!(
-            "💥 Output path exists, will not overwrite: {}",
+            "💥 Output dir path exists: {}. (Pass --overwrite to force.)",
             output_dir.display()
         ));
     }
@@ -245,14 +258,4 @@ pub fn make_boilermaker_template_dir() -> Result<PathBuf> {
     }
 
     Ok(templates_dir)
-}
-
-#[derive(Debug)]
-pub(crate) struct TemplateCommand {
-    pub name: String,
-    pub template: String,
-    pub lang: Option<String>,
-    pub branch: Option<String>,
-    pub subdir: Option<String>,
-    pub output: Option<String>,
 }

@@ -17,8 +17,10 @@ pub(crate) struct New {
     pub branch: Option<String>,
     #[arg(short = 'd', long)]
     pub subdir: Option<String>,
-    #[arg(short, long)]
-    pub output: Option<String>,
+    #[arg(short, long = "output-dir")]
+    pub output_dir: Option<String>,
+    #[arg(short = 'O', long, default_value_t = false)]
+    pub overwrite: bool,
 }
 
 impl From<&New> for TemplateCommand {
@@ -30,7 +32,8 @@ impl From<&New> for TemplateCommand {
             lang: cmd.lang.to_owned(),
             branch: cmd.branch.to_owned(),
             subdir: cmd.subdir.to_owned(),
-            output: cmd.output.to_owned(),
+            output_dir: cmd.output_dir.to_owned(),
+            overwrite: cmd.overwrite,
         }
     }
 }
