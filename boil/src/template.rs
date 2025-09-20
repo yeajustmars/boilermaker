@@ -226,9 +226,7 @@ pub async fn move_to_output_dir(ctx: &TemplateContext) -> Result<()> {
         ));
     }
 
-    let dir_exists = output_dir.is_dir();
-
-    if dir_exists {
+    if output_dir.is_dir() {
         if ctx.overwrite {
             match fs::remove_dir_all(&output_dir) {
                 Ok(_) => info!(
