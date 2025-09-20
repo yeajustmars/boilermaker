@@ -219,14 +219,7 @@ pub async fn render_template_files(
 pub async fn move_to_output_dir(ctx: &TemplateContext) -> Result<()> {
     let output_dir = &ctx.output_dir;
 
-    if output_dir.exists() && !ctx.overwrite {
-        return Err(eyre!(
-            "💥 Output dir path exists: {}. (Pass --overwrite to force.)",
-            output_dir.display()
-        ));
-    }
-
-    if output_dir.is_dir() {
+    if output_dir.exists() {
         if ctx.overwrite {
             match fs::remove_dir_all(&output_dir) {
                 Ok(_) => info!(
@@ -235,6 +228,11 @@ pub async fn move_to_output_dir(ctx: &TemplateContext) -> Result<()> {
                 ),
                 Err(e) => return Err(eyre!("💥 Failed to remove existing output directory: {e}")),
             }
+        } else {
+            return Err(eyre!(
+                "💥 Output dir path exists: {}. (Pass --overwrite to force.)",
+                output_dir.display()
+            ));
         }
     } else {
         match fs::create_dir_all(&output_dir) {
