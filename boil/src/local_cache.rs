@@ -1,10 +1,13 @@
 use std::fs::OpenOptions;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use color_eyre::{Result, eyre::eyre};
 use lazy_static::lazy_static;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePool};
 use std::path::PathBuf;
 use tracing::info;
+
+use crate::template::TemplateCommand;
 
 // TODO: move to a constants mod
 lazy_static! {
@@ -17,7 +20,7 @@ pub struct LocalCache {
     pub pool: SqlitePool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, sqlx::FromRow)]
 pub struct TemplateRow {
     pub name: String,
     pub lang: String,
@@ -25,6 +28,32 @@ pub struct TemplateRow {
     pub repo: String,
     pub branch: Option<String>,
     pub subdir: Option<String>,
+}
+
+#[derive(Debug, sqlx::FromRow)]
+pub struct TemplateResult {
+    pub name: String,
+    pub lang: String,
+    pub template_dir: String,
+    pub created_at: i64,
+    pub updated_at: i64,
+    pub repo: String,
+    pub branch: Option<String>,
+    pub subdir: Option<String>,
+}
+
+impl From<&TemplateCommand> for TemplateRow {
+    #[tracing::instrument]
+    fn from(cmd: &TemplateCommand) -> Self {
+        Self {
+            name: cmd.name.to_owned(),
+            lang: cmd.lang.to_owned().unwrap_or_default(),
+            template_dir: cmd.output_dir.to_owned().unwrap_or_default(),
+            repo: cmd.template.to_owned(),
+            branch: cmd.branch.to_owned(),
+            subdir: cmd.subdir.to_owned(),
+        }
+    }
 }
 
 impl LocalCache {
@@ -64,7 +93,8 @@ impl LocalCache {
                 name TEXT NOT NULL,
                 lang TEXT,
                 template_dir TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMP NOT NULL, 
+                updated_at TIMESTAMP, 
                 repo TEXT,
                 branch TEXT,
                 subdir TEXT,
@@ -80,16 +110,20 @@ impl LocalCache {
 
     #[tracing::instrument]
     pub async fn add_template(&self, template: TemplateRow) -> Result<i64> {
+        let now = SystemTime::now();
+        let timestamp = now.duration_since(UNIX_EPOCH)?.as_millis() as i64;
+
         // TODO: rewrite with compile-time macros in sqlx
         let result = sqlx::query(
             r#"
-            INSERT INTO template (name, lang, template_dir, repo, branch, subdir)
-            VALUES (?1, ?2, ?3, ?4, ?5, ?6);
+            INSERT INTO template (name, lang, template_dir, created_at, repo, branch, subdir)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7);
             "#,
         )
         .bind(template.name)
         .bind(template.lang)
         .bind(template.template_dir)
+        .bind(timestamp)
         .bind(template.repo)
         .bind(template.branch)
         .bind(template.subdir)
@@ -103,7 +137,8 @@ impl LocalCache {
                     return Err(eyre!(
                         [
                             "💥 Template already exists in local cache.",
-                            "(There is a unique connstraint for: name + repo + branch + subdir)",
+                            "(There is a unique connstraint for: name + repo + branch + subdir.",
+                            "If you want to update an existing template, use the 'update' command.)"
                         ]
                         .join(" ")
                     ));
@@ -112,6 +147,37 @@ impl LocalCache {
                 }
             }
         }
+    }
+
+    #[tracing::instrument]
+    pub async fn get_template(&self, name: &str, lang: &str) -> Result<Option<TemplateResult>> {
+        let row = sqlx::query_as::<_, TemplateResult>(
+            r#"
+            SELECT name, lang, template_dir, repo, branch, subdir, created_at, updated_at 
+            FROM template
+            WHERE name = ?1 AND lang = ?2;
+            "#,
+        )
+        .bind(name)
+        .bind(lang)
+        .fetch_optional(&self.pool)
+        .await?;
+
+        Ok(row)
+    }
+
+    #[tracing::instrument]
+    pub async fn get_templates(&self) -> Result<Vec<TemplateResult>> {
+        let rows = sqlx::query_as::<_, TemplateResult>(
+            r#"
+            SELECT name, lang, template_dir, repo, branch, subdir, created_at, updated_at 
+            FROM template;
+            "#,
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(rows)
     }
 }
 

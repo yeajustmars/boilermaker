@@ -58,24 +58,12 @@ impl From<&Add> for TemplateRow {
     }
 }
 
-impl From<&TemplateCommand> for TemplateRow {
-    #[tracing::instrument]
-    fn from(cmd: &TemplateCommand) -> Self {
-        Self {
-            name: cmd.name.to_owned(),
-            lang: cmd.lang.to_owned().unwrap_or_default(),
-            template_dir: cmd.output_dir.to_owned().unwrap_or_default(),
-            repo: cmd.template.to_owned(),
-            branch: cmd.branch.to_owned(),
-            subdir: cmd.subdir.to_owned(),
-        }
-    }
-}
-
 #[tracing::instrument]
 pub async fn add(sys_config: &toml::Value, cmd: &Add) -> Result<()> {
     info!("Adding template: {}", &cmd.name);
     info!("Template: {}", cmd.template);
+
+    // TODO: short-circuit if template already exists in local cache (before cloning)
 
     let mut cmd = TemplateCommand::from(cmd);
     if cmd.output_dir.is_none() {
