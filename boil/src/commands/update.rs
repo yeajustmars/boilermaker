@@ -1,15 +1,10 @@
-use std::fs;
-use std::path::PathBuf;
-
 use clap::Parser;
 
 use color_eyre::Result;
 use tracing::info;
 
-use crate::local_cache::{BOILERMAKER_LOCAL_CACHE_PATH, LocalCache, TemplateRow};
-use crate::template::{
-    BOILERMAKER_TEMPLATES_DIR, TemplateCommand, get_template, move_to_output_dir,
-};
+use crate::local_cache::TemplateRow;
+use crate::template::TemplateCommand;
 
 #[derive(Debug, Parser)]
 pub(crate) struct Update {
