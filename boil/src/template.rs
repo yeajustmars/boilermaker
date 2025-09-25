@@ -12,7 +12,10 @@ use toml;
 use tracing::info;
 use walkdir::WalkDir;
 
-use crate::config::{BoilermakerConfig, get_template_config};
+use crate::{
+    config::{BoilermakerConfig, get_template_config},
+    local_cache::{BOILERMAKER_LOCAL_CACHE_PATH, LocalCache},
+};
 
 // TODO: move to a constants mod
 lazy_static! {
@@ -140,12 +143,22 @@ pub struct TemplateContext {
 }
 
 #[tracing::instrument]
-pub async fn get_template_from_remote(
+pub async fn get_template(
+    _sys_config: &toml::Value,
     cmd: &TemplateCommand,
-    output_dir: PathBuf,
 ) -> Result<TemplateContext> {
-    info!("Fetching template from remote: {}", cmd.template);
-    info!("Cloning into temporary directory: {}", output_dir.display());
+    let output_dir = match &cmd.output_dir {
+        Some(dir) => PathBuf::from(dir),
+        None => env::current_dir()?.join(&cmd.name),
+    };
+
+    // TODO: add option to force overwrite existing output dir
+    if output_dir.exists() && !cmd.overwrite {
+        return Err(eyre!(
+            "💥 Output dir path exists: {}. (Pass --overwrite to force.)",
+            output_dir.display()
+        ));
+    }
 
     let repo_root = env::temp_dir().join(&cmd.name);
     let src_root = repo_root.join("src");
@@ -159,6 +172,10 @@ pub async fn get_template_from_remote(
     let template_root = make_template_root_dir(&src_root, cmd);
     let cfg_path = template_root.join("boilermaker.toml");
     let cfg: BoilermakerConfig = get_template_config(cfg_path.as_path())?;
+    println!(
+        "-------------------------------------- Using template config: {:?}",
+        cfg
+    );
     let lang = get_lang(&cmd, &cfg)?;
     let template_files_path = template_root.join(&lang);
     let target_root = repo_root.join("target");
@@ -182,27 +199,6 @@ pub async fn get_template_from_remote(
         vars,
         overwrite: cmd.overwrite,
     })
-}
-
-#[tracing::instrument]
-pub async fn get_template(
-    _sys_config: &toml::Value,
-    cmd: &TemplateCommand,
-) -> Result<TemplateContext> {
-    let output_dir = match &cmd.output_dir {
-        Some(dir) => PathBuf::from(dir),
-        None => env::current_dir()?.join(&cmd.name),
-    };
-
-    // TODO: add option to force overwrite existing output dir
-    if output_dir.exists() && !cmd.overwrite {
-        return Err(eyre!(
-            "💥 Output dir path exists: {}. (Pass --overwrite to force.)",
-            output_dir.display()
-        ));
-    }
-
-    get_template_from_remote(cmd, output_dir).await
 }
 
 #[tracing::instrument]
