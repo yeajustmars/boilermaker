@@ -12,4 +12,4 @@ sqlx = { workspace = true }
 tracing = { workspace = true }
 
 # Internal
-template = { workspace = true }
+util = { workspace = true }

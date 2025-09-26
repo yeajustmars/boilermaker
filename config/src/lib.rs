@@ -1,8 +1,11 @@
-use std::collections::HashMap;
-use std::fs;
-use std::path::Path;
+use std::{
+    collections::HashMap,
+    fs,
+    fs::OpenOptions,
+    path::{Path, PathBuf},
+};
 
-use color_eyre::eyre::{Error, Result};
+use color_eyre::eyre::{Error, Result, eyre};
 use dirs::home_dir;
 use lazy_static::lazy_static;
 use serde::Deserialize;
@@ -14,6 +17,10 @@ lazy_static! {
         "{}/.config/boilermaker/boilermaker.toml",
         home_dir().unwrap().to_str().unwrap()
     );
+}
+
+lazy_static! {
+    pub static ref DEFAULT_LOCAL_CACHE_PATH: PathBuf = make_boilermaker_local_cache_path().unwrap();
 }
 
 //TODO: add default configuration for boil cmd
@@ -62,6 +69,27 @@ pub fn get_system_config(config_path: Option<&Path>) -> Result<Value> {
         Ok(config)
     } else {
         Ok(make_default_config())
+    }
+}
+
+#[tracing::instrument]
+pub fn make_boilermaker_local_cache_path() -> Result<PathBuf> {
+    let home_dir = dirs::home_dir().ok_or_else(|| eyre!("Can't find home directory"))?;
+    let local_cache_path = home_dir.join(".boilermaker").join("local_cache.db");
+
+    match OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&local_cache_path)
+    {
+        Ok(_) => Ok(local_cache_path),
+        Err(e) => {
+            if e.kind() == std::io::ErrorKind::AlreadyExists {
+                return Ok(local_cache_path);
+            } else {
+                return Err(eyre!("💥 Failed to create local cache file: {}", e));
+            }
+        }
     }
 }
 

@@ -1,17 +1,21 @@
+mod commands;
+mod logging;
+
 use std::path::PathBuf;
+use std::sync::{Arc, RwLock};
 
 use clap::{Parser, Subcommand};
 use color_eyre::eyre::Result;
 use tracing::warn;
 
-mod commands;
-mod logging;
+use config::{get_system_config, DEFAULT_LOCAL_CACHE_PATH};
+use boil::AppState;
 
-use config::get_system_config;
+use commands::{add::add};
+use db::LocalCache;
 
 //TODO: 1. [ ] add custom macro for logging to reduce icon/symbol duplication, etc (possibly just a function?)
 //TODO: 2. [ ] add ability to use YAML for config files as well as TOML
-//TODO: 3. [ ] move all (or most) main logic into lib.rs
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -60,9 +64,16 @@ async fn main() -> Result<()> {
 
     let sys_config = get_system_config(cli.config.as_deref())?;
 
+    let local_cache_path = DEFAULT_LOCAL_CACHE_PATH.as_path().to_str().unwrap();
+
+    // TODO: check global boilermaker config for local vs remote db option
+    let app_state = AppState {
+        template_db: Arc::new(RwLock::new(LocalCache::new(local_cache_path).await?)),
+    };
+
     if let Some(command) = cli.command {
         match command {
-            Commands::Add(cmd) => commands::add::add(&sys_config, &cmd).await?,
+            Commands::Add(cmd) => add(&sys_config, &app_state, &cmd).await?,
             //Commands::List(cmd) => commands::list::list(&sys_config, &cmd).await?,
             //Commands::New(cmd) => commands::new::new(&sys_config, &cmd).await?,
             // Commands::Update(cmd) => commands::update::update(&sys_config, &cmd).await?,

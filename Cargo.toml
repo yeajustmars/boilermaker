@@ -4,6 +4,7 @@ members = ["api", "boil", "config", "db", "template", "util", "web"]
 
 [workspace.dependencies]
 async-trait = "0.1.89"
+chrono = "0.4.42"
 clap = { version = "4.5.47", features = ["derive"] }
 color-eyre = "0.6.5"
 colored = "3.0.0" # TODO: pick one of colored or nu-ansi-term

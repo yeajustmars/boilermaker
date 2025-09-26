@@ -1,7 +1,10 @@
+use std::fs;
+
 use clap::Parser;
 use color_eyre::Result;
 use tracing::info;
 
+use boil::AppState;
 use template::{self, CloneContext};
 
 /*
@@ -120,15 +123,29 @@ pub struct Add {
     pub template: String,
     #[arg(short, long)]
     pub branch: Option<String>,
+    #[arg(short = 'O', long, default_value_t = false)]
+    pub overwrite: bool,
 }
 
-pub async fn add(_sys_config: &toml::Value, cmd: &Add) -> Result<()> {
+#[tracing::instrument]
+pub async fn add(_sys_config: &toml::Value, _app_state: &AppState, cmd: &Add) -> Result<()> {
     info!("Adding template: {}", &cmd.template);
 
-    let clone_ctx = CloneContext::from(cmd);
-    let repo = template::clone_repo(&clone_ctx).await?;
-    let _work_dir = &clone_ctx.dest;
-    println!("path: {}", repo.path().display());
+    let repo_ctx = CloneContext::from(cmd);
+    let work_dir = repo_ctx.dest.as_ref().unwrap();
+
+    if work_dir.as_path().exists() {
+        if cmd.overwrite {
+            fs::remove_dir_all(work_dir)?;
+        } else {
+            return Err(color_eyre::eyre::eyre!(
+                "Directory {} already exists. Use --overwrite to force.",
+                work_dir.display()
+            ));
+        }
+    }
+
+    let _repo = template::clone_repo(&repo_ctx).await?;
 
     Ok(())
 }

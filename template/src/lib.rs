@@ -330,13 +330,3 @@ pub fn get_repo_name_from_url(url: &str) -> String {
 pub fn make_tmp_dir_from_url(url: &str) -> PathBuf {
     env::temp_dir().join(get_repo_name_from_url(url))
 }
-
-pub struct TemplateResult {
-    pub id: i64,
-    pub name: String,
-    pub template: String,
-    pub lang: String,
-    pub branch: Option<String>,
-    pub subdir: Option<String>,
-    pub overwrite: bool,
-}
