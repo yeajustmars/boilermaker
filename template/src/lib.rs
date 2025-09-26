@@ -351,7 +351,7 @@ pub fn get_lang(tpl_cnf: &TemplateConfig, option: &Option<String>) -> Result<Str
 }
 
 #[tracing::instrument]
-pub fn clean_work_dir_if_overwrite(work_dir: &PathBuf, overwrite: bool) -> Result<()> {
+pub fn clean_clone_dir_if_overwrite(work_dir: &PathBuf, overwrite: bool) -> Result<()> {
     if work_dir.as_path().exists() {
         if overwrite {
             fs::remove_dir_all(work_dir)?;
@@ -361,6 +361,15 @@ pub fn clean_work_dir_if_overwrite(work_dir: &PathBuf, overwrite: bool) -> Resul
                 work_dir.display()
             ));
         }
+    }
+    Ok(())
+}
+
+#[tracing::instrument]
+pub fn remove_git_dir(work_dir: &PathBuf) -> Result<()> {
+    let git_dir = work_dir.join(".git");
+    if git_dir.exists() {
+        fs::remove_dir_all(git_dir)?;
     }
     Ok(())
 }

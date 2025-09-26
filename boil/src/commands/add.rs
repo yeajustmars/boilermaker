@@ -5,8 +5,8 @@ use tracing::info;
 use crate::AppState;
 use db::{self, TemplateRow};
 use template::{
-    self, CloneContext, clean_work_dir_if_overwrite, clone_repo, get_lang, get_template_config,
-    install_template, make_name_from_url, make_template_dir, make_tmp_dir_from_url,
+    self, CloneContext, clean_clone_dir_if_overwrite, clone_repo, get_lang, get_template_config,
+    install_template, make_name_from_url, make_template_dir, make_tmp_dir_from_url, remove_git_dir,
 };
 
 #[derive(Debug, Parser)]
@@ -60,18 +60,23 @@ pub async fn add(app_state: &AppState, cmd: &Add) -> Result<()> {
     info!("Adding template: {name}");
 
     let repo_ctx = CloneContext::from(cmd);
-    let work_dir = repo_ctx.dest.as_ref().unwrap();
+    let clone_dir = repo_ctx.dest.as_ref().unwrap();
+    let work_dir = if let Some(subdir) = &cmd.subdir {
+        clone_dir.join(subdir)
+    } else {
+        clone_dir.to_path_buf()
+    };
 
-    if let Err(err) = clean_work_dir_if_overwrite(work_dir, cmd.overwrite) {
-        return Err(eyre!("Failed to clean work dir: {}", err));
+    if let Err(err) = clean_clone_dir_if_overwrite(clone_dir, cmd.overwrite) {
+        return Err(eyre!("Failed setting up work dir: {}", err));
     }
 
     if let Err(err) = clone_repo(&repo_ctx).await {
         return Err(eyre!("Failed to clone template: {}", err));
     }
 
-    let tpl_cnf = get_template_config(work_dir)?;
-    let lang = get_lang(&tpl_cnf, &cmd.lang)?;
+    let cnf = get_template_config(work_dir.as_path())?;
+    let lang = get_lang(&cnf, &cmd.lang)?;
     let template_dir = make_template_dir(name.as_str())?;
     let row = TemplateRow {
         name,
@@ -85,9 +90,7 @@ pub async fn add(app_state: &AppState, cmd: &Add) -> Result<()> {
 
     info!("Template added with ID: {}", new_id);
 
-    let installation = install_template(&work_dir, &template_dir, cmd.overwrite).await;
-
-    match installation {
+    match install_template(&work_dir, &template_dir, cmd.overwrite).await {
         Ok(_) => info!(
             "Template installed successfully to: {}",
             template_dir.display()
@@ -96,6 +99,8 @@ pub async fn add(app_state: &AppState, cmd: &Add) -> Result<()> {
             return Err(eyre!("Failed to install template: {}", e));
         }
     }
+
+    _ = remove_git_dir(&template_dir);
 
     Ok(())
 }
