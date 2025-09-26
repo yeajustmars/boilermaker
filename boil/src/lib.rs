@@ -1,12 +1,22 @@
+/// boil
+///    Boilermaker CLI
+///         A simple, fast, and flexible project scaffolding tool.
 use std::fmt;
+use std::sync::{Arc, RwLock};
 
 use db::TemplateDb;
-use std::sync::{Arc, RwLock};
+
+pub mod commands;
+pub mod logging;
+
+pub use commands::*;
 
 pub type TemplateDbType = Arc<RwLock<dyn TemplateDb + Send + Sync>>;
 
 pub struct AppState {
     pub template_db: TemplateDbType,
+    pub sys_config: toml::Value,
+    pub log_level: u8,
 }
 
 impl fmt::Debug for AppState {

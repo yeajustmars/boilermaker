@@ -1,7 +1,12 @@
-use std::{env, path::PathBuf};
+use std::{env, fs, path::PathBuf};
 
-use color_eyre::Result;
+use color_eyre::{Result, eyre::eyre};
+use dirs;
 use git2::{FetchOptions, Repository, build::RepoBuilder};
+
+use config::TemplateConfig;
+
+pub use config::get_template_config;
 
 /*
 use std::{collections::HashMap, env, fs, path::PathBuf};
@@ -316,7 +321,7 @@ pub async fn clone_repo(ctx: &CloneContext) -> Result<Repository> {
 }
 
 #[tracing::instrument]
-pub fn get_repo_name_from_url(url: &str) -> String {
+pub fn make_name_from_url(url: &str) -> String {
     url.split('/')
         .last()
         .unwrap()
@@ -328,5 +333,76 @@ pub fn get_repo_name_from_url(url: &str) -> String {
 
 #[tracing::instrument]
 pub fn make_tmp_dir_from_url(url: &str) -> PathBuf {
-    env::temp_dir().join(get_repo_name_from_url(url))
+    env::temp_dir().join(make_name_from_url(url))
+}
+#[tracing::instrument]
+pub fn get_lang(tpl_cnf: &TemplateConfig, option: &Option<String>) -> Result<String> {
+    if let Some(lang_option) = option {
+        return Ok(lang_option.clone());
+    }
+
+    if let Some(default_lang) = &tpl_cnf.project.default_lang {
+        return Ok(default_lang.clone());
+    }
+
+    return Err(eyre!(
+        "Can't find language. Pass `--lang` option or add `default_lang` to `boilermaker.toml`."
+    ));
+}
+
+#[tracing::instrument]
+pub fn clean_work_dir_if_overwrite(work_dir: &PathBuf, overwrite: bool) -> Result<()> {
+    if work_dir.as_path().exists() {
+        if overwrite {
+            fs::remove_dir_all(work_dir)?;
+        } else {
+            return Err(eyre!(
+                "Directory already exists: {} (Use --overwrite to force.)",
+                work_dir.display()
+            ));
+        }
+    }
+    Ok(())
+}
+
+#[tracing::instrument]
+pub fn make_template_dir(name: &str) -> Result<PathBuf> {
+    let home_dir = dirs::home_dir().ok_or_else(|| eyre!("Can't find home directory"))?;
+    let templates_dir = home_dir.join(".boilermaker").join("templates").join(name);
+
+    if !templates_dir.exists() {
+        fs::create_dir_all(&templates_dir)?;
+    }
+
+    Ok(templates_dir)
+}
+
+#[tracing::instrument]
+pub async fn install_template(
+    src_path: &PathBuf,
+    dest_path: &PathBuf,
+    overwrite: bool,
+) -> Result<()> {
+    if dest_path.exists() {
+        if overwrite {
+            if let Err(e) = fs::remove_dir_all(&dest_path) {
+                return Err(eyre!("💥 Failed to remove existing output directory: {e}"));
+            }
+        } else {
+            return Err(eyre!(
+                "💥 Output dir path exists: {}. (Pass --overwrite to force.)",
+                dest_path.display()
+            ));
+        }
+    } else {
+        if let Err(e) = fs::create_dir_all(&dest_path) {
+            return Err(eyre!("💥 Failed to create output directory: {e}"));
+        }
+    }
+
+    if let Err(e) = fs::rename(&src_path, &dest_path) {
+        return Err(eyre!("💥 Failed to move project to output directory: {e}"));
+    }
+
+    Ok(())
 }

@@ -5,12 +5,13 @@ use sqlx::sqlite::{SqliteConnectOptions, SqlitePool};
 pub trait TemplateDb: Send + Sync {
     async fn create_template_table(&self) -> Result<()>;
     async fn template_table_exists(&self) -> Result<bool>;
-    async fn create_template(&self) -> Result<i64>;
-    async fn update_template(&self) -> Result<TemplateResult>;
-    async fn delete_template(&self) -> Result<i64>;
-    async fn get_template(&self) -> Result<TemplateResult>;
+    async fn create_template(&self, row: TemplateRow) -> Result<i64>;
+    async fn update_template(&self, row: TemplateRow) -> Result<TemplateResult>;
+    async fn delete_template(&self, id: i64) -> Result<i64>;
+    async fn get_template(&self, id: i64) -> Result<Option<TemplateResult>>;
     async fn list_templates(&self) -> Vec<TemplateResult>;
     async fn search_templates(&self) -> Vec<TemplateResult>;
+    async fn check_unique(&self, row: &TemplateRow) -> Result<Option<TemplateResult>>;
 }
 
 #[derive(Debug)]
@@ -74,25 +75,52 @@ impl TemplateDb for LocalCache {
     }
 
     #[tracing::instrument]
-    async fn create_template(&self) -> Result<i64> {
+    async fn create_template(&self, row: TemplateRow) -> Result<i64> {
+        let result = sqlx::query(
+            r#"
+            INSERT INTO template (name, lang, template_dir, created_at, repo, branch, subdir)
+            VALUES (?, ?, ?, strftime('%s','now'), ?, ?, ?);
+            "#,
+        )
+        .bind(&row.name)
+        .bind(&row.lang)
+        .bind(&row.template_dir)
+        .bind(&row.repo)
+        .bind(&row.branch)
+        .bind(&row.subdir)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(result.last_insert_rowid())
+    }
+
+    #[tracing::instrument]
+    async fn update_template(&self, _row: TemplateRow) -> Result<TemplateResult> {
         todo!()
     }
 
     #[tracing::instrument]
-    async fn update_template(&self) -> Result<TemplateResult> {
+    async fn delete_template(&self, _id: i64) -> Result<i64> {
         todo!()
     }
 
     #[tracing::instrument]
-    async fn delete_template(&self) -> Result<i64> {
-        todo!()
+    async fn get_template(&self, id: i64) -> Result<Option<TemplateResult>> {
+        let result = sqlx::query_as::<_, TemplateResult>(
+            r#"
+            SELECT * 
+            FROM template 
+            WHERE id = ?;
+            "#,
+        )
+        .bind(id)
+        .fetch_optional(&self.pool)
+        .await?;
+
+        Ok(result)
     }
 
     #[tracing::instrument]
-    async fn get_template(&self) -> Result<TemplateResult> {
-        todo!()
-    }
-
     #[tracing::instrument]
     async fn list_templates(&self) -> Vec<TemplateResult> {
         todo!()
@@ -102,15 +130,48 @@ impl TemplateDb for LocalCache {
     async fn search_templates(&self) -> Vec<TemplateResult> {
         todo!()
     }
+
+    #[tracing::instrument]
+    async fn check_unique(&self, row: &TemplateRow) -> Result<Option<TemplateResult>> {
+        let result = sqlx::query_as::<_, TemplateResult>(
+            r#"
+            SELECT *
+            FROM template 
+            WHERE 
+                name = ?1 AND 
+                lang = ?2 AND
+                repo = ?3;
+            "#,
+        )
+        .bind(&row.name)
+        .bind(&row.lang)
+        .bind(&row.repo)
+        .fetch_optional(&self.pool)
+        .await?;
+
+        Ok(result)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct TemplateRow {
+    pub name: String,
+    pub lang: String,
+    pub template_dir: String,
+    pub repo: String,
+    pub branch: Option<String>,
+    pub subdir: Option<String>,
 }
 
 #[derive(Debug, Clone, sqlx::FromRow)]
 pub struct TemplateResult {
     pub id: i64,
     pub name: String,
-    pub template: String,
     pub lang: String,
+    pub template_dir: String,
+    pub repo: String,
     pub branch: Option<String>,
     pub subdir: Option<String>,
-    pub overwrite: bool,
+    pub created_at: Option<i32>,
+    pub updated_at: Option<i32>,
 }

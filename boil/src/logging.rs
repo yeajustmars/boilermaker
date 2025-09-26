@@ -44,9 +44,7 @@ where
 pub fn init_tracing(debug_level: u8) -> Result<()> {
     //TODO: Add more specific formatting for each debug level (0-4)
     let fmt_layer: Box<dyn tracing_subscriber::Layer<_> + Send + Sync> = match debug_level {
-        //TODO: add possible custom formatter to print minimal info (e.g., just the message)
         0 => Box::new(fmt::layer().event_format(DefaultFormatter)),
-        //TODO: add custom formatter for debug level 1
         1 => Box::new(
             fmt::layer()
                 .event_format(fmt::format().compact())
@@ -55,7 +53,6 @@ pub fn init_tracing(debug_level: u8) -> Result<()> {
                 .with_target(true)
                 .with_level(true),
         ),
-        //TODO: add custom formatter for debug levels 2..=4
         2.. => Box::new(
             fmt::layer()
                 .event_format(fmt::format().pretty())

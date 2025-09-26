@@ -3341,6 +3341,8 @@ name = "template"
 version = "0.1.0"
 dependencies = [
  "color-eyre",
+ "config",
+ "dirs",
  "git2",
  "tracing",
  "tracing-error",

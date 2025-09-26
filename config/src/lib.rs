@@ -9,6 +9,8 @@ use color_eyre::eyre::{Error, Result, eyre};
 use dirs::home_dir;
 use lazy_static::lazy_static;
 use serde::Deserialize;
+use serde::de::{self, MapAccess, Visitor};
+use std::fmt;
 use toml::{Value, map::Map as TomlMap};
 use tracing::{info, warn};
 
@@ -46,7 +48,6 @@ pub fn get_system_config_path(config_path: Option<&Path>) -> Result<Option<&Path
         }
     } else if fs::exists(SYS_CONFIG_FILE.as_str()).unwrap() {
         let path = Path::new(SYS_CONFIG_FILE.as_str());
-        info!("Using system config file: `{}`.", path.display());
         Ok(Some(path))
     } else {
         info!(" Using default config.");
@@ -93,12 +94,13 @@ pub fn make_boilermaker_local_cache_path() -> Result<PathBuf> {
     }
 }
 
-/*
 #[tracing::instrument]
-pub fn get_template_config(config_path: &Path) -> Result<BoilermakerConfig> {
+pub fn get_template_config(template_path: &Path) -> Result<TemplateConfig> {
+    let config_path = template_path.join("boilermaker.toml");
+
     if config_path.exists() {
         let config_content = fs::read_to_string(config_path)?;
-        let config: BoilermakerConfig = toml::from_str(&config_content)?;
+        let config: TemplateConfig = toml::from_str(&config_content)?;
         Ok(config)
     } else {
         Err(color_eyre::eyre::eyre!(
@@ -107,25 +109,20 @@ pub fn get_template_config(config_path: &Path) -> Result<BoilermakerConfig> {
         ))
     }
 }
- */
-
-#[derive(Debug, Deserialize)]
-pub struct BoilermakerConfig {
-    pub boilermaker: BoilermakerConfigRoot,
-}
 
 // TODO: decide on whether variables are allowed to be nested or not.
 // TODO: decide on whether variables should allow aggregate types (arrays, tables) or just simple key-value pairs.
 // NOTE: Probably yes to the latter.
 #[derive(Debug, Deserialize)]
-pub struct BoilermakerConfigRoot {
-    pub project: BoilermakerConfigProject,
+pub struct TemplateConfig {
+    pub project: TemplateConfigProject,
     // pub variables: Option<toml::Value>,
-    pub variables: Option<HashMap<String, String>>,
+    //pub variables: Option<HashMap<String, String>>,
+    pub variables: Option<TemplateConfigVariableMap>,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct BoilermakerConfigProject {
+pub struct TemplateConfigProject {
     // pub name: String,
     // pub repository: String,
     // pub subdir: Option<String>,
@@ -136,4 +133,45 @@ pub struct BoilermakerConfigProject {
     // pub license: Option<String>,
     // pub keywords: Option<Vec<String>>,
     // pub website: Option<String>,
+}
+
+#[derive(Debug)]
+pub struct TemplateConfigVariableMap(HashMap<String, String>);
+
+impl TemplateConfigVariableMap {
+    pub fn as_map(&self) -> &HashMap<String, String> {
+        &self.0
+    }
+}
+
+impl<'de> Deserialize<'de> for TemplateConfigVariableMap {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: de::Deserializer<'de>,
+    {
+        deserializer.deserialize_map(TemplateConfigVariableMapVisitor)
+    }
+}
+
+struct TemplateConfigVariableMapVisitor;
+
+impl<'de> Visitor<'de> for TemplateConfigVariableMapVisitor {
+    type Value = TemplateConfigVariableMap;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("a TOML table that can be converted to a HashMap<String, String>")
+    }
+
+    fn visit_map<M>(self, mut map: M) -> Result<Self::Value, M::Error>
+    where
+        M: MapAccess<'de>,
+    {
+        let mut inner_map = HashMap::new();
+        while let Some(key) = map.next_key::<String>()? {
+            // Deserialize the value as a toml::Value first, then convert to String
+            let value: toml::Value = map.next_value()?;
+            inner_map.insert(key, value.to_string());
+        }
+        Ok(TemplateConfigVariableMap(inner_map))
+    }
 }
