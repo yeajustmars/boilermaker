@@ -1,7 +1,7 @@
 use std::fs;
 
 use clap::Parser;
-use color_eyre::Result;
+use color_eyre::{Result, eyre::eyre};
 use tracing::info;
 
 use boil::AppState;
@@ -138,7 +138,7 @@ pub async fn add(_sys_config: &toml::Value, _app_state: &AppState, cmd: &Add) ->
         if cmd.overwrite {
             fs::remove_dir_all(work_dir)?;
         } else {
-            return Err(color_eyre::eyre::eyre!(
+            return Err(eyre!(
                 "Directory {} already exists. Use --overwrite to force.",
                 work_dir.display()
             ));
