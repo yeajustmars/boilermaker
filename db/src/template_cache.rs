@@ -9,8 +9,8 @@ pub trait TemplateDb: Send + Sync {
     async fn update_template(&self, row: TemplateRow) -> Result<TemplateResult>;
     async fn delete_template(&self, id: i64) -> Result<i64>;
     async fn get_template(&self, id: i64) -> Result<Option<TemplateResult>>;
-    async fn list_templates(&self) -> Vec<TemplateResult>;
-    async fn search_templates(&self) -> Vec<TemplateResult>;
+    async fn list_templates(&self) -> Result<Vec<TemplateResult>>;
+    async fn search_templates(&self) -> Result<Vec<TemplateResult>>;
     async fn check_unique(&self, row: &TemplateRow) -> Result<Option<TemplateResult>>;
 }
 
@@ -121,13 +121,22 @@ impl TemplateDb for LocalCache {
     }
 
     #[tracing::instrument]
-    #[tracing::instrument]
-    async fn list_templates(&self) -> Vec<TemplateResult> {
-        todo!()
+    async fn list_templates(&self) -> Result<Vec<TemplateResult>> {
+        let results = sqlx::query_as::<_, TemplateResult>(
+            r#"
+            SELECT * 
+            FROM template 
+            ORDER BY created_at DESC;
+            "#,
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(results)
     }
 
     #[tracing::instrument]
-    async fn search_templates(&self) -> Vec<TemplateResult> {
+    async fn search_templates(&self) -> Result<Vec<TemplateResult>> {
         todo!()
     }
 

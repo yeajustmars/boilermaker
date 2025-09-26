@@ -9,6 +9,7 @@ edition = "2024"
 async-trait = { workspace = true }
 color-eyre = { workspace = true }
 sqlx = { workspace = true }
+tabled = { workspace = true }
 tracing = { workspace = true }
 
 # Internal

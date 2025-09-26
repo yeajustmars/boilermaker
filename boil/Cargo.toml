@@ -17,6 +17,7 @@ minijinja = { workspace = true }
 nu-ansi-term = { workspace = true }
 serde = { workspace = true }
 sqlx = { workspace = true }
+tabled = { workspace = true }
 # TODO: remove tokio full feature and only enable the features needed
 tokio = { workspace = true, features = ["full"] }
 toml = { workspace = true }
