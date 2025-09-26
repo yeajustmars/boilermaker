@@ -1,7 +1,7 @@
-use color_eyre::Result;
-use sqlx::sqlite::{SqliteConnectOptions, SqlitePool};
-use tracing;
+pub mod template_cache;
 
+pub use template_cache::TemplateCache;
+/*
 pub struct Database {
     pub pool: SqlitePool,
     pub path: String,
@@ -22,3 +22,4 @@ impl Database {
         })
     }
 }
+ */

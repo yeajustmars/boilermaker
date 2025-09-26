@@ -5,10 +5,7 @@ use color_eyre::eyre::Result;
 use tracing::warn;
 
 mod commands;
-mod config;
-mod local_cache;
 mod logging;
-mod template;
 
 use config::get_system_config;
 
@@ -42,14 +39,14 @@ struct Cli {
 enum Commands {
     #[command(about = "Add a template to the cache")]
     Add(commands::add::Add),
-    #[command(about = "List all templates in the local cache")]
-    List(commands::list::List),
-    #[command(about = "Create a new project from a Git repository template")]
-    New(commands::new::New),
-    #[command(about = "Remove a template from the local cache")]
+    //#[command(about = "List all templates in the local cache")]
+    //List(commands::list::List),
+    //#[command(about = "Create a new project from a template")]
+    //New(commands::new::New),
+    //#[command(about = "Remove a template from the local cache")]
     // Remove(remove::Remove),
-    #[command(about = "Update an existing template in the cache")]
-    Update(commands::update::Update),
+    //#[command(about = "Update an existing template in the cache")]
+    // Update(commands::update::Update),
 }
 
 #[tokio::main]
@@ -66,9 +63,9 @@ async fn main() -> Result<()> {
     if let Some(command) = cli.command {
         match command {
             Commands::Add(cmd) => commands::add::add(&sys_config, &cmd).await?,
-            Commands::List(cmd) => commands::list::list(&sys_config, &cmd).await?,
-            Commands::New(cmd) => commands::new::new(&sys_config, &cmd).await?,
-            Commands::Update(cmd) => commands::update::update(&sys_config, &cmd).await?,
+            //Commands::List(cmd) => commands::list::list(&sys_config, &cmd).await?,
+            //Commands::New(cmd) => commands::new::new(&sys_config, &cmd).await?,
+            // Commands::Update(cmd) => commands::update::update(&sys_config, &cmd).await?,
         }
     } else {
         warn!("❗ No command provided. Use --help for usage.");

@@ -1,3 +1,4 @@
+/*
 use clap::Parser;
 use color_eyre::{Result, eyre::eyre};
 use tracing::info;
@@ -26,3 +27,4 @@ pub(crate) async fn list(_sys_config: &toml::Value, _cmd: &List) -> Result<()> {
 
     Ok(())
 }
+ */

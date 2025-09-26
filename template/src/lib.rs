@@ -1,3 +1,10 @@
+use std::{env, path::PathBuf};
+
+use color_eyre::Result;
+use git2::{FetchOptions, Repository, build::RepoBuilder};
+use tracing::info;
+
+/*
 use std::{collections::HashMap, env, fs, path::PathBuf};
 
 use color_eyre::{Result, eyre::eyre};
@@ -143,6 +150,9 @@ pub struct TemplateContext {
 }
 
 #[tracing::instrument]
+pub async fn make_template_context(_sys_config: &toml::Value) -> Result<TemplateContext> {}
+
+#[tracing::instrument]
 pub async fn get_template(
     _sys_config: &toml::Value,
     cmd: &TemplateCommand,
@@ -274,4 +284,60 @@ pub fn make_boilermaker_template_dir() -> Result<PathBuf> {
     }
 
     Ok(templates_dir)
+}
+ */
+
+#[derive(Debug)]
+pub struct CloneContext {
+    pub url: String,
+    pub dest: Option<PathBuf>,
+    pub branch: Option<String>,
+}
+
+#[tracing::instrument]
+pub async fn clone_repo(ctx: &CloneContext) -> Result<Repository> {
+    let mut fetch_opts = FetchOptions::new();
+    fetch_opts.depth(1);
+
+    let mut repo_builder = RepoBuilder::new();
+    repo_builder.fetch_options(fetch_opts);
+
+    if let Some(branch) = &ctx.branch {
+        repo_builder.branch(branch);
+    }
+
+    let dir = match &ctx.dest {
+        Some(d) => d.into(),
+        None => env::temp_dir(),
+    };
+
+    let repo = repo_builder.clone(&ctx.url, &dir)?;
+
+    Ok(repo)
+}
+
+#[tracing::instrument]
+pub fn get_repo_name_from_url(url: &str) -> String {
+    url.split('/')
+        .last()
+        .unwrap()
+        .split('.')
+        .next()
+        .unwrap()
+        .to_string()
+}
+
+#[tracing::instrument]
+pub fn make_tmp_dir_from_url(url: &str) -> PathBuf {
+    env::temp_dir().join(get_repo_name_from_url(url))
+}
+
+pub struct TemplateResult {
+    pub id: i64,
+    pub name: String,
+    pub template: String,
+    pub lang: String,
+    pub branch: Option<String>,
+    pub subdir: Option<String>,
+    pub overwrite: bool,
 }

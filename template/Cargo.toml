@@ -1,0 +1,11 @@
+[package]
+name = "template"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+color-eyre = { workspace = true }
+git2 = { workspace = true }
+tracing = { workspace = true }
+tracing-error = { workspace = true }
+tracing-subscriber = { workspace = true }

@@ -1,9 +1,11 @@
+/*
 use clap::Parser;
 
 use color_eyre::Result;
 use tracing::info;
 
 use crate::local_cache::TemplateRow;
+
 use crate::template::TemplateCommand;
 
 #[derive(Debug, Parser)]
@@ -56,3 +58,4 @@ pub async fn update(sys_config: &toml::Value, cmd: &Update) -> Result<()> {
     info!("Updating template: {}", &cmd.name);
     Ok(())
 }
+ */

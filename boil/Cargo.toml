@@ -27,4 +27,7 @@ uuid = { workspace = true }
 walkdir = { workspace = true }
 
 # Internal
+config = { workspace = true }
+db = { workspace = true }
+template = { workspace = true }
 util = { workspace = true }

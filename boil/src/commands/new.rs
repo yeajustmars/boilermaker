@@ -1,3 +1,4 @@
+/*
 use clap::Parser;
 use color_eyre::{Result, eyre::eyre};
 use toml;
@@ -38,13 +39,36 @@ impl From<&New> for TemplateCommand {
     }
 }
 
+/*
+pub struct TemplateContext {
+    pub lang: String,
+    pub repo_root: PathBuf,
+    pub src_root: PathBuf,
+    pub target_root: PathBuf,
+    pub target_dir: PathBuf,
+    pub output_dir: PathBuf,
+    pub template_files: Vec<PathBuf>,
+    pub vars: HashMap<String, String>,
+    pub overwrite: bool,
+}
+ */
+
 #[tracing::instrument]
 pub async fn new(sys_config: &toml::Value, cmd: &New) -> Result<()> {
     info!("Creating new project...");
     info!("Name: {}", cmd.name);
     info!("Template: {}", cmd.template);
 
+    // 1. get name + lang
+    // 2. check if template exists in local cache
+    // 3. if not, clone template repo to local cache
+
     let cmd = TemplateCommand::from(cmd);
+
+    // TODO: move cache and other global state to a passed state struct
+    let local_cache_path = BOILERMAKER_LOCAL_CACHE_PATH.to_str().unwrap();
+    let local_cache = LocalCache::new(local_cache_path).await?;
+
     let ctx = get_template(sys_config, &cmd).await?;
 
     if let Err(e) = render_template_files(ctx.template_files.clone(), &ctx).await {
@@ -56,3 +80,4 @@ pub async fn new(sys_config: &toml::Value, cmd: &New) -> Result<()> {
     info!("All set. Happy hacking! 🚀");
     Ok(())
 }
+ */

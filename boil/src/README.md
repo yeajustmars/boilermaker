@@ -9,6 +9,19 @@ and desktop interfaces. In fact, it is just a terminal interface to the same und
 
 Add a template to the cache for use by `new`, `update`, `list`, `search`, etc.
 
+#### Arguments
+
+| Arg | Description |
+|-----|-------------|
+| `name` |
+
+
+#### Options
+
+| Option | Description |
+|--------|-------------|
+
+
 ## `new`
 
 Create a project from a template. 

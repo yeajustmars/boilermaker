@@ -1,3 +1,12 @@
+use std::path::PathBuf;
+
+use clap::Parser;
+use color_eyre::Result;
+use tracing::info;
+
+use template::{self, CloneContext};
+
+/*
 use std::fs;
 use std::path::PathBuf;
 
@@ -104,4 +113,35 @@ pub async fn add(sys_config: &toml::Value, cmd: &Add) -> Result<()> {
     let _ = move_to_output_dir(&ctx).await?;
 
     Ok(())
+}
+ */
+
+#[derive(Debug, Parser)]
+pub(crate) struct Add {
+    #[arg(required = true)]
+    pub template: String,
+    #[arg(short, long)]
+    pub branch: Option<String>,
+}
+
+pub async fn add(_sys_config: &toml::Value, cmd: &Add) -> Result<()> {
+    info!("Adding template: {}", &cmd.template);
+
+    let clone_ctx = CloneContext::from(cmd);
+    let repo = template::clone_repo(&clone_ctx).await?;
+    let work_dir = &clone_ctx.dest;
+    println!("path: {}", repo.path().display());
+
+    Ok(())
+}
+
+impl From<&Add> for CloneContext {
+    #[tracing::instrument]
+    fn from(cmd: &Add) -> CloneContext {
+        CloneContext {
+            url: cmd.template.to_owned(),
+            branch: cmd.branch.to_owned(),
+            dest: Some(template::make_tmp_dir_from_url(&cmd.template)),
+        }
+    }
 }

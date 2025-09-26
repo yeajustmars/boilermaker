@@ -65,6 +65,7 @@ pub fn get_system_config(config_path: Option<&Path>) -> Result<Value> {
     }
 }
 
+/*
 #[tracing::instrument]
 pub fn get_template_config(config_path: &Path) -> Result<BoilermakerConfig> {
     if config_path.exists() {
@@ -78,6 +79,7 @@ pub fn get_template_config(config_path: &Path) -> Result<BoilermakerConfig> {
         ))
     }
 }
+ */
 
 #[derive(Debug, Deserialize)]
 pub struct BoilermakerConfig {
