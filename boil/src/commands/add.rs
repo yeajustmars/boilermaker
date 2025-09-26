@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use clap::Parser;
 use color_eyre::Result;
 use tracing::info;
@@ -117,7 +115,7 @@ pub async fn add(sys_config: &toml::Value, cmd: &Add) -> Result<()> {
  */
 
 #[derive(Debug, Parser)]
-pub(crate) struct Add {
+pub struct Add {
     #[arg(required = true)]
     pub template: String,
     #[arg(short, long)]
@@ -129,7 +127,7 @@ pub async fn add(_sys_config: &toml::Value, cmd: &Add) -> Result<()> {
 
     let clone_ctx = CloneContext::from(cmd);
     let repo = template::clone_repo(&clone_ctx).await?;
-    let work_dir = &clone_ctx.dest;
+    let _work_dir = &clone_ctx.dest;
     println!("path: {}", repo.path().display());
 
     Ok(())

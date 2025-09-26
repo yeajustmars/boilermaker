@@ -2,7 +2,6 @@ use std::{env, path::PathBuf};
 
 use color_eyre::Result;
 use git2::{FetchOptions, Repository, build::RepoBuilder};
-use tracing::info;
 
 /*
 use std::{collections::HashMap, env, fs, path::PathBuf};
