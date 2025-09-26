@@ -93,10 +93,10 @@ pub async fn new(sys_config: &toml::Value, cmd: &New) -> Result<()> {
 pub struct New {
     #[arg(required = true)]
     pub name: String,
+    #[arg(short, long, required = true)]
+    pub lang: Option<String>,
     #[arg(short, long)]
     pub rename: Option<String>,
-    #[arg(short, long)]
-    pub lang: Option<String>,
     #[arg(short, long)]
     pub dir: Option<String>,
     #[arg(short = 'P', long = "output-path")]
@@ -112,9 +112,19 @@ pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
     } else {
         &cmd.name
     };
+
     info!("Creating new project: {project_name}");
 
+    let template = {
+        let cache = app_state
+            .template_db
+            .read()
+            .map_err(|e| color_eyre::eyre::eyre!("Failed to acquire template_db read lock: {e}"))?;
+        cache.get_template(&cmd.name, cmd.lang.as_deref()).await?
+    };
+
     let project_dir = get_or_make_project_dir(&project_name, cmd.dir.as_deref()).await?;
+
     info!("Using project directory: {}", project_dir.display());
 
     Ok(())
