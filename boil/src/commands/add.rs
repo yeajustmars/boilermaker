@@ -139,7 +139,7 @@ pub async fn add(_sys_config: &toml::Value, _app_state: &AppState, cmd: &Add) ->
             fs::remove_dir_all(work_dir)?;
         } else {
             return Err(eyre!(
-                "Directory {} already exists. Use --overwrite to force.",
+                "Directory already exists: {} (Use --overwrite to force.)",
                 work_dir.display()
             ));
         }
