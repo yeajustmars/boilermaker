@@ -1,3 +1,10 @@
+use clap::Parser;
+use color_eyre::Result;
+use tracing::info;
+
+use crate::AppState;
+use template::get_or_make_project_dir;
+
 /*
 use clap::Parser;
 use color_eyre::{Result, eyre::eyre};
@@ -81,3 +88,34 @@ pub async fn new(sys_config: &toml::Value, cmd: &New) -> Result<()> {
     Ok(())
 }
  */
+
+#[derive(Debug, Parser)]
+pub struct New {
+    #[arg(required = true)]
+    pub name: String,
+    #[arg(short, long)]
+    pub rename: Option<String>,
+    #[arg(short, long)]
+    pub lang: Option<String>,
+    #[arg(short, long)]
+    pub dir: Option<String>,
+    #[arg(short = 'P', long = "output-path")]
+    pub output_path: Option<String>,
+    #[arg(short = 'O', long, default_value_t = false)]
+    pub overwrite: bool,
+}
+
+#[tracing::instrument]
+pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
+    let project_name = if let Some(rename) = &cmd.rename {
+        rename
+    } else {
+        &cmd.name
+    };
+    info!("Creating new project: {project_name}");
+
+    let project_dir = get_or_make_project_dir(&project_name, cmd.dir.as_deref()).await?;
+    info!("Using project directory: {}", project_dir.display());
+
+    Ok(())
+}

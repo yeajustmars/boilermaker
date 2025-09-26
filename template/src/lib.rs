@@ -415,3 +415,27 @@ pub async fn install_template(
 
     Ok(())
 }
+
+#[tracing::instrument]
+pub async fn get_or_make_project_dir(project_name: &str, dir: Option<&str>) -> Result<PathBuf> {
+    let project_dir = if let Some(dir) = dir {
+        PathBuf::from(dir).join(project_name)
+    } else {
+        env::current_dir()?.join(project_name)
+    };
+
+    if !project_dir.exists() {
+        if let Err(e) = fs::create_dir_all(&project_dir) {
+            return Err(eyre!("Failed to create project directory: {e}"));
+        }
+    }
+
+    if !project_dir.is_dir() {
+        return Err(eyre!(
+            "Project path is not a directory: {}",
+            project_dir.display()
+        ));
+    }
+
+    Ok(project_dir)
+}

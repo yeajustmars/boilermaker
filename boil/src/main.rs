@@ -40,8 +40,8 @@ enum Commands {
     Add(commands::Add),
     #[command(about = "List all templates in the local cache")]
     List(commands::List),
-    //#[command(about = "Create a new project from a template")]
-    //New(commands::new::New),
+    #[command(about = "Create a new project from a template")]
+    New(commands::new::New),
     //#[command(about = "Remove a template from the local cache")]
     // Remove(remove::Remove),
     //#[command(about = "Update an existing template in the cache")]
@@ -69,7 +69,7 @@ async fn main() -> Result<()> {
         match command {
             Commands::Add(cmd) => commands::add(&app_state, &cmd).await?,
             Commands::List(cmd) => commands::list(&app_state, &cmd).await?,
-            //Commands::New(cmd) => commands::new::new(&sys_config, &cmd).await?,
+            Commands::New(cmd) => commands::new::new(&app_state, &cmd).await?,
             // Commands::Update(cmd) => commands::update::update(&sys_config, &cmd).await?,
         }
     } else {
