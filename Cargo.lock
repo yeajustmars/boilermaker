@@ -3414,6 +3414,7 @@ dependencies = [
  "tracing",
  "tracing-error",
  "tracing-subscriber",
+ "walkdir",
 ]
 
 [[package]]

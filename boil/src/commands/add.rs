@@ -5,8 +5,9 @@ use tracing::info;
 use crate::AppState;
 use db::{self, TemplateRow};
 use template::{
-    self, CloneContext, clean_dir_if_overwrite, clone_repo, get_lang, get_template_config,
-    install_template, make_name_from_url, make_template_dir, make_tmp_dir_from_url, remove_git_dir,
+    self, CloneContext, clean_dir_if_overwrite, clone_repo, create_template_dir, get_lang,
+    get_template_config, install_template, make_name_from_url, make_tmp_dir_from_url,
+    remove_git_dir,
 };
 
 #[derive(Debug, Parser)]
@@ -77,7 +78,7 @@ pub async fn add(app_state: &AppState, cmd: &Add) -> Result<()> {
 
     let cnf = get_template_config(work_dir.as_path())?;
     let lang = get_lang(&cnf, &cmd.lang)?;
-    let template_dir = make_template_dir(name.as_str())?;
+    let template_dir = create_template_dir(name.as_str())?;
     let row = TemplateRow {
         name,
         lang,

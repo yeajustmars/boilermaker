@@ -133,38 +133,51 @@ pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
 
     let t = existing_templates.first().unwrap();
 
-    //TODO: clean up and refactor
-    let work_dir = tpl::make_work_dir_path(&t.name)?;
-    let _ = tpl::clean_dir_if_overwrite(&work_dir, true);
-    let _ = tpl::make_work_dir(&t.name)?;
+    let work_dir = tpl::create_work_dir_clean(&t.name)?;
 
     //TODO: clean up and refactor
     let template_base_dir = PathBuf::from(&t.template_dir);
-    let template_config = tpl::get_template_config(&template_base_dir)?;
     let template_dir = template_base_dir.join(&t.lang);
-    println!("template_config: {:?}", template_config);
     let _ = tpl::copy_dir(&template_dir, &work_dir).await?;
 
-    let template_paths = tpl::list_dir(&work_dir).await?;
+    let template_paths: Vec<PathBuf> = tpl::list_dir(&work_dir)
+        .await?
+        .iter()
+        .filter(|p| p.is_file())
+        .map(|p| p.to_path_buf())
+        .collect();
+
+    let template_config = tpl::get_template_config(&template_base_dir)?;
     let template_context = if let Some(vars) = template_config.variables {
         vars.as_map().clone()
     } else {
         let ctx: HashMap<String, String> = HashMap::new();
         ctx
     };
-    let _ = tpl::render_template_files(template_paths, template_context).await?;
 
-    let out_dir = tpl::get_or_make_project_dir(&project_name, cmd.dir.as_deref()).await?;
+    if let Err(e) = tpl::render_template_files(template_paths, template_context).await {
+        return Err(eyre!("💥 Failed to render template files: {e}"));
+    }
 
-    info!("1. template_dir: {}", template_dir.display());
-    info!("2. work_dir: {}", work_dir.display());
-    info!("3. out_dir: {}", out_dir.display());
+    let out_dir = tpl::get_or_create_project_dir(&project_name, cmd.dir.as_deref()).await?;
 
-    // 2. Render template files
+    if out_dir.exists() {
+        if cmd.overwrite {
+            tpl::clean_dir(&out_dir)?;
+        } else {
+            return Err(eyre!(
+                "💥 Output directory already exists: {}. (Use --overwrite to force.)",
+                out_dir.display()
+            ));
+        }
+    }
 
-    // 3. Move temp dir to final project_dir
+    if let Err(e) = tpl::move_file(&work_dir, &out_dir).await {
+        return Err(eyre!("💥 Failed to move project to output directory: {e}"));
+    }
 
-    info!("Using project directory: {}", out_dir.display());
+    info!("Project created at: {}", out_dir.display());
+    info!("All set. Happy hacking! 🚀");
 
     Ok(())
 }
