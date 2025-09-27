@@ -1,11 +1,13 @@
-use std::{env, fs, path::PathBuf};
+use std::{collections::HashMap, env, fs, path::PathBuf};
 
 use color_eyre::{Result, eyre::eyre};
 use dirs;
+use fs_extra::{copy_items, copy_items_with_progress, dir::CopyOptions};
 use git2::{FetchOptions, Repository, build::RepoBuilder};
+use minijinja;
+use tracing::info;
 
 use config::TemplateConfig;
-
 pub use config::get_template_config;
 
 /*
@@ -335,6 +337,7 @@ pub fn make_name_from_url(url: &str) -> String {
 pub fn make_tmp_dir_from_url(url: &str) -> PathBuf {
     env::temp_dir().join(make_name_from_url(url))
 }
+
 #[tracing::instrument]
 pub fn get_lang(tpl_cnf: &TemplateConfig, option: &Option<String>) -> Result<String> {
     if let Some(lang_option) = option {
@@ -350,8 +353,9 @@ pub fn get_lang(tpl_cnf: &TemplateConfig, option: &Option<String>) -> Result<Str
     ));
 }
 
+//TODO: move to a more generic loc like util::file
 #[tracing::instrument]
-pub fn clean_clone_dir_if_overwrite(work_dir: &PathBuf, overwrite: bool) -> Result<()> {
+pub fn clean_dir_if_overwrite(work_dir: &PathBuf, overwrite: bool) -> Result<()> {
     if work_dir.as_path().exists() {
         if overwrite {
             fs::remove_dir_all(work_dir)?;
@@ -365,6 +369,7 @@ pub fn clean_clone_dir_if_overwrite(work_dir: &PathBuf, overwrite: bool) -> Resu
     Ok(())
 }
 
+//TODO: move to a more generic loc like util::file
 #[tracing::instrument]
 pub fn remove_git_dir(work_dir: &PathBuf) -> Result<()> {
     let git_dir = work_dir.join(".git");
@@ -375,15 +380,44 @@ pub fn remove_git_dir(work_dir: &PathBuf) -> Result<()> {
 }
 
 #[tracing::instrument]
-pub fn make_template_dir(name: &str) -> Result<PathBuf> {
+pub fn make_work_dir_path(name: &str) -> Result<PathBuf> {
+    let work_dir = env::temp_dir().join("boilermaker").join(name);
+    Ok(work_dir)
+}
+
+#[tracing::instrument]
+pub fn make_work_dir(name: &str) -> Result<PathBuf> {
+    let work_dir = make_work_dir_path(&name)?;
+    if !work_dir.exists() {
+        fs::create_dir_all(&work_dir)?;
+    }
+    Ok(work_dir)
+}
+
+#[tracing::instrument]
+fn make_template_dir_path(name: &str) -> Result<PathBuf> {
     let home_dir = dirs::home_dir().ok_or_else(|| eyre!("Can't find home directory"))?;
     let templates_dir = home_dir.join(".boilermaker").join("templates").join(name);
-
-    if !templates_dir.exists() {
-        fs::create_dir_all(&templates_dir)?;
-    }
-
     Ok(templates_dir)
+}
+
+#[tracing::instrument]
+pub fn make_template_dir(name: &str) -> Result<PathBuf> {
+    let template_dir = make_template_dir_path(name)?;
+    if !template_dir.exists() {
+        fs::create_dir_all(&template_dir)?;
+    }
+    Ok(template_dir)
+}
+
+#[tracing::instrument]
+pub fn get_template_dir(name: &str) -> Result<PathBuf> {
+    let template_dir = make_template_dir_path(name)?;
+    if !template_dir.exists() {
+        Err(eyre!("Cannot find template directory for {name}"))
+    } else {
+        Ok(template_dir)
+    }
 }
 
 #[tracing::instrument]
@@ -438,4 +472,78 @@ pub async fn get_or_make_project_dir(project_name: &str, dir: Option<&str>) -> R
     }
 
     Ok(project_dir)
+}
+
+#[tracing::instrument]
+pub async fn render_template_files(
+    paths: Vec<PathBuf>,
+    ctx: HashMap<String, String>,
+) -> Result<()> {
+    let mut jinja = minijinja::Environment::new();
+
+    for path in paths {
+        let name = path.file_name().unwrap().to_str().unwrap().to_string();
+        let content = fs::read_to_string(&path)?;
+        jinja.add_template_owned(name.clone(), content)?;
+
+        let template = jinja.get_template(&name)?;
+        let rendered = template.render(minijinja::context! { ..ctx.to_owned() })?;
+
+        fs::write(&path, rendered)?;
+    }
+
+    Ok(())
+}
+
+//TODO: move to a more generic loc like util::file
+#[tracing::instrument]
+pub async fn list_dir(path: &PathBuf) -> Result<Vec<PathBuf>> {
+    let paths: Vec<PathBuf> = fs::read_dir(&path)?
+        .filter_map(|entry| entry.ok().map(|e| e.path()))
+        .filter(|entry| !entry.is_dir())
+        .collect();
+    Ok(paths)
+}
+
+//TODO: move to a more generic loc like util::file
+#[tracing::instrument]
+pub async fn copy_dir(src_dir: &PathBuf, dest_dir: &PathBuf) -> Result<()> {
+    let files = list_dir(src_dir).await?;
+    let options = CopyOptions::new();
+
+    if let Err(e) = copy_items(&files, dest_dir, &options) {
+        return Err(eyre!("Failed to copy template files: {e}"));
+    }
+
+    Ok(())
+}
+
+//TODO: move to a more generic loc like util::file
+#[tracing::instrument]
+pub async fn copy_dir_with_progress(src_dir: &PathBuf, dest_dir: &PathBuf) -> Result<()> {
+    let files = list_dir(src_dir).await?;
+
+    //TODO: overwrite existing line in place for progress bar
+    let is_copied = copy_items_with_progress(
+        &files,
+        dest_dir,
+        &fs_extra::dir::CopyOptions::new(),
+        |progress| {
+            info!(
+                "\tCopied {} bytes to {}/{}",
+                progress.copied_bytes, progress.dir_name, progress.file_name,
+            );
+            fs_extra::dir::TransitProcessResult::ContinueOrAbort
+        },
+    );
+
+    match is_copied {
+        Ok(_) => info!(
+            "Copied template files to target directory: {}",
+            dest_dir.display()
+        ),
+        Err(e) => return Err(eyre!("Failed to copy template files: {e}")),
+    }
+
+    Ok(())
 }

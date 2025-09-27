@@ -5,7 +5,7 @@ use tracing::info;
 use crate::AppState;
 use db::{self, TemplateRow};
 use template::{
-    self, CloneContext, clean_clone_dir_if_overwrite, clone_repo, get_lang, get_template_config,
+    self, CloneContext, clean_dir_if_overwrite, clone_repo, get_lang, get_template_config,
     install_template, make_name_from_url, make_template_dir, make_tmp_dir_from_url, remove_git_dir,
 };
 
@@ -67,7 +67,7 @@ pub async fn add(app_state: &AppState, cmd: &Add) -> Result<()> {
         clone_dir.to_path_buf()
     };
 
-    if let Err(err) = clean_clone_dir_if_overwrite(clone_dir, cmd.overwrite) {
+    if let Err(err) = clean_dir_if_overwrite(clone_dir, cmd.overwrite) {
         return Err(eyre!("Failed setting up work dir: {}", err));
     }
 

@@ -69,7 +69,7 @@ async fn main() -> Result<()> {
         match command {
             Commands::Add(cmd) => commands::add(&app_state, &cmd).await?,
             Commands::List(cmd) => commands::list(&app_state, &cmd).await?,
-            Commands::New(cmd) => commands::new::new(&app_state, &cmd).await?,
+            Commands::New(cmd) => commands::new(&app_state, &cmd).await?,
             // Commands::Update(cmd) => commands::update::update(&sys_config, &cmd).await?,
         }
     } else {

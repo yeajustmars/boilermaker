@@ -6,3 +6,4 @@ pub mod update;
 
 pub use add::{Add, add};
 pub use list::{List, list};
+pub use new::{New, new};
