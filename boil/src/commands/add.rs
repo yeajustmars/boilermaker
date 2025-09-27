@@ -31,7 +31,7 @@ async fn add_template_to_cache(app_state: &AppState, row: TemplateRow) -> Result
     let cache = app_state
         .template_db
         .write()
-        .map_err(|e| eyre!("Failed to acquire write lock: {}", e))?;
+        .map_err(|e| eyre!("💥 Failed to acquire write lock: {}", e))?;
 
     if !cache.template_table_exists().await? {
         cache.create_template_table().await?;
@@ -39,7 +39,7 @@ async fn add_template_to_cache(app_state: &AppState, row: TemplateRow) -> Result
 
     if let Some(existing_template) = cache.check_unique(&row).await? {
         return Err(eyre!(
-            "Template with the same name/lang/repo already exists: {:?}.",
+            "💥 Template with the same name/lang/repo already exists: {:?}.",
             existing_template
         ));
     }
@@ -69,11 +69,11 @@ pub async fn add(app_state: &AppState, cmd: &Add) -> Result<()> {
     };
 
     if let Err(err) = clean_dir_if_overwrite(clone_dir, cmd.overwrite) {
-        return Err(eyre!("Failed setting up work dir: {}", err));
+        return Err(eyre!("💥 Failed setting up work dir: {}", err));
     }
 
     if let Err(err) = clone_repo(&repo_ctx).await {
-        return Err(eyre!("Failed to clone template: {}", err));
+        return Err(eyre!("💥 Failed to clone template: {}", err));
     }
 
     let cnf = get_template_config(work_dir.as_path())?;
@@ -97,7 +97,7 @@ pub async fn add(app_state: &AppState, cmd: &Add) -> Result<()> {
             template_dir.display()
         ),
         Err(e) => {
-            return Err(eyre!("Failed to install template: {}", e));
+            return Err(eyre!("💥 Failed to install template: {}", e));
         }
     }
 

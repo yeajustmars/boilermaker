@@ -66,7 +66,7 @@ pub fn get_lang(tpl_cnf: &TemplateConfig, option: &Option<String>) -> Result<Str
     }
 
     return Err(eyre!(
-        "Can't find language. Pass `--lang` option or add `default_lang` to `boilermaker.toml`."
+        "💥 Can't find language. Pass `--lang` option or add `default_lang` to `boilermaker.toml`."
     ));
 }
 
@@ -124,7 +124,7 @@ pub fn create_work_dir_clean(name: &str) -> Result<PathBuf> {
 
 #[tracing::instrument]
 fn make_template_dir_path(name: &str) -> Result<PathBuf> {
-    let home_dir = dirs::home_dir().ok_or_else(|| eyre!("Can't find home directory"))?;
+    let home_dir = dirs::home_dir().ok_or_else(|| eyre!("💥 Can't find home directory"))?;
     let templates_dir = home_dir.join(".boilermaker").join("templates").join(name);
     Ok(templates_dir)
 }
@@ -142,7 +142,7 @@ pub fn create_template_dir(name: &str) -> Result<PathBuf> {
 pub fn get_template_dir(name: &str) -> Result<PathBuf> {
     let template_dir = make_template_dir_path(name)?;
     if !template_dir.exists() {
-        Err(eyre!("Cannot find template directory for {name}"))
+        Err(eyre!("💥 Cannot find template directory for {name}"))
     } else {
         Ok(template_dir)
     }
@@ -188,13 +188,13 @@ pub async fn get_or_create_project_dir(project_name: &str, dir: Option<&str>) ->
 
     if !project_dir.exists() {
         if let Err(e) = fs::create_dir_all(&project_dir) {
-            return Err(eyre!("Failed to create project directory: {e}"));
+            return Err(eyre!("💥 Failed to create project directory: {e}"));
         }
     }
 
     if !project_dir.is_dir() {
         return Err(eyre!(
-            "Project path is not a directory: {}",
+            "💥 Project path is not a directory: {}",
             project_dir.display()
         ));
     }
@@ -249,7 +249,7 @@ pub async fn copy_dir(src_dir: &PathBuf, dest_dir: &PathBuf) -> Result<()> {
     let options = CopyOptions::new();
 
     if let Err(e) = copy_items(&files, dest_dir, &options) {
-        return Err(eyre!("Failed to copy template files: {e}"));
+        return Err(eyre!("💥 Failed to copy template files: {e}"));
     }
 
     Ok(())
