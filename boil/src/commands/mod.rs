@@ -1,3 +1,9 @@
-pub(crate) mod list;
-pub(crate) mod new;
-pub(crate) mod test;
+pub mod add;
+pub mod list;
+pub mod new;
+pub mod test;
+pub mod update;
+
+pub use add::{Add, add};
+pub use list::{List, list};
+pub use new::{New, new};

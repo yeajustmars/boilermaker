@@ -1,166 +1,141 @@
-use std::{env, fs, path::PathBuf};
+use std::{collections::HashMap, path::PathBuf};
 
 use clap::Parser;
 use color_eyre::{Result, eyre::eyre};
-// use colored::Colorize;
-use fs_extra::copy_items_with_progress;
-use git2::{FetchOptions, Repository, build::RepoBuilder};
-// use nu_ansi_term::Style; // TODO: possibly replace nu_ansi_term with colored
-use toml;
-use tracing::info;
+use tabled::{Table, Tabled, settings::Style};
+use tracing::{error, info};
 
-use crate::config::{BoilermakerConfig, get_template_config};
+use crate::AppState;
+use core::db::{TemplateFindParams, TemplateResult};
+use core::template as tpl;
 
 #[derive(Debug, Parser)]
-pub(crate) struct New {
+pub struct New {
     #[arg(required = true)]
     pub name: String,
-
-    #[arg(short, long)]
-    pub template: String,
-
     #[arg(short, long)]
     pub lang: Option<String>,
-
     #[arg(short, long)]
-    pub branch: Option<String>,
-
-    #[arg(short = 'd', long)]
-    pub subdir: Option<String>,
-}
-
-// TODO: see if it's possible to do a sparse checkout with git2
-fn make_template_root_dir(repo_root: &PathBuf, cmd: &New) -> PathBuf {
-    match &cmd.subdir {
-        Some(subdir) => repo_root.join(subdir),
-        None => repo_root.to_owned(),
-    }
-}
-
-// TODO: add local .cache dir that doesn't need to copy every time (maybe 10 minutes?)
-#[tracing::instrument]
-fn clone_repo(src_root: &PathBuf, cmd: &New) -> Result<Repository> {
-    info!("Cloning into temporary directory: {}", src_root.display());
-
-    let mut fetch_opts = FetchOptions::new();
-    fetch_opts.depth(1);
-
-    let mut repo_builder = RepoBuilder::new();
-    repo_builder.fetch_options(fetch_opts);
-
-    if let Some(branch) = &cmd.branch {
-        repo_builder.branch(branch);
-    }
-
-    let repo = repo_builder.clone(&cmd.template, &src_root)?;
-    Ok(repo)
-}
-
-#[derive(Debug)]
-pub struct TemplateContext {
-    lang: String,
-    repo_root: PathBuf,
-    src_root: PathBuf,
-    target_root: PathBuf,
-    target_dir: PathBuf,
+    pub rename: Option<String>,
+    #[arg(short, long)]
+    pub dir: Option<String>,
+    #[arg(short = 'P', long = "output-path")]
+    pub output_path: Option<String>,
+    #[arg(short = 'O', long, default_value_t = false)]
+    pub overwrite: bool,
 }
 
 #[tracing::instrument]
-fn get_lang(cmd: &New, cfg: &BoilermakerConfig) -> Result<String> {
-    if let Some(lang_option) = &cmd.lang {
-        info!("Using `--lang` from command line: {}", lang_option);
-        return Ok(lang_option.clone());
+pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
+    let project_name = if let Some(rename) = &cmd.rename {
+        rename
+    } else {
+        &cmd.name
+    };
+
+    info!("Creating new project: {project_name}");
+
+    let existing_templates = get_existing_templates(&app_state, &cmd).await?;
+    match existing_templates.len() {
+        0 => {
+            return Err(eyre!("💥 Cannot find template: {}.", cmd.name));
+        }
+        2.. => {
+            print_multiple_template_results_help(&existing_templates);
+            return Ok(());
+        }
+        _ => {}
     }
 
-    if let Some(default_lang) = &cfg.boilermaker.project.default_lang {
-        info!("Using `default_lang` from template config: {default_lang}");
-        return Ok(default_lang.clone());
-    }
+    let t = existing_templates.first().unwrap();
 
-    return Err(eyre!(
-        "Can't find language. Pass `--lang` option or add `default_lang` to `boilermaker.toml`."
-    ));
-}
+    let work_dir = tpl::create_work_dir_clean(&t.name)?;
 
-#[tracing::instrument]
-fn copy_files_to_target(
-    template_files_path: &PathBuf,
-    lang: &str,
-    target_root: &PathBuf,
-    target_dir: &PathBuf,
-) -> Result<()> {
-    match fs::create_dir(&target_root) {
-        Ok(_) => info!("Created target directory: {}", target_root.display()),
-        Err(e) => return Err(eyre!("Failed to create target directory: {e}")),
-    }
+    //TODO: clean up and refactor
+    let template_base_dir = PathBuf::from(&t.template_dir);
+    let template_dir = template_base_dir.join(&t.lang);
+    let _ = tpl::copy_dir(&template_dir, &work_dir).await?;
 
-    match fs::create_dir(&target_dir) {
-        Ok(_) => info!("Created target directory: {}", target_dir.display()),
-        Err(e) => return Err(eyre!("Failed to create target directory: {e}")),
-    }
-
-    let files_iter = fs::read_dir(&template_files_path)?;
-    let files: Vec<PathBuf> = files_iter
-        .filter_map(|entry| entry.ok().map(|e| e.path()))
+    let template_paths: Vec<PathBuf> = tpl::list_dir(&work_dir)
+        .await?
+        .iter()
+        .filter(|p| p.is_file())
+        .map(|p| p.to_path_buf())
         .collect();
 
-    info!("Copying template files for language '{}'...", lang);
-    match copy_items_with_progress(
-        &files,
-        &target_dir,
-        &fs_extra::dir::CopyOptions::new(),
-        |progress| {
-            info!("\tCopied {} bytes", progress.copied_bytes);
-            fs_extra::dir::TransitProcessResult::ContinueOrAbort
-        },
-    ) {
-        Ok(_) => info!(
-            "Copied template files to target directory: {}",
-            target_root.display()
-        ),
-        Err(e) => return Err(eyre!("Failed to copy template files: {e}")),
+    let template_config = tpl::get_template_config(&template_base_dir)?;
+    let template_context = if let Some(vars) = template_config.variables {
+        vars.as_map().clone()
+    } else {
+        let ctx: HashMap<String, String> = HashMap::new();
+        ctx
+    };
+
+    if let Err(e) = tpl::render_template_files(template_paths, template_context).await {
+        return Err(eyre!("💥 Failed to render template files: {e}"));
     }
+
+    let out_dir = tpl::get_or_create_project_dir(&project_name, cmd.dir.as_deref()).await?;
+
+    if out_dir.exists() {
+        if cmd.overwrite {
+            tpl::clean_dir(&out_dir)?;
+        } else {
+            return Err(eyre!(
+                "💥 Output directory already exists: {}. (Use --overwrite to force.)",
+                out_dir.display()
+            ));
+        }
+    }
+
+    if let Err(e) = tpl::move_file(&work_dir, &out_dir).await {
+        return Err(eyre!("💥 Failed to move project to output directory: {e}"));
+    }
+
+    info!("Project created at: {}", out_dir.display());
+    info!("All set. Happy hacking! 🚀");
 
     Ok(())
 }
 
-#[tracing::instrument]
-pub fn get_template(_sys_config: &toml::Value, cmd: &New) -> Result<TemplateContext> {
-    let repo_root = env::temp_dir().join(&cmd.name);
-    let src_root = repo_root.join("src");
-    let template_root = make_template_root_dir(&src_root, cmd);
-    let cfg_path = template_root.join("boilermaker.toml");
-    let cfg: BoilermakerConfig = get_template_config(cfg_path.as_path())?;
-    let lang = get_lang(&cmd, &cfg)?;
-    let target_root = repo_root.join("target");
-    let target_dir = target_root.join(&lang);
-    let template_files_path = template_root.join(&lang);
+async fn get_existing_templates(app_state: &AppState, cmd: &New) -> Result<Vec<TemplateResult>> {
+    let find_params = TemplateFindParams {
+        name: Some(cmd.name.to_owned()),
+        lang: cmd.lang.clone(),
+        repo: None,
+        branch: None,
+        subdir: None,
+    };
 
-    if repo_root.exists() {
-        fs::remove_dir_all(&repo_root)?;
-    }
-    let _repo = clone_repo(&src_root, cmd)?;
-    let _ = copy_files_to_target(&template_files_path, &lang, &target_root, &target_dir)?;
+    let cache = app_state
+        .template_db
+        .read()
+        .map_err(|e| eyre!("💥 Failed to acquire template_db read lock: {e}"))?;
 
-    // let target_root = target_root.join(&lang);
+    let existing_templates = { cache.find_templates(find_params).await? };
 
-    Ok(TemplateContext {
-        lang: lang.clone(),
-        repo_root,
-        src_root,
-        target_root,
-        target_dir,
-    })
+    Ok(existing_templates)
 }
 
-#[tracing::instrument]
-pub fn new(sys_config: &toml::Value, cmd: &New) -> Result<()> {
-    info!("Creating new project...");
-    info!("Name: {}", cmd.name);
-    info!("Template: {}", cmd.template);
+#[derive(Tabled)]
+struct MultipleResultsRow {
+    #[tabled(rename = "Template")]
+    template: String,
+    #[tabled(rename = "Lang")]
+    lang: String,
+}
 
-    let ctx = get_template(sys_config, &cmd)?;
-    println!("---->  ctx: {:#?}", ctx);
+fn print_multiple_template_results_help(template_rows: &Vec<TemplateResult>) {
+    let help_line = "Multiple templates found. (You need to provide --lang)";
+    let mut help_rows = Vec::new();
+    for t in template_rows {
+        help_rows.push(MultipleResultsRow {
+            template: t.name.clone(),
+            lang: t.lang.clone(),
+        });
+    }
 
-    Ok(())
+    let mut table = Table::new(&help_rows);
+    table.with(Style::psql());
+    error!("{}\n\n{table}\n", help_line);
 }

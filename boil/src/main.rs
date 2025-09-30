@@ -1,27 +1,33 @@
 use std::path::PathBuf;
+use std::sync::{Arc, RwLock};
 
 use clap::{Parser, Subcommand};
 use color_eyre::eyre::Result;
-use tracing::{info, warn};
+use tracing::warn;
 
-mod commands;
-mod config;
-mod logging;
-
-use commands::{list, new, test};
-use config::get_system_config;
+use boil::{AppState, commands, logging};
+use core::config::{get_system_config, DEFAULT_LOCAL_CACHE_PATH};
+use core::db::LocalCache;
 
 //TODO: 1. [ ] add custom macro for logging to reduce icon/symbol duplication, etc (possibly just a function?)
 //TODO: 2. [ ] add ability to use YAML for config files as well as TOML
-//TODO: 3. [ ] move all (or most) main logic into lib.rs
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 struct Cli {
-    #[arg(short, long, value_name = "~/.config/boilermaker/boilermaker.toml")]
+    #[arg(
+        short,
+        long,
+        value_name = "FILE",
+        help = "Path to config file (default: ~/.config/boilermaker/boilermaker.toml)"
+    )]
     config: Option<PathBuf>,
 
-    #[arg(short = 'D', long, action = clap::ArgAction::Count)]
+    #[arg(
+        short = 'D', 
+        long, 
+        action = clap::ArgAction::Count, 
+        help = "Turn on debug logging (use -D[DDD] for more verbosity)")]
     debug: u8,
 
     #[command(subcommand)]
@@ -30,50 +36,45 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    List(list::List),
-    New(new::New),
-    Test(test::Test),
+    #[command(about = "Add a template to the cache")]
+    Add(commands::Add),
+    #[command(about = "List all templates in the local cache")]
+    List(commands::List),
+    #[command(about = "Create a new project from a template")]
+    New(commands::new::New),
+    //#[command(about = "Remove a template from the local cache")]
+    // Remove(remove::Remove),
+    //#[command(about = "Update an existing template in the cache")]
+    // Update(commands::update::Update),
 }
 
+#[tokio::main]
 #[tracing::instrument]
-fn main() -> Result<()> {
-    color_eyre::install().expect("Failed to install color_eyre");
+async fn main() -> Result<()> {
+    color_eyre::install().expect("Failed to set up error handling");
 
     let cli = Cli::parse();
 
     logging::init_tracing(cli.debug)?;
 
-    let sys_config = get_system_config(cli.config.as_deref())?;
+    // TODO: check global boilermaker config for local vs remote db option
+    let local_cache_path = DEFAULT_LOCAL_CACHE_PATH.as_path().to_str().unwrap();
+    let app_state = AppState {
+        template_db: Arc::new(RwLock::new(LocalCache::new(local_cache_path).await?)),
+        sys_config: get_system_config(cli.config.as_deref())?,
+        log_level: cli.debug,
+    };
 
     if let Some(command) = cli.command {
         match command {
-            Commands::List(list_cmd) => {
-                //TODO: move into list::List command implementation
-                if list_cmd.public {
-                    info!("Listing public items...");
-                    Ok(())
-                } else if list_cmd.private {
-                    info!("Listing private items...");
-                    Ok(())
-                } else {
-                    info!("Listing all items...");
-                    Ok(())
-                }
-            }
-            Commands::New(cmd) => new::new(&sys_config, &cmd),
-            Commands::Test(test_cmd) => {
-                if test_cmd.list {
-                    info!("Listing tests...");
-                    Ok(())
-                } else {
-                    info!("Running tests...");
-                    Ok(())
-                }
-            }
+            Commands::Add(cmd) => commands::add(&app_state, &cmd).await?,
+            Commands::List(cmd) => commands::list(&app_state, &cmd).await?,
+            Commands::New(cmd) => commands::new(&app_state, &cmd).await?,
+            // Commands::Update(cmd) => commands::update::update(&sys_config, &cmd).await?,
         }
     } else {
-        //TODO: default to printing help menu if no command is provided
-        warn!("❗ No command provided. Use --help for more information.");
-        Ok(())
+        warn!("❗ No command provided. Use --help for usage.");
     }
+
+    Ok(())
 }

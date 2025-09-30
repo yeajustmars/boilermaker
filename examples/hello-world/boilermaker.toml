@@ -1,6 +1,4 @@
-[boilermaker]
-
-[boilermaker.project]
+[project]
 name = "hello-world"
 description = "A simple hello world example using Boilermaker"
 default_lang = "rust"
@@ -9,8 +7,8 @@ subdir = "examples/hello-world"
 version = "0.1.0"
 authors = ["yeajustmars <yeajustmars@gmail.com>"]
 keywords = ["boilermaker", "example"]
-website = "https://boilermaker.dev/templates/hello-world"
+website = "https://dev/templates/hello-world"
 license = "MIT"
 
-[boilermaker.variables]
+[variables]
 welcome_message = "Hello, World!"
