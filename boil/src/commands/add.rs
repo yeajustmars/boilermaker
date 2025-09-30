@@ -3,9 +3,9 @@ use color_eyre::{Result, eyre::eyre};
 use tracing::info;
 
 use crate::AppState;
-use db::{self, TemplateRow};
-use template::{
-    self, CloneContext, clean_dir_if_overwrite, clone_repo, create_template_dir, get_lang,
+use core::db::TemplateRow;
+use core::template::{
+    CloneContext, clean_dir_if_overwrite, clone_repo, create_template_dir, get_lang,
     get_template_config, install_template, make_name_from_url, make_tmp_dir_from_url,
     remove_git_dir,
 };

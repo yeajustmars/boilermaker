@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["api", "boil", "config", "db", "template", "util", "web"]
+members = ["api", "boil", "core", "web"]
 
 [workspace.dependencies]
 async-trait = "0.1.89"
@@ -35,10 +35,9 @@ walkdir = "2.5.0"
 
 # workspace
 api = { path = "api" }
-config = { path = "config" }
-db = { path = "db" }
-template = { path = "template" }
-util = { path = "util" }
+boil = { path = "boil" }
+core = { path = "core" }
+web = { path = "web" }
 
 [profile]
 

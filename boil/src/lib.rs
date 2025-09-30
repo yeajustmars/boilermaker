@@ -1,10 +1,7 @@
-/// boil
-///    Boilermaker CLI
-///         A simple, fast, and flexible project scaffolding tool.
 use std::fmt;
 use std::sync::{Arc, RwLock};
 
-use db::TemplateDb;
+use core::db::TemplateDb;
 
 pub mod commands;
 pub mod logging;

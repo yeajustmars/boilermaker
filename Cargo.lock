@@ -259,8 +259,7 @@ dependencies = [
  "clap",
  "color-eyre",
  "colored",
- "config",
- "db",
+ "core",
  "dirs",
  "fs_extra",
  "git2",
@@ -270,13 +269,11 @@ dependencies = [
  "serde",
  "sqlx",
  "tabled",
- "template",
  "tokio",
  "toml",
  "tracing",
  "tracing-error",
  "tracing-subscriber",
- "util",
  "uuid",
  "walkdir",
 ]
@@ -455,20 +452,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "config"
-version = "0.1.0"
-dependencies = [
- "color-eyre",
- "dirs",
- "lazy_static",
- "serde",
- "toml",
- "tracing",
- "tracing-error",
- "tracing-subscriber",
-]
-
-[[package]]
 name = "console_error_panic_hook"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -532,6 +515,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec182b0ca2f35d8fc196cf3404988fd8b8c739a4d270ff118a398feb0cbec1ca"
 dependencies = [
  "unicode-segmentation",
+]
+
+[[package]]
+name = "core"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "color-eyre",
+ "dirs",
+ "fs_extra",
+ "git2",
+ "lazy_static",
+ "minijinja",
+ "serde",
+ "sqlx",
+ "tabled",
+ "toml",
+ "tracing",
+ "tracing-error",
+ "tracing-subscriber",
+ "walkdir",
 ]
 
 [[package]]
@@ -657,18 +662,6 @@ name = "data-encoding"
 version = "2.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2a2330da5de22e8a3cb63252ce2abb30116bf5265e89c0e01bc17015ce30a476"
-
-[[package]]
-name = "db"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "color-eyre",
- "sqlx",
- "tabled",
- "tracing",
- "util",
-]
 
 [[package]]
 name = "der"
@@ -3402,22 +3395,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "template"
-version = "0.1.0"
-dependencies = [
- "color-eyre",
- "config",
- "dirs",
- "fs_extra",
- "git2",
- "minijinja",
- "tracing",
- "tracing-error",
- "tracing-subscriber",
- "walkdir",
-]
-
-[[package]]
 name = "testing_table"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3944,14 +3921,6 @@ name = "utf8parse"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
-
-[[package]]
-name = "util"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "color-eyre",
-]
 
 [[package]]
 name = "uuid"

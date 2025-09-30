@@ -7,8 +7,8 @@ use git2::{FetchOptions, Repository, build::RepoBuilder};
 use minijinja;
 use walkdir::WalkDir;
 
-use config::TemplateConfig;
-pub use config::get_template_config;
+use crate::config::TemplateConfig;
+pub use crate::config::get_template_config;
 
 #[derive(Debug)]
 pub struct CloneContext {

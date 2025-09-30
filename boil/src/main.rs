@@ -6,8 +6,8 @@ use color_eyre::eyre::Result;
 use tracing::warn;
 
 use boil::{AppState, commands, logging};
-use config::{get_system_config, DEFAULT_LOCAL_CACHE_PATH};
-use db::LocalCache;
+use core::config::{get_system_config, DEFAULT_LOCAL_CACHE_PATH};
+use core::db::LocalCache;
 
 //TODO: 1. [ ] add custom macro for logging to reduce icon/symbol duplication, etc (possibly just a function?)
 //TODO: 2. [ ] add ability to use YAML for config files as well as TOML

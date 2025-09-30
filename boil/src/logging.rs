@@ -8,7 +8,7 @@ use tracing_subscriber::fmt::{FmtContext, FormatEvent, FormatFields};
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::registry::LookupSpan;
 
-use util::fmt::{DEBUG_STR, ERROR_STR, INFO_STR, TRACE_STR, WARN_STR};
+use core::util::fmt::{DEBUG_STR, ERROR_STR, INFO_STR, TRACE_STR, WARN_STR};
 
 struct DefaultFormatter;
 
