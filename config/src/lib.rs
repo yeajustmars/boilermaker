@@ -166,12 +166,15 @@ impl<'de> Visitor<'de> for TemplateConfigVariableMapVisitor {
     where
         M: MapAccess<'de>,
     {
-        let mut inner_map = HashMap::new();
+        let mut m = HashMap::new();
         while let Some(key) = map.next_key::<String>()? {
-            // Deserialize the value as a toml::Value first, then convert to String
             let value: toml::Value = map.next_value()?;
-            inner_map.insert(key, value.to_string());
+            let s = match value {
+                toml::Value::String(s) => s,
+                other_type => other_type.to_string(),
+            };
+            m.insert(key, s);
         }
-        Ok(TemplateConfigVariableMap(inner_map))
+        Ok(TemplateConfigVariableMap(m))
     }
 }
