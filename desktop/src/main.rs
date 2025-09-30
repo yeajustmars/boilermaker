@@ -1,9 +1,10 @@
 use dioxus::prelude::*;
 
-mod views;
+mod ui;
+use ui::Home;
+
 use views::{
-    constants::{FAVICON, MAIN_CSS, TAILWIND_CSS},
-    Docs, GetInvolved, Home, Search, Templates,
+    Docs, GetInvolved, Search, Templates, {FAVICON, MAIN_CSS, TAILWIND_CSS},
 };
 
 //TODO: 1. [ ] Add a WASM-compiled playground for users to develop templates directly in the browser

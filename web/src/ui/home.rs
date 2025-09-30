@@ -2,9 +2,8 @@ use dioxus::prelude::*;
 
 use indoc::indoc;
 
-use crate::views::constants::{FAVICON, GITHUB_DARK_CSS, HIGHLIGHT_JS, LINK_STYLE};
-use crate::views::Echo;
 use crate::Route;
+use views::{Echo, FAVICON, GITHUB_DARK_CSS, HIGHLIGHT_JS, LINK_STYLE};
 
 #[component]
 pub fn Home() -> Element {
@@ -17,7 +16,25 @@ pub fn Home() -> Element {
         document::Script { "hljs.highlightAll();" }
         Hero {}
         div { class: "py-4 px-2",
-            h1 { class: "text-3xl font-bold", "Boilermaker Desktop App" }
+            p {
+                "Boilermaker is a thin project management system that helps you quickly set up programming projects"
+                " with sensible defaults and configurations. It is written in Rust but the templates themselves are language-agnostic."
+                "You either choose from one of the "
+                Link { class: LINK_STYLE, to: Route::Templates {}, "public templates" }
+                "or plug in your own for later reuse."
+            }
+            p { class: "mt-4",
+                "Boilermaker is designed to be customizable, allowing you to adapt it to your specific needs."
+                " Other than providing a framework for "
+                Link { class: LINK_STYLE, to: "/structure", "structure" }
+                ", "
+                Link { class: LINK_STYLE, to: "/variables", "variable interpolation" }
+                " and "
+                Link { class: LINK_STYLE, to: "/configuration", "configuration" }
+                ", it does not impose any opinions on how you should organize your code or project."
+                " However, it does aim to provide a best practices approach to each language it has templates for."
+            }
+            Quickstart {}
         }
         Echo {}
     }

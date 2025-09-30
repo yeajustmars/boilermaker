@@ -1,0 +1,12 @@
+[package]
+name = "views"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# External 
+dioxus = { workspace = true, features = ["router"] }
+indoc = { workspace = true }
+# Internal 
+api = { workspace = true }
+core = { workspace = true }

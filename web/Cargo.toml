@@ -4,9 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-api = { workspace = true }
+# External
 dioxus = { workspace = true, features = ["router"] }
 indoc = { workspace = true }
+# Internal
+api = { workspace = true }
+views = { workspace = true }
 
 [features]
 default = []
