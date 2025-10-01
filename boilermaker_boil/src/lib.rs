@@ -1,7 +1,7 @@
 use std::fmt;
 use std::sync::{Arc, RwLock};
 
-use core::db::TemplateDb;
+use boilermaker_core::db::TemplateDb;
 
 pub mod commands;
 pub mod logging;

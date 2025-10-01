@@ -6,8 +6,8 @@ use tabled::{Table, Tabled, settings::Style};
 use tracing::{error, info};
 
 use crate::AppState;
-use core::db::{TemplateFindParams, TemplateResult};
-use core::template as tpl;
+use boilermaker_core::db::{TemplateFindParams, TemplateResult};
+use boilermaker_core::template as tpl;
 
 #[derive(Debug, Parser)]
 pub struct New {

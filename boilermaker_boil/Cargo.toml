@@ -1,5 +1,5 @@
 [package]
-name = "boil"
+name = "boilermaker_boil"
 version = "0.1.0"
 edition = "2024"
 
@@ -28,4 +28,4 @@ uuid = { workspace = true }
 walkdir = { workspace = true }
 
 # Internal
-core = { workspace = true }
+boilermaker_core = { workspace = true }

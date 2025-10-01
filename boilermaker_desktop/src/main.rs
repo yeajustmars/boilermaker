@@ -1,9 +1,12 @@
+use color_eyre::eyre::Result;
 use dioxus::prelude::*;
 
 mod ui;
 use ui::Home;
 
-use views::{
+use boilermaker_desktop::init_app_state;
+
+use boilermaker_views::{
     Docs, GetInvolved, Search, Templates, {FAVICON, MAIN_CSS, TAILWIND_CSS},
 };
 
@@ -24,8 +27,10 @@ enum Route {
         GetInvolved {},
 }
 
-fn main() {
+fn main() -> Result<()> {
+    init_app_state()?;
     dioxus::launch(App);
+    Ok(())
 }
 
 #[component]
@@ -39,9 +44,11 @@ fn App() -> Element {
             href: "https://fonts.gstatic.com",
             crossorigin: true,
         }
+        // TODO: move to Dioxus.toml
         document::Stylesheet { href: "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" }
         document::Stylesheet { href: "https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" }
         document::Stylesheet { href: "https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap" }
+        // TODO: move to Dioxus.toml
         document::Link { rel: "stylesheet", href: MAIN_CSS }
         document::Link { rel: "stylesheet", href: TAILWIND_CSS }
         Router::<Route> {}

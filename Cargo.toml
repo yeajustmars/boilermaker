@@ -1,14 +1,22 @@
 [workspace]
 resolver = "2"
-members = ["api", "boil", "core", "desktop", "views", "web"]
+members = [
+    "boilermaker_api",
+    "boilermaker_boil",
+    "boilermaker_core",
+    "boilermaker_desktop",
+    "boilermaker_views",
+    "boilermaker_web",
+]
 
 [workspace.dependencies]
 async-trait = "0.1.89"
 chrono = "0.4.42"
-clap = { version = "4.5.47", features = ["derive"] }
+clap = { version = "4.5.48", features = ["derive"] }
 color-eyre = "0.6.5"
 colored = "3.0.0"                                                             # TODO: pick one of colored or nu-ansi-term
-dioxus = { version = "0.6.3" }
+dioxus = { version = "0.6.3", features = ["desktop", "router"] }
+dioxus-desktop = "0.6.3"
 fs_extra = "1.3.0"
 dirs = "6.0.0"
 git2 = "0.20.2"
@@ -16,13 +24,14 @@ indoc = "2.0.6"
 lazy_static = "1.5.0"
 minijinja = { version = "2.12.0", features = ["loader"] }
 nu-ansi-term = "0.50.1"
+once_cell = "1.21.3"
 reqwest = { version = "0.12.23", features = ["json"] }
-serde = { version = "1.0.225", features = ["derive"] }
+serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
 sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "migrate"] }
 tabled = "0.20.0"
-#tokio = { version = "1.47.1", features = ["full"] }
-tokio = { version = "1", default-features = false, features = ["rt", "macros"] }
+tokio = { version = "1.47.1", features = ["full"] }
+#tokio = { version = "1", default-features = false, features = ["rt", "macros"] }
 toml = "0.9.7"
 tracing = { version = "0.1.41", features = ["log"] }
 tracing-error = "0.2.1"
@@ -34,14 +43,13 @@ tracing-subscriber = { version = "0.3.20", features = [
 uuid = { version = "1.18.1", features = ["v4", "serde"] }
 walkdir = "2.5.0"
 
-
 # workspace
-api = { path = "api" }
-boil = { path = "boil" }
-desktop = { path = "desktop" }
-core = { path = "core" }
-views = { path = "views" }
-web = { path = "web" }
+boilermaker_api = { path = "boilermaker_api" }
+boilermaker_boil = { path = "boilermaker_boil" }
+boilermaker_core = { path = "boilermaker_core" }
+boilermaker_desktop = { path = "boilermaker_desktop" }
+boilermaker_views = { path = "boilermaker_views" }
+boilermaker_web = { path = "boilermaker_web" }
 
 [profile]
 

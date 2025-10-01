@@ -5,13 +5,13 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use color_eyre::eyre::{eyre, Error, Result};
+use color_eyre::eyre::{Error, Result, eyre};
 use dirs::home_dir;
 use lazy_static::lazy_static;
-use serde::de::{self, MapAccess, Visitor};
 use serde::Deserialize;
+use serde::de::{self, MapAccess, Visitor};
 use std::fmt;
-use toml::{map::Map as TomlMap, Value};
+use toml::{Value, map::Map as TomlMap};
 use tracing::{info, warn};
 
 lazy_static! {
@@ -19,10 +19,12 @@ lazy_static! {
         "{}/.config/boilermaker/boilermaker.toml",
         home_dir().unwrap().to_str().unwrap()
     );
-}
-
-lazy_static! {
     pub static ref DEFAULT_LOCAL_CACHE_PATH: PathBuf = make_boilermaker_local_cache_path().unwrap();
+    pub static ref DEFAULT_LOCAL_CACHE_PATH_STRING: String = DEFAULT_LOCAL_CACHE_PATH
+        .as_path()
+        .to_str()
+        .unwrap()
+        .to_string();
 }
 
 //TODO: add default configuration for boil cmd

@@ -3,8 +3,8 @@ use color_eyre::{Result, eyre::eyre};
 use tracing::info;
 
 use crate::AppState;
-use core::db::TemplateRow;
-use core::template::{
+use boilermaker_core::db::TemplateRow;
+use boilermaker_core::template::{
     CloneContext, clean_dir_if_overwrite, clone_repo, create_template_dir, get_lang,
     get_template_config, install_template, make_name_from_url, make_tmp_dir_from_url,
     remove_git_dir,

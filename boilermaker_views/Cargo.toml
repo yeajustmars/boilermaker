@@ -1,5 +1,5 @@
 [package]
-name = "views"
+name = "boilermaker_views"
 version = "0.1.0"
 edition = "2024"
 
@@ -8,5 +8,5 @@ edition = "2024"
 dioxus = { workspace = true, features = ["router"] }
 indoc = { workspace = true }
 # Internal 
-api = { workspace = true }
-core = { workspace = true }
+boilermaker_api = { workspace = true }
+boilermaker_core = { workspace = true }

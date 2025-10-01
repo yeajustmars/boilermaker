@@ -1,19 +1,17 @@
 [package]
-name = "desktop"
+name = "boilermaker_web"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-
 # External
 dioxus = { workspace = true, features = ["router"] }
 indoc = { workspace = true }
-
 # Internal
-api = { workspace = true }
-views = { workspace = true }
+boilermaker_api = { workspace = true }
+boilermaker_views = { workspace = true }
 
 [features]
 default = []
-desktop = ["dioxus/desktop"]
+web = ["dioxus/web"]
 server = ["dioxus/server"]

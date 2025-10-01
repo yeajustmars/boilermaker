@@ -1,6 +1,6 @@
-use api;
 use dioxus::prelude::*; // Import the api module from your crate (adjust the path if needed)
 
+use boilermaker_api;
 // const ECHO_CSS: Asset = asset!("/assets/styling/echo.css");
 
 /// Echo component that demonstrates fullstack server functions.
@@ -15,7 +15,7 @@ pub fn Echo() -> Element {
             input {
                 placeholder: "Type here to echo...",
                 oninput: move |event| async move {
-                    let data = api::echo(event.value()).await.unwrap();
+                    let data = boilermaker_api::echo(event.value()).await.unwrap();
                     response.set(data);
                 },
             }

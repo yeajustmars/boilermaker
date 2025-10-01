@@ -92,13 +92,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "api"
-version = "0.1.0"
-dependencies = [
- "dioxus",
-]
-
-[[package]]
 name = "ashpd"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -442,13 +435,21 @@ dependencies = [
 ]
 
 [[package]]
-name = "boil"
+name = "boilermaker_api"
 version = "0.1.0"
 dependencies = [
+ "boilermaker_core",
+ "dioxus",
+]
+
+[[package]]
+name = "boilermaker_boil"
+version = "0.1.0"
+dependencies = [
+ "boilermaker_core",
  "clap",
  "color-eyre",
  "colored",
- "core",
  "dirs",
  "fs_extra",
  "git2",
@@ -465,6 +466,65 @@ dependencies = [
  "tracing-subscriber",
  "uuid",
  "walkdir",
+]
+
+[[package]]
+name = "boilermaker_core"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "color-eyre",
+ "dirs",
+ "fs_extra",
+ "git2",
+ "lazy_static",
+ "minijinja",
+ "serde",
+ "sqlx",
+ "tabled",
+ "toml 0.9.7",
+ "tracing",
+ "tracing-error",
+ "tracing-subscriber",
+ "walkdir",
+]
+
+[[package]]
+name = "boilermaker_desktop"
+version = "0.1.0"
+dependencies = [
+ "boilermaker_api",
+ "boilermaker_core",
+ "boilermaker_views",
+ "color-eyre",
+ "dioxus",
+ "indoc",
+ "once_cell",
+ "sqlx",
+ "tokio",
+ "toml 0.9.7",
+ "tracing",
+]
+
+[[package]]
+name = "boilermaker_views"
+version = "0.1.0"
+dependencies = [
+ "boilermaker_api",
+ "boilermaker_core",
+ "dioxus",
+ "indoc",
+]
+
+[[package]]
+name = "boilermaker_web"
+version = "0.1.0"
+dependencies = [
+ "boilermaker_api",
+ "boilermaker_views",
+ "dioxus",
+ "indoc",
 ]
 
 [[package]]
@@ -603,9 +663,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.5.47"
+version = "4.5.48"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7eac00902d9d136acd712710d71823fb8ac8004ca445a89e73a41d45aa712931"
+checksum = "e2134bb3ea021b78629caa971416385309e0131b351b25e01dc16fb54e1b5fae"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -613,9 +673,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.5.47"
+version = "4.5.48"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2ad9bbf750e73b5884fb8a211a9424a1906c1e156724260fdae972f31d70e1d6"
+checksum = "c2ba64afa3c0a6df7fa517765e31314e983f51dda798ffba27b988194fb65dc9"
 dependencies = [
  "anstream",
  "anstyle",
@@ -831,28 +891,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec182b0ca2f35d8fc196cf3404988fd8b8c739a4d270ff118a398feb0cbec1ca"
 dependencies = [
  "unicode-segmentation",
-]
-
-[[package]]
-name = "core"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "chrono",
- "color-eyre",
- "dirs",
- "fs_extra",
- "git2",
- "lazy_static",
- "minijinja",
- "serde",
- "sqlx",
- "tabled",
- "toml 0.9.7",
- "tracing",
- "tracing-error",
- "tracing-subscriber",
- "walkdir",
 ]
 
 [[package]]
@@ -1115,16 +1153,6 @@ dependencies = [
  "quote",
  "rustc_version",
  "syn 2.0.106",
-]
-
-[[package]]
-name = "desktop"
-version = "0.1.0"
-dependencies = [
- "api",
- "dioxus",
- "indoc",
- "views",
 ]
 
 [[package]]
@@ -1655,7 +1683,7 @@ dependencies = [
  "libc",
  "option-ext",
  "redox_users",
- "windows-sys 0.60.2",
+ "windows-sys 0.61.1",
 ]
 
 [[package]]
@@ -4675,9 +4703,9 @@ dependencies = [
 
 [[package]]
 name = "serde"
-version = "1.0.225"
+version = "1.0.228"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fd6c24dee235d0da097043389623fb913daddf92c76e9f5a1db88607a0bcbd1d"
+checksum = "9a8e94ea7f378bd32cbbd37198a4a91436180c5bb472411e48b5ec2e2124ae9e"
 dependencies = [
  "serde_core",
  "serde_derive",
@@ -4696,18 +4724,18 @@ dependencies = [
 
 [[package]]
 name = "serde_core"
-version = "1.0.225"
+version = "1.0.228"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "659356f9a0cb1e529b24c01e43ad2bdf520ec4ceaf83047b83ddcc2251f96383"
+checksum = "41d385c7d4ca58e59fc732af25c3983b67ac852c1a25000afe1175de458b67ad"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.225"
+version = "1.0.228"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ea936adf78b1f766949a4977b91d2f5595825bd6ec079aa9543ad2685fc4516"
+checksum = "d540f220d3187173da220f885ab66608367b6574e925011a9353e4badda91d79"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6107,16 +6135,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
-name = "views"
-version = "0.1.0"
-dependencies = [
- "api",
- "core",
- "dioxus",
- "indoc",
-]
-
-[[package]]
 name = "walkdir"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6270,16 +6288,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "web"
-version = "0.1.0"
-dependencies = [
- "api",
- "dioxus",
- "indoc",
- "views",
-]
-
-[[package]]
 name = "web-sys"
 version = "0.3.78"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6418,7 +6426,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.60.2",
+ "windows-sys 0.61.1",
 ]
 
 [[package]]

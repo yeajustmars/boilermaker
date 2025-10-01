@@ -1,0 +1,31 @@
+[application]
+name = "boilermaker"
+out_dir = "dist"
+asset_dir = "public"
+
+[web.app]
+title = "Boilermaker"
+
+[web.watcher]
+reload_html = true
+watch_path = [
+    "boilermaker_desktop/src",
+    "boilermaker_web/src",
+    "boilermaker_views/src",
+]
+
+[web.resource]
+style = []
+script = []
+
+[web.resource.dev]
+style = []
+script = []
+
+[[web.proxy]]
+backend = "http://localhost:8000/api/"
+
+[bundle]
+identifier = "dev.boilermaker"
+publisher = "yeajustmars"
+icon = ["public/logo-flame.png"]

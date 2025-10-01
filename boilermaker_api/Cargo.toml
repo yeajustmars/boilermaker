@@ -1,7 +1,10 @@
 [package]
-name = "api"
+name = "boilermaker_api"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+# External
 dioxus = { workspace = true, features = ["fullstack"] }
+# Internal
+boilermaker_core = { workspace = true }

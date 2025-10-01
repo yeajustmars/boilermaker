@@ -3,7 +3,7 @@ use color_eyre::{Result, eyre::eyre};
 use tabled::{Table, Tabled, settings::Style};
 
 use crate::AppState;
-use core::db::TemplateResult;
+use boilermaker_core::db::TemplateResult;
 
 #[derive(Parser)]
 pub struct List {

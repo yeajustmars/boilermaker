@@ -5,9 +5,9 @@ use clap::{Parser, Subcommand};
 use color_eyre::eyre::Result;
 use tracing::warn;
 
-use boil::{AppState, commands, logging};
-use core::config::{get_system_config, DEFAULT_LOCAL_CACHE_PATH};
-use core::db::LocalCache;
+use boilermaker_boil::{AppState, commands, logging};
+use boilermaker_core::config::{get_system_config, DEFAULT_LOCAL_CACHE_PATH, DEFAULT_LOCAL_CACHE_PATH_STRING};
+use boilermaker_core::db::LocalCache;
 
 //TODO: 1. [ ] add custom macro for logging to reduce icon/symbol duplication, etc (possibly just a function?)
 //TODO: 2. [ ] add ability to use YAML for config files as well as TOML
@@ -58,9 +58,8 @@ async fn main() -> Result<()> {
     logging::init_tracing(cli.debug)?;
 
     // TODO: check global boilermaker config for local vs remote db option
-    let local_cache_path = DEFAULT_LOCAL_CACHE_PATH.as_path().to_str().unwrap();
     let app_state = AppState {
-        template_db: Arc::new(RwLock::new(LocalCache::new(local_cache_path).await?)),
+        template_db: Arc::new(RwLock::new(LocalCache::new(DEFAULT_LOCAL_CACHE_PATH_STRING.as_str()).await?)),
         sys_config: get_system_config(cli.config.as_deref())?,
         log_level: cli.debug,
     };

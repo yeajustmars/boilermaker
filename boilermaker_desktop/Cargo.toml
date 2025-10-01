@@ -1,0 +1,26 @@
+[package]
+name = "boilermaker_desktop"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+# External
+color-eyre = { workspace = true }
+dioxus = { workspace = true, features = ["router"] }
+indoc = { workspace = true }
+once_cell = { workspace = true }
+sqlx = { workspace = true }
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "sync"] }
+toml = { workspace = true }
+tracing = { workspace = true }
+
+# Internal
+boilermaker_api = { workspace = true }
+boilermaker_core = { workspace = true }
+boilermaker_views = { workspace = true }
+
+[features]
+default = []
+desktop = ["dioxus/desktop"]
+server = ["dioxus/server"]
