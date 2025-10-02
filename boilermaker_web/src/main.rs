@@ -3,7 +3,7 @@ use dioxus::prelude::*;
 mod ui;
 use ui::Home;
 
-use views::{
+use boilermaker_views::{
     Docs, GetInvolved, Search, Templates, {FAVICON, MAIN_CSS, TAILWIND_CSS},
 };
 

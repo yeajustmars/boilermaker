@@ -2,12 +2,13 @@ use color_eyre::eyre::Result;
 use dioxus::prelude::*;
 
 mod ui;
-use ui::Home;
+use ui::{Home, TemplateNew};
 
 use boilermaker_desktop::init_app_state;
 
 use boilermaker_views::{
-    Docs, GetInvolved, Search, Templates, {FAVICON, MAIN_CSS, TAILWIND_CSS},
+    Docs, GetInvolved, Search, Templates,
+    {DROPDOWN_LINK_STYLE, FAVICON, INDENTED_DROPDOWN_LINK_STYLE, MAIN_CSS, TAILWIND_CSS},
 };
 
 //TODO: 1. [ ] Add a WASM-compiled playground for users to develop templates directly in the browser
@@ -23,6 +24,8 @@ enum Route {
         Docs {},
         #[route("/templates")]
         Templates {},
+        #[route("/templates/new")]
+        TemplateNew {},
         #[route("/get-involved")]
         GetInvolved {},
 }
@@ -107,7 +110,6 @@ fn MainLinks() -> Element {
 #[component]
 fn MainNavDropdownMenu() -> Element {
     let is_open = *MAIN_DROPDOWN_OPEN_STATE.read();
-    let link_style = "block px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-700";
 
     rsx! {
         span {
@@ -127,19 +129,25 @@ fn MainNavDropdownMenu() -> Element {
                     close_main_dropdown();
                 },
                 class: "absolute left-0 top-13 w-48 bg-white dark:bg-neutral-900 rounded shadow-lg border border-l-0 border-t-0 border-neutral-300 dark:border-neutral-700 z-10 text-sm ",
-                Link { class: link_style, to: Route::Home {},
+                Link { class: DROPDOWN_LINK_STYLE, to: Route::Home {},
                     i { class: "fa-solid fa-house" }
                     span { class: "ml-2", "Home" }
                 }
-                Link { class: link_style, to: Route::Templates {},
+                Link { class: DROPDOWN_LINK_STYLE, to: Route::Templates {},
                     i { class: "fa-solid fa-note-sticky" }
                     span { class: "ml-2", "Templates" }
                 }
-                Link { class: link_style, to: Route::Docs {},
+                Link {
+                    class: INDENTED_DROPDOWN_LINK_STYLE,
+                    to: Route::TemplateNew {},
+                    i { class: "fa-solid fa-plus" }
+                    span { class: "ml-2", "New Template" }
+                }
+                Link { class: DROPDOWN_LINK_STYLE, to: Route::Docs {},
                     i { class: "fa-solid fa-file-code" }
                     span { class: "ml-2", "Docs" }
                 }
-                Link { class: link_style, to: Route::GetInvolved {},
+                Link { class: DROPDOWN_LINK_STYLE, to: Route::GetInvolved {},
                     i { class: "fa-solid fa-hands-helping" }
                     span { class: "ml-2", "Get Involved" }
                 }
@@ -153,9 +161,9 @@ pub fn MainSettings() -> Element {
     rsx! {
         a {
             class: "px-4 py-2 rounded hover:bg-neutral-100 dark:hover:bg-neutral-700",
-            href: "/login",
-            i { class: "fa-solid fa-user" }
-            span { class: "ml-2", "Login" }
+            href: "/settings",
+            i { class: "fa-solid fa-gear" }
+            span { class: "ml-2", "Settings" }
         }
     }
 }

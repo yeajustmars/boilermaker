@@ -9,7 +9,10 @@ pub trait TemplateDb: Send + Sync {
     async fn delete_template(&self, id: i64) -> Result<i64>;
     async fn find_templates(&self, query: TemplateFindParams) -> Result<Vec<TemplateResult>>;
     async fn get_template(&self, id: i64) -> Result<Option<TemplateResult>>;
-    async fn list_templates(&self) -> Result<Vec<TemplateResult>>;
+    async fn list_templates(
+        &self,
+        opts: Option<ListTemplateOptions>,
+    ) -> Result<Vec<TemplateResult>>;
     async fn template_table_exists(&self) -> Result<bool>;
     async fn update_template(&self, row: TemplateRow) -> Result<TemplateResult>;
 }
@@ -148,7 +151,10 @@ impl TemplateDb for LocalCache {
     }
 
     #[tracing::instrument]
-    async fn list_templates(&self) -> Result<Vec<TemplateResult>> {
+    async fn list_templates(
+        &self,
+        opts: Option<ListTemplateOptions>,
+    ) -> Result<Vec<TemplateResult>> {
         let results = sqlx::query_as::<_, TemplateResult>(
             r#"
             SELECT * 
@@ -226,4 +232,11 @@ pub struct TemplateFindParams {
     pub repo: Option<String>,
     pub branch: Option<String>,
     pub subdir: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ListTemplateOptions {
+    pub order_by: Option<String>,
+    pub limit: Option<u64>,
+    pub offset: Option<u64>,
 }

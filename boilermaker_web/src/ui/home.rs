@@ -3,7 +3,7 @@ use dioxus::prelude::*;
 use indoc::indoc;
 
 use crate::Route;
-use views::{Echo, FAVICON, GITHUB_DARK_CSS, HIGHLIGHT_JS, LINK_STYLE};
+use boilermaker_views::{Echo, FAVICON, GITHUB_DARK_CSS, HIGHLIGHT_JS, LINK_STYLE};
 
 #[component]
 pub fn Home() -> Element {

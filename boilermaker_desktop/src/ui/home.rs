@@ -1,14 +1,20 @@
 use dioxus::prelude::*;
 use tracing::error;
 
+use boilermaker_core::db::ListTemplateOptions;
 use boilermaker_desktop::APP_STATE;
-use boilermaker_views::Echo;
+use boilermaker_views::{Echo, BTN_DELETE_STYLE, BTN_EDIT_STYLE, TD_STYLE, TH_STYLE};
 
 #[component]
 pub fn Home() -> Element {
     let resource = use_resource(move || async move {
         let cache = APP_STATE.get().unwrap().template_db.write().unwrap();
-        match cache.list_templates().await {
+        let list_opts = Some(ListTemplateOptions {
+            order_by: Some("created_at DESC, name ASC".to_string()),
+            limit: Some(10),
+            offset: None,
+        });
+        match cache.list_templates(list_opts).await {
             Ok(templates) => Ok(templates),
             Err(e) => {
                 error!("Error fetching templates: {}", e);
@@ -23,19 +29,16 @@ pub fn Home() -> Element {
         }
     });
 
-    let th_style = "px-4 py-2 bg-gray-200 text-left";
-    let td_style = "px-4 py-2";
-
     rsx! {
         document::Title { "Boilermaker" }
         div { class: "py-4 px-2",
-            h1 { class: "text-3xl font-bold", "Latest Boilermaker Templates" }
+            h1 { class: "text-2xl text-neutral-500", "Latest Boilermaker Templates" }
 
             match result_signal {
                 Err(e) => {
                     error!("Failed to load templates: {}", e);
                     rsx! {
-                        div { class: "text-red-500", "Failed to load templates." }
+                        div { class: "text-red-400", "Failed to load templates." }
                     }
                 }
                 Ok(signal) => {
@@ -47,20 +50,39 @@ pub fn Home() -> Element {
                         }
                     } else {
                         rsx! {
-                            table {
+                            table { class: "mt-6",
                                 thead {
                                     tr {
-                                        th { class: th_style, "Name" }
-                                        th { class: th_style, "Language" }
-                                        th { class: th_style, "Repo" }
+                                        th {}
+                                        th { class: TH_STYLE, "Name" }
+                                        th { class: TH_STYLE, "Language" }
+                                        th { class: TH_STYLE, "Repo" }
+                                        th { class: TH_STYLE, "Subdirectory" }
+                                        th { class: TH_STYLE, "Actions" }
                                     }
                                 }
                                 tbody {
-                                    for t in templates {
+                                    for (i , t) in templates.iter().enumerate() {
                                         tr {
-                                            td { class: td_style, "{t.name}" }
-                                            td { class: td_style, "{t.lang}" }
-                                            td { class: td_style, "{t.repo}" }
+                                            td { class: "italic text-sm text-neutral-500", "{i + 1}" }
+                                            td { class: TD_STYLE, "{t.name}" }
+                                            td { class: TD_STYLE, "{t.lang}" }
+                                            td { class: TD_STYLE, "{t.repo}" }
+                                            td { class: TD_STYLE,
+                                                match &t.subdir {
+                                                    Some(subdir) => rsx! {
+                                                    "{subdir}"
+                                                    },
+                                                    None => rsx! { "-" },
+                                                }
+                                            }
+                                            td { class: TD_STYLE,
+                                                div { class: "flex gap-2",
+                                                    // TODO: Add global fn for creating buttons
+                                                    button { class: BTN_EDIT_STYLE, "Edit" }
+                                                    button { class: BTN_DELETE_STYLE, "Delete" }
+                                                }
+                                            }
                                         }
                                     }
                                 }

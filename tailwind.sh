@@ -2,5 +2,5 @@
 
 npx @tailwindcss/cli \
     -i ./tailwind.css \
-    -o ./views/assets/tailwind.css \
+    -o ./boilermaker_views/assets/tailwind.css \
     --watch

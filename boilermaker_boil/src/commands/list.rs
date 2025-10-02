@@ -20,7 +20,7 @@ pub async fn list(app_state: &AppState, _cmd: &List) -> Result<()> {
             .write()
             .map_err(|e| eyre!("Failed to acquire write lock: {}", e))?;
 
-        cache.list_templates().await?
+        cache.list_templates(None).await?
     };
 
     let rows = result
