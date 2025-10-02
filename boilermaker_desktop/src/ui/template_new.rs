@@ -1,8 +1,10 @@
 use std::collections::HashMap;
 
 use dioxus::prelude::*;
+use git2;
 
 use boilermaker_views::{BTN_CREATE_STYLE, INPUT_STYLE, LABEL_STYLE, TEXTAREA_STYLE};
+use regex::Regex;
 
 #[component]
 pub fn TemplateNew() -> Element {
@@ -12,6 +14,102 @@ pub fn TemplateNew() -> Element {
     let mut branch = use_signal(|| String::new());
     let mut subdir = use_signal(|| String::new());
     let mut status = use_signal(|| HashMap::<String, Option<(bool, String)>>::new());
+
+    // TODO: move to common, reusable location
+    let validate_name = move |_event| {
+        let name_val = name.read().trim().to_string();
+        if !name_val.is_empty() {
+            status
+                .write()
+                .insert("name".to_string(), Some((true, "is valid".to_string())));
+        } else {
+            status.write().insert(
+                "name".to_string(),
+                Some((false, "Name is required".to_string())),
+            );
+        }
+    };
+
+    // TODO: check that the repo is able to be cloned
+    // TODO: move to common, reusable location
+    let validate_repo = move |_event| {
+        let repo_val = repo.read().trim().to_string();
+
+        if repo_val.is_empty() {
+            status.write().insert(
+                "repo".to_string(),
+                Some((false, "Repo URL is required".to_string())),
+            );
+            return;
+        }
+
+        let remote = git2::Remote::create_detached(repo_val.clone());
+        if let Err(e) = remote {
+            status.write().insert(
+                "repo".to_string(),
+                Some((false, format!("Invalid repo URL: {}", e))),
+            );
+            return;
+        }
+
+        let mut remote = remote.unwrap();
+        match remote.connect(git2::Direction::Fetch) {
+            Ok(_) => {}
+            Err(e) => {
+                status.write().insert(
+                    "repo".to_string(),
+                    Some((false, format!("Invalid repo URL: {}", e))),
+                );
+                return;
+            }
+        }
+
+        status
+            .write()
+            .insert("repo".to_string(), Some((true, "is valid".to_string())));
+    };
+
+    // TODO: move to constants or somewhere common
+    let branch_pattern = Regex::new(r"^(refs/heads/)?[A-Za-z0-9._/-]+$").unwrap();
+    // TODO: move to common, reusable location
+    let validate_branch = move |_event| {
+        let branch_val = branch.read().trim().to_string();
+        if branch_val.is_empty() || branch_pattern.is_match(&branch_val) {
+            status
+                .write()
+                .insert("branch".to_string(), Some((true, "is valid".to_string())));
+        } else {
+            status.write().insert(
+                "branch".to_string(),
+                Some((false, "Invalid branch name".to_string())),
+            );
+        }
+    };
+
+    // TODO: move to constants or somewhere common
+    let subdir_pattern = Regex::new(r"^/?[A-Za-z0-9/\-_].*$").unwrap();
+    // TODO: move to common, reusable location
+    let validate_subdir = move |_event| {
+        let subdir_val = subdir.read().trim().to_string();
+        if subdir_val.is_empty() || subdir_pattern.is_match(&subdir_val) {
+            status
+                .write()
+                .insert("subdir".to_string(), Some((true, "is valid".to_string())));
+        } else {
+            status.write().insert(
+                "subdir".to_string(),
+                Some((false, "Invalid path".to_string())),
+            );
+        }
+    };
+
+    // TODO: move to common, reusable location
+    let validate_description = move |_event| {
+        status.write().insert(
+            "description".to_string(),
+            Some((true, "is valid".to_string())),
+        );
+    };
 
     rsx! {
         document::Title { "Create New Template - Boilermaker" }
@@ -35,38 +133,11 @@ pub fn TemplateNew() -> Element {
                                     placeholder: "Enter template name",
                                     oninput: move |e| name.set(e.value()),
                                     value: "{name}",
-                                    onblur: move |_| {
-                                        let name_val = name.read().trim().to_string();
-                                        if !name_val.is_empty() {
-                                            status
-                                                .write()
-                                                .insert(
-                                                    "name".to_string(),
-                                                    Some((true, "Template name is valid".to_string())),
-                                                );
-                                        } else {
-                                            status
-                                                .write()
-                                                .insert(
-                                                    "name".to_string(),
-                                                    Some((false, "Name is required".to_string())),
-                                                );
-                                        }
-                                    },
+                                    onblur: validate_name,
                                 }
                             }
                             div { class: "mb-4",
-                                label { class: LABEL_STYLE, "Template Description (optional))" }
-                                textarea {
-                                    name: "description",
-                                    class: TEXTAREA_STYLE,
-                                    placeholder: "Enter a description for the template",
-                                    oninput: move |e| description.set(e.value()),
-                                    value: "{description}",
-                                }
-                            }
-                            div { class: "mb-4",
-                                label { class: LABEL_STYLE, "Template Repository URL" }
+                                label { class: LABEL_STYLE, "Template Repo URL" }
                                 input {
                                     name: "repo",
                                     r#type: "text",
@@ -74,6 +145,7 @@ pub fn TemplateNew() -> Element {
                                     placeholder: "e.g. https://github.com/yeajustmars/boilermaker",
                                     oninput: move |e| repo.set(e.value()),
                                     value: "{repo}",
+                                    onblur: validate_repo,
                                 }
                             }
                             div { class: "mb-4",
@@ -85,6 +157,7 @@ pub fn TemplateNew() -> Element {
                                     placeholder: "Enter template branch (default: main)",
                                     oninput: move |e| branch.set(e.value()),
                                     value: "{branch}",
+                                    onblur: validate_branch,
                                 }
                             }
                             div { class: "mb-4",
@@ -96,6 +169,18 @@ pub fn TemplateNew() -> Element {
                                     placeholder: "e.g. /examples/hello-world (default: /)",
                                     oninput: move |e| subdir.set(e.value()),
                                     value: "{subdir}",
+                                    onblur: validate_subdir,
+                                }
+                            }
+                            div { class: "mb-4",
+                                label { class: LABEL_STYLE, "Template Description (optional))" }
+                                textarea {
+                                    name: "description",
+                                    class: TEXTAREA_STYLE,
+                                    placeholder: "Enter a description for the template",
+                                    oninput: move |e| description.set(e.value()),
+                                    value: "{description}",
+                                    onblur: validate_description,
                                 }
                             }
                             div { class: "mb-6",
@@ -105,7 +190,7 @@ pub fn TemplateNew() -> Element {
                     }
                 }
                 div { class: "w-128 p-4 rounded border border-neutral-200 dark:border-neutral-700 mr-4",
-                    h2 { class: "text-xl mb-4", "Template status" }
+                    h2 { class: "text-xl mb-4", "New template status" }
                     AddTemplateStatusSidebar { status: status.clone() }
                 }
             }
@@ -118,10 +203,10 @@ fn AddTemplateStatusSidebar(status: Signal<HashMap<String, Option<(bool, String)
     #[rustfmt::skip]
     let keys = vec![
         ("Name",         "name",        "fa-solid fa-signature"),
-        ("Description",  "description", "fa-solid fa-file-lines"),
         ("Repo URL",     "repo",        "fa-solid fa-link"),
         ("Branch",       "branch",      "fa-solid fa-code-branch"),
         ("Subdirectory", "subdir",      "fa-solid fa-folder"),
+        ("Description",  "description", "fa-solid fa-file-lines"),
     ];
 
     rsx! {
@@ -136,7 +221,7 @@ fn AddTemplateStatusSidebar(status: Signal<HashMap<String, Option<(bool, String)
                         div { class: "w-3/4",
                             match status.read().get(key).cloned().flatten() {
                                 Some((true, msg)) => rsx! {
-                                    span { class: "text-green-500", "✅ {msg}" }
+                                    span { class: "text-green-500", "{msg} ✅" }
                                 },
                                 Some((false, msg)) => rsx! {
                                     span { class: "text-red-500", "💥 {msg}" }

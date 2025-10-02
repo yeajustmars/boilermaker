@@ -8,8 +8,10 @@ edition = "2021"
 # External
 color-eyre = { workspace = true }
 dioxus = { workspace = true, features = ["router"] }
+git2 = { workspace = true }
 indoc = { workspace = true }
 once_cell = { workspace = true }
+regex = { workspace = true }
 sqlx = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "sync"] }
 toml = { workspace = true }
