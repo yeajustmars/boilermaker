@@ -27,7 +27,6 @@ pub struct Add {
 }
 
 #[tracing::instrument]
-//pub async fn add(_sys_config: &toml::Value, app_state: &AppState, cmd: &Add) -> Result<()> {
 pub async fn add(app_state: &AppState, cmd: &Add) -> Result<()> {
     let name = if let Some(name) = &cmd.name {
         name.to_owned()

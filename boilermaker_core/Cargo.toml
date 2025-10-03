@@ -13,9 +13,11 @@ fs_extra = { workspace = true }
 git2 = { workspace = true }
 lazy_static = { workspace = true }
 minijinja = { workspace = true }
+regex = { workspace = true }
 serde = { workspace = true }
 sqlx = { workspace = true }
 tabled = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
 toml = { workspace = true }
 tracing = { workspace = true }
 tracing-error = { workspace = true }
