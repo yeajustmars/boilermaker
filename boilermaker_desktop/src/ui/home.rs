@@ -51,7 +51,7 @@ pub fn Home() -> Element {
                         rsx! {
                             div { class: "py-4 text-neutral-500 dark:text-neutral-200",
                                 "No templates found. "
-                                Link { class: LINK_STYLE, to: Route::TemplateNew {}, "Add some templates to get started!" }
+                                Link { class: LINK_STYLE, to: Route::TemplateAdd {}, "Add some templates to get started!" }
                             }
                         }
                     } else {

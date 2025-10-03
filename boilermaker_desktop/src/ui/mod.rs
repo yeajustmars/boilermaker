@@ -1,5 +1,5 @@
 mod home;
-mod template_new;
+mod template_add;
 
 pub use home::Home;
-pub use template_new::TemplateNew;
+pub use template_add::TemplateAdd;

@@ -2,7 +2,7 @@ use color_eyre::eyre::Result;
 use dioxus::prelude::*;
 
 mod ui;
-use ui::{Home, TemplateNew};
+use ui::{Home, TemplateAdd};
 
 use boilermaker_desktop::init_app_state;
 
@@ -25,7 +25,7 @@ enum Route {
         #[route("/templates")]
         Templates {},
         #[route("/templates/new")]
-        TemplateNew {},
+        TemplateAdd {},
         #[route("/get-involved")]
         GetInvolved {},
 }
@@ -139,9 +139,9 @@ fn MainNavDropdownMenu() -> Element {
                 }
                 Link {
                     class: INDENTED_DROPDOWN_LINK_STYLE,
-                    to: Route::TemplateNew {},
+                    to: Route::TemplateAdd {},
                     i { class: "fa-solid fa-plus" }
-                    span { class: "ml-2", "New Template" }
+                    span { class: "ml-2", "Add Template" }
                 }
                 Link { class: DROPDOWN_LINK_STYLE, to: Route::Docs {},
                     i { class: "fa-solid fa-file-code" }

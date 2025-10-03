@@ -5,9 +5,12 @@ use clap::{Parser, Subcommand};
 use color_eyre::eyre::Result;
 use tracing::warn;
 
-use boilermaker_boil::{AppState, commands, logging};
-use boilermaker_core::config::{get_system_config, DEFAULT_LOCAL_CACHE_PATH, DEFAULT_LOCAL_CACHE_PATH_STRING};
-use boilermaker_core::db::LocalCache;
+use boilermaker_boil::{commands, logging};
+use boilermaker_core::{
+    config::{get_system_config, DEFAULT_LOCAL_CACHE_PATH_STRING}, 
+    db::LocalCache,
+    state::AppState
+};
 
 //TODO: 1. [ ] add custom macro for logging to reduce icon/symbol duplication, etc (possibly just a function?)
 //TODO: 2. [ ] add ability to use YAML for config files as well as TOML

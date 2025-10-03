@@ -1,21 +1,28 @@
+use core::error;
 use std::collections::HashMap;
 
 use dioxus::prelude::*;
 use git2;
-use tokio::runtime::Runtime;
+use tokio::time::{sleep, Duration};
 
 use boilermaker_boil::commands::add::{add, Add}; // TODO: move actual cmds to Core
 use boilermaker_core::constants::{BRANCH_PATTERN, SUBDIR_PATTERN};
 use boilermaker_desktop::APP_STATE;
-use boilermaker_views::{BTN_CREATE_STYLE, INPUT_STYLE, LABEL_STYLE, TEXTAREA_STYLE};
+use boilermaker_views::{BTN_CREATE_STYLE, INPUT_STYLE, LABEL_STYLE, PRELOADER, TEXTAREA_STYLE};
 
 type SignalStringType = Signal<String>;
 type StatusHashType = HashMap<String, Option<(bool, String)>>;
 type StatusSignalType = Signal<StatusHashType>;
 
+enum ResultMessage {
+    None,
+    Error(String),
+    Success(String),
+}
+
 // TODO: add select to choose whether to overwrite
 #[component]
-pub fn TemplateNew() -> Element {
+pub fn TemplateAdd() -> Element {
     let mut template = use_signal(|| String::new());
     let mut branch = use_signal(|| String::new());
     let mut subdir = use_signal(|| String::new());
@@ -23,17 +30,73 @@ pub fn TemplateNew() -> Element {
     let mut name = use_signal(|| String::new());
     let mut description = use_signal(|| String::new());
     let mut status = use_signal(|| HashMap::<String, Option<(bool, String)>>::new());
+    let mut processing = use_signal(|| false);
+    let mut result_message = use_signal(|| ResultMessage::None);
 
     rsx! {
         document::Title { "Create New Template - Boilermaker" }
 
-        div { class: "py-4 px-2",
+        div { class: "py-4 px-2 relative h-screen w-screen",
             h1 { class: "text-2xl mb-4 px-4", "Add a new template" }
+
+            if *processing.read() {
+                div { class: "absolute w-full h-full top-0 left-0 right-0 bottom-0 bg-black bg-opacity-75 z-50",
+                    div { class: "fixed inset-0 flex items-center justify-center",
+                        div { class: "text-center text-neutral-400 text-2xl",
+                            div {
+                                img { class: "", src: PRELOADER }
+                                "Processing..."
+                            }
+                        }
+                    }
+                }
+            }
+
+            match &*result_message.read() {
+                ResultMessage::None => rsx! {},
+                ResultMessage::Error(msg) => rsx! {
+                    div { class: "absolute w-full h-full top-0 left-0 right-0 bottom-0 bg-black bg-opacity-75 z-50",
+                        div { class: "fixed inset-0 flex items-center justify-center",
+                            div { class: "text-center text-red-400 text-2xl", "{msg}" }
+                        }
+                    }
+                },
+                ResultMessage::Success(msg) => rsx! {
+                    div { class: "absolute w-full h-full top-0 left-0 right-0 bottom-0 bg-black bg-opacity-75 z-50",
+                        div { class: "fixed inset-0 flex items-center justify-center",
+                            div { class: "text-center text-green-400 text-2xl", "{msg}" }
+                        }
+                    }
+                },
+            }
 
             div { class: "p-0 flex",
                 div { class: "flex-grow p-4 rounded",
                     div { class: "p-0",
-                        form { class: "p-4", onsubmit: add_template,
+                        form {
+                            class: "p-4",
+                            onsubmit: move |e| async move {
+                                e.prevent_default();
+                                processing.set(true);
+                                let app_state = APP_STATE.get().expect("APP_STATE not initialized");
+                                let add_args = e.to_add();
+                                sleep(Duration::from_secs(3)).await;
+                                match add(&app_state, &add_args).await {
+                                    Ok(_) => {
+                                        result_message
+                                            .set(
+                                                ResultMessage::Success(
+                                                    "Template added successfully!".to_string(),
+                                                ),
+                                            )
+                                    }
+                                    Err(err) => {
+                                        result_message
+                                            .set(ResultMessage::Error(format!("Error adding template: {}", err)))
+                                    }
+                                }
+                                processing.set(false);
+                            },
                             div { class: "mb-4",
                                 label { class: LABEL_STYLE,
                                     i { class: "fa-solid fa-link" }
@@ -270,15 +333,19 @@ pub fn validate_description(
     set_status(status, "description", true, "is valid");
 }
 
+/*
 pub fn add_template(e: Event<FormData>) {
     e.prevent_default();
     let add_args = e.to_add();
 
     let rt = Runtime::new().unwrap();
-    let result = rt.block_on(async { add(APP_STATE, add_args).await });
+    let app_state = APP_STATE.get().expect("APP_STATE not initialized");
+    let result = rt.block_on(async { add(&app_state, &add_args).await });
     println!("FormData: {:?}", e);
     println!("Add Args: {:?}", add_args);
+    println!("Add Result: {:?}", result);
 }
+ */
 
 trait AsOption {
     fn as_option(&self) -> Option<String>;
