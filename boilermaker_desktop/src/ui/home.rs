@@ -1,9 +1,11 @@
-use dioxus::{html::table, prelude::*};
+use dioxus::prelude::*;
 use tracing::error;
 
 use boilermaker_core::db::ListTemplateOptions;
 use boilermaker_desktop::APP_STATE;
-use boilermaker_views::{Echo, BTN_DELETE_STYLE, BTN_EDIT_STYLE, TD_STYLE, TH_STYLE};
+use boilermaker_views::{Echo, BTN_DELETE_STYLE, BTN_EDIT_STYLE, LINK_STYLE, TD_STYLE, TH_STYLE};
+
+use crate::Route;
 
 #[component]
 pub fn Home() -> Element {
@@ -31,6 +33,7 @@ pub fn Home() -> Element {
 
     rsx! {
         document::Title { "Boilermaker" }
+
         div { class: "py-4 px-2",
             h1 { class: "text-2xl text-neutral-500", "Latest Boilermaker Templates" }
 
@@ -46,7 +49,10 @@ pub fn Home() -> Element {
                     let templates = signal_value.as_ref().unwrap();
                     if templates.is_empty() {
                         rsx! {
-                            div { "No templates found. Add some templates to get started!" }
+                            div { class: "py-4 text-neutral-500 dark:text-neutral-200",
+                                "No templates found. "
+                                Link { class: LINK_STYLE, to: Route::TemplateNew {}, "Add some templates to get started!" }
+                            }
                         }
                     } else {
                         rsx! {

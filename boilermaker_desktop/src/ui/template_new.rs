@@ -2,32 +2,34 @@ use std::collections::HashMap;
 
 use dioxus::prelude::*;
 use git2;
-
-use boilermaker_views::{BTN_CREATE_STYLE, INPUT_STYLE, LABEL_STYLE, TEXTAREA_STYLE};
 use regex::Regex;
 
+use boilermaker_boil::commands::add::{add, Add};
+use boilermaker_views::{BTN_CREATE_STYLE, INPUT_STYLE, LABEL_STYLE, TEXTAREA_STYLE};
+
+// TODO: add select to choose whether to overwrite
 #[component]
 pub fn TemplateNew() -> Element {
     let mut name = use_signal(|| String::new());
-    let mut description = use_signal(|| String::new());
+    let mut lang = use_signal(|| String::new());
     let mut repo = use_signal(|| String::new());
     let mut branch = use_signal(|| String::new());
     let mut subdir = use_signal(|| String::new());
+    let mut description = use_signal(|| String::new());
     let mut status = use_signal(|| HashMap::<String, Option<(bool, String)>>::new());
 
     // TODO: move to common, reusable location
     let validate_name = move |_event| {
-        let name_val = name.read().trim().to_string();
-        if !name_val.is_empty() {
-            status
-                .write()
-                .insert("name".to_string(), Some((true, "is valid".to_string())));
-        } else {
-            status.write().insert(
-                "name".to_string(),
-                Some((false, "Name is required".to_string())),
-            );
-        }
+        status
+            .write()
+            .insert("name".to_string(), Some((true, "is valid".to_string())));
+    };
+
+    // TODO: move to common, reusable location
+    let validate_lang = move |_event| {
+        status
+            .write()
+            .insert("lang".to_string(), Some((true, "is valid".to_string())));
     };
 
     // TODO: check that the repo is able to be cloned
@@ -120,11 +122,51 @@ pub fn TemplateNew() -> Element {
             div { class: "p-0 flex",
                 div { class: "flex-grow p-4 rounded",
                     div { class: "p-0",
-                        form { class: "p-4",
+                        form {
+                            class: "p-4",
+                            onsubmit: move |e| {
+                                e.prevent_default();
+                                let add_cmd = Add {
+                                    template: repo.read().trim().to_string(),
+                                    name: if name.read().trim().is_empty() {
+                                        None
+                                    } else {
+                                        Some(name.read().trim().to_string())
+                                    },
+                                    lang: None,
+                                    branch: if branch.read().trim().is_empty() {
+                                        None
+                                    } else {
+                                        Some(branch.read().trim().to_string())
+                                    },
+                                    subdir: if subdir.read().trim().is_empty() {
+                                        None
+                                    } else {
+                                        Some(subdir.read().trim().to_string())
+                                    },
+                                    overwrite: true,
+                                };
+                                println!("Add command: {:?}", add_cmd);
+                            },
+                            div { class: "mb-4",
+                                label { class: LABEL_STYLE,
+                                    i { class: "fa-solid fa-link" }
+                                    span { class: "ml-2", "Template Repo URL" }
+                                }
+                                input {
+                                    name: "repo",
+                                    r#type: "text",
+                                    class: INPUT_STYLE,
+                                    placeholder: "e.g. https://github.com/yeajustmars/boilermaker",
+                                    oninput: move |e| repo.set(e.value()),
+                                    value: "{repo}",
+                                    onblur: validate_repo,
+                                }
+                            }
                             div { class: "mb-4",
                                 label { class: LABEL_STYLE,
                                     i { class: "fa-solid fa-signature" }
-                                    span { class: "ml-2", "Template Name" }
+                                    span { class: "ml-2", "Template Name (optional)" }
                                 }
                                 input {
                                     name: "name",
@@ -137,19 +179,25 @@ pub fn TemplateNew() -> Element {
                                 }
                             }
                             div { class: "mb-4",
-                                label { class: LABEL_STYLE, "Template Repo URL" }
+                                label { class: LABEL_STYLE,
+                                    i { class: "fa-solid fa-language" }
+                                    span { class: "ml-2", "Template Language (optional)" }
+                                }
                                 input {
-                                    name: "repo",
+                                    name: "lang",
                                     r#type: "text",
                                     class: INPUT_STYLE,
-                                    placeholder: "e.g. https://github.com/yeajustmars/boilermaker",
-                                    oninput: move |e| repo.set(e.value()),
-                                    value: "{repo}",
-                                    onblur: validate_repo,
+                                    placeholder: "Enter template language",
+                                    oninput: move |e| lang.set(e.value()),
+                                    value: "{lang}",
+                                    onblur: validate_lang,
                                 }
                             }
                             div { class: "mb-4",
-                                label { class: LABEL_STYLE, "Git Repo Branch (optional)" }
+                                label { class: LABEL_STYLE,
+                                    i { class: "fa-solid fa-code-branch" }
+                                    span { class: "ml-2", "Git Repo Branch (optional)" }
+                                }
                                 input {
                                     name: "branch",
                                     r#type: "text",
@@ -161,7 +209,10 @@ pub fn TemplateNew() -> Element {
                                 }
                             }
                             div { class: "mb-4",
-                                label { class: LABEL_STYLE, "Git Repo Subdirectory (optional)" }
+                                label { class: LABEL_STYLE,
+                                    i { class: "fa-solid fa-folder" }
+                                    span { class: "ml-2", "Git Repo Subdirectory (optional)" }
+                                }
                                 input {
                                     name: "subdir",
                                     r#type: "text",
@@ -173,7 +224,10 @@ pub fn TemplateNew() -> Element {
                                 }
                             }
                             div { class: "mb-4",
-                                label { class: LABEL_STYLE, "Template Description (optional))" }
+                                label { class: LABEL_STYLE,
+                                    i { class: "fa-solid fa-file-lines" }
+                                    span { class: "ml-2", "Template Description (optional))" }
+                                }
                                 textarea {
                                     name: "description",
                                     class: TEXTAREA_STYLE,
@@ -189,7 +243,7 @@ pub fn TemplateNew() -> Element {
                         }
                     }
                 }
-                div { class: "w-128 p-4 rounded border border-neutral-200 dark:border-neutral-700 mr-4",
+                div { class: "w-128 p-4 rounded border border-neutral-200 dark:border-neutral-800 mr-4",
                     h2 { class: "text-xl mb-4", "New template status" }
                     AddTemplateStatusSidebar { status: status.clone() }
                 }
@@ -202,8 +256,9 @@ pub fn TemplateNew() -> Element {
 fn AddTemplateStatusSidebar(status: Signal<HashMap<String, Option<(bool, String)>>>) -> Element {
     #[rustfmt::skip]
     let keys = vec![
-        ("Name",         "name",        "fa-solid fa-signature"),
         ("Repo URL",     "repo",        "fa-solid fa-link"),
+        ("Name",         "name",        "fa-solid fa-signature"),
+        ("Lang",         "lang",        "fa-solid fa-language"),
         ("Branch",       "branch",      "fa-solid fa-code-branch"),
         ("Subdirectory", "subdir",      "fa-solid fa-folder"),
         ("Description",  "description", "fa-solid fa-file-lines"),

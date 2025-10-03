@@ -19,6 +19,7 @@ tracing = { workspace = true }
 
 # Internal
 boilermaker_api = { workspace = true }
+boilermaker_boil = { workspace = true }
 boilermaker_core = { workspace = true }
 boilermaker_views = { workspace = true }
 

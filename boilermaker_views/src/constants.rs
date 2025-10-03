@@ -26,5 +26,5 @@ pub const INDENTED_DROPDOWN_LINK_STYLE: &str =
 
 pub const LABEL_STYLE: &str = "block text-sm font-bold mb-2";
 pub const INPUT_STYLE: &str =
-    "w-full p-2 border border-neutral-200 dark:border-neutral-400 dark:border-neutral-700 rounded";
-pub const TEXTAREA_STYLE: &str = "w-full p-2 border border-neutral-200 dark:border-neutral-400 dark:border-neutral-700 rounded h-24";
+    "w-full p-2 border border-neutral-200 dark:border-neutral-400 dark:border-neutral-800 rounded";
+pub const TEXTAREA_STYLE: &str = "w-full p-2 border border-neutral-200 dark:border-neutral-400 dark:border-neutral-800 rounded h-24";

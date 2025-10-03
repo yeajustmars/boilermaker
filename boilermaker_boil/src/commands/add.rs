@@ -27,29 +27,6 @@ pub struct Add {
 }
 
 #[tracing::instrument]
-async fn add_template_to_cache(app_state: &AppState, row: TemplateRow) -> Result<i64> {
-    let cache = app_state
-        .template_db
-        .write()
-        .map_err(|e| eyre!("💥 Failed to acquire write lock: {}", e))?;
-
-    if !cache.template_table_exists().await? {
-        cache.create_template_table().await?;
-    }
-
-    if let Some(existing_template) = cache.check_unique(&row).await? {
-        return Err(eyre!(
-            "💥 Template with the same name/lang/repo already exists: {:?}.",
-            existing_template
-        ));
-    }
-
-    let new_id = cache.create_template(row).await?;
-
-    Ok(new_id)
-}
-
-#[tracing::instrument]
 //pub async fn add(_sys_config: &toml::Value, app_state: &AppState, cmd: &Add) -> Result<()> {
 pub async fn add(app_state: &AppState, cmd: &Add) -> Result<()> {
     let name = if let Some(name) = &cmd.name {
@@ -115,4 +92,27 @@ impl From<&Add> for CloneContext {
             dest: Some(make_tmp_dir_from_url(&cmd.template)),
         }
     }
+}
+
+#[tracing::instrument]
+async fn add_template_to_cache(app_state: &AppState, row: TemplateRow) -> Result<i64> {
+    let cache = app_state
+        .template_db
+        .write()
+        .map_err(|e| eyre!("💥 Failed to acquire write lock: {}", e))?;
+
+    if !cache.template_table_exists().await? {
+        cache.create_template_table().await?;
+    }
+
+    if let Some(existing_template) = cache.check_unique(&row).await? {
+        return Err(eyre!(
+            "💥 Template with the same name/lang/repo already exists: {:?}.",
+            existing_template
+        ));
+    }
+
+    let new_id = cache.create_template(row).await?;
+
+    Ok(new_id)
 }
