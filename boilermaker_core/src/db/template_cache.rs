@@ -150,10 +150,11 @@ impl TemplateDb for LocalCache {
         Ok(results)
     }
 
+    // TODO: add options for ordering, pagination, filtering, etc
     #[tracing::instrument]
     async fn list_templates(
         &self,
-        opts: Option<ListTemplateOptions>,
+        _opts: Option<ListTemplateOptions>,
     ) -> Result<Vec<TemplateResult>> {
         let results = sqlx::query_as::<_, TemplateResult>(
             r#"

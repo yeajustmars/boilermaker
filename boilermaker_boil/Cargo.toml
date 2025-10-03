@@ -29,3 +29,7 @@ walkdir = { workspace = true }
 
 # Internal
 boilermaker_core = { workspace = true }
+
+[[bin]]
+name = "boil"
+path = "src/main.rs"
