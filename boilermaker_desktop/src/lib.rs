@@ -37,7 +37,24 @@ pub fn init_app_state() -> Result<()> {
                     .await
                     .expect("Failed to initialize local cache"),
             ));
+
+            if !template_db
+                .read()
+                .unwrap()
+                .template_table_exists()
+                .await
+                .unwrap_or(false)
+            {
+                template_db
+                    .write()
+                    .unwrap()
+                    .create_template_table()
+                    .await
+                    .map_err(|e| eyre!("Failed to create template table: {}", e))?;
+            }
+
             let sys_config = get_system_config(None).expect("Failed to load system config");
+
             let app_state = AppState {
                 template_db,
                 sys_config,

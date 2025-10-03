@@ -1,4 +1,4 @@
-use dioxus::prelude::*;
+use dioxus::{html::table, prelude::*};
 use tracing::error;
 
 use boilermaker_core::db::ListTemplateOptions;
