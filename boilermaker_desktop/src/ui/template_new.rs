@@ -244,7 +244,7 @@ pub fn TemplateNew() -> Element {
                     }
                 }
                 div { class: "w-128 p-4 rounded border border-neutral-200 dark:border-neutral-800 mr-4",
-                    h2 { class: "text-xl mb-4", "New template status" }
+                    h2 { class: "text-xl mb-4", "Status" }
                     AddTemplateStatusSidebar { status: status.clone() }
                 }
             }
