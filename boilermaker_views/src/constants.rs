@@ -14,11 +14,12 @@ pub const LINK_STYLE: &str = "text-blue-400 px-1";
 
 pub const BTN_CREATE_STYLE: &str = "bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded";
 pub const BTN_EDIT_STYLE: &str =
-    "bg-neutral-300 hover:bg-blue-700 dark:bg-neutral-700 text-white py-1 px-2 rounded";
+    "bg-neutral-300 hover:bg-blue-500 dark:bg-neutral-700 text-white py-1 px-2 rounded";
 pub const BTN_DELETE_STYLE: &str =
     "bg-neutral-300 hover:bg-red-700 dark:bg-neutral-700 text-white py-1 px-2 rounded";
 
 pub const TH_STYLE: &str = "p-2 text-left text-blue-400";
+pub const TH_MUTED_STYLE: &str = "p-2 text-left text-neutral-400";
 pub const TD_STYLE: &str = "p-2 border-b border-b-neutral-700";
 
 pub const DROPDOWN_LINK_STYLE: &str =

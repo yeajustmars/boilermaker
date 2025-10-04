@@ -1,9 +1,11 @@
-use dioxus::{html::i, prelude::*};
+use dioxus::prelude::*;
 use tracing::error;
 
 use boilermaker_core::db::ListTemplateOptions;
 use boilermaker_desktop::APP_STATE;
-use boilermaker_views::{Echo, BTN_DELETE_STYLE, BTN_EDIT_STYLE, LINK_STYLE, TD_STYLE, TH_STYLE};
+use boilermaker_views::{
+    BTN_DELETE_STYLE, BTN_EDIT_STYLE, LINK_STYLE, TD_STYLE, TH_MUTED_STYLE, TH_STYLE,
+};
 
 use crate::Route;
 
@@ -64,7 +66,7 @@ pub fn Home() -> Element {
                                         th { class: TH_STYLE, "Language" }
                                         th { class: TH_STYLE, "Repo" }
                                         th { class: TH_STYLE, "Subdirectory" }
-                                        th { class: TH_STYLE, "Actions" }
+                                        th { class: TH_MUTED_STYLE, "Actions" }
                                     }
                                 }
                                 tbody {
@@ -85,10 +87,14 @@ pub fn Home() -> Element {
                                             td { class: TD_STYLE,
                                                 div { class: "flex gap-2",
                                                     // TODO: Add global fn for creating buttons
-                                                    button { class: BTN_EDIT_STYLE,
+                                                    button {
+                                                        class: BTN_EDIT_STYLE,
+                                                        "aria-label": "Edit Template",
                                                         i { class: "fas fa-edit" }
                                                     }
-                                                    button { class: BTN_DELETE_STYLE,
+                                                    button {
+                                                        class: BTN_DELETE_STYLE,
+                                                        "aria-label": "Delete Template",
                                                         i { class: "fas fa-trash" }
                                                     }
                                                 }
@@ -102,6 +108,5 @@ pub fn Home() -> Element {
                 }
             }
         }
-        Echo {}
     }
 }
