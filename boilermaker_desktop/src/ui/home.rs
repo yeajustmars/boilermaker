@@ -1,4 +1,4 @@
-use dioxus::prelude::*;
+use dioxus::{html::i, prelude::*};
 use tracing::error;
 
 use boilermaker_core::db::ListTemplateOptions;
@@ -85,8 +85,12 @@ pub fn Home() -> Element {
                                             td { class: TD_STYLE,
                                                 div { class: "flex gap-2",
                                                     // TODO: Add global fn for creating buttons
-                                                    button { class: BTN_EDIT_STYLE, "Edit" }
-                                                    button { class: BTN_DELETE_STYLE, "Delete" }
+                                                    button { class: BTN_EDIT_STYLE,
+                                                        i { class: "fas fa-edit" }
+                                                    }
+                                                    button { class: BTN_DELETE_STYLE,
+                                                        i { class: "fas fa-trash" }
+                                                    }
                                                 }
                                             }
                                         }

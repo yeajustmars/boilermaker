@@ -10,8 +10,8 @@ use boilermaker_desktop::APP_STATE;
 use boilermaker_views::{BTN_CREATE_STYLE, INPUT_STYLE, LABEL_STYLE, PRELOADER, TEXTAREA_STYLE};
 
 type SignalStringType = Signal<String>;
-type StatusHashType = HashMap<String, Option<(bool, String)>>;
-type StatusSignalType = Signal<StatusHashType>;
+type StatusHashMapType = HashMap<String, Option<(bool, String)>>;
+type StatusSignalType = Signal<StatusHashMapType>;
 
 enum ResultMessage {
     None,
@@ -28,7 +28,7 @@ pub fn TemplateAdd() -> Element {
     let mut lang = use_signal(|| String::new());
     let mut name = use_signal(|| String::new());
     let mut description = use_signal(|| String::new());
-    let mut status = use_signal(|| HashMap::<String, Option<(bool, String)>>::new());
+    let mut status = use_signal(|| StatusHashMapType::new());
     let mut processing = use_signal(|| false);
     let mut result_message = use_signal(|| ResultMessage::None);
 
@@ -51,22 +51,16 @@ pub fn TemplateAdd() -> Element {
                 }
             }
 
-            match &*result_message.read() {
-                ResultMessage::None => rsx! {},
-                ResultMessage::Error(msg) => rsx! {
-                    div { class: "absolute w-full h-full top-0 left-0 right-0 bottom-0 bg-black bg-opacity-75 z-50",
-                        div { class: "fixed inset-0 flex items-center justify-center",
-                            div { class: "text-center text-red-400 text-2xl", "{msg}" }
-                        }
-                    }
-                },
-                ResultMessage::Success(msg) => rsx! {
-                    div { class: "absolute w-full h-full top-0 left-0 right-0 bottom-0 bg-black bg-opacity-75 z-50",
-                        div { class: "fixed inset-0 flex items-center justify-center",
-                            div { class: "text-center text-green-400 text-2xl", "{msg}" }
-                        }
-                    }
-                },
+            div { class: "py-2 px-4 text-left",
+                match &*result_message.read() {
+                    ResultMessage::None => rsx! {},
+                    ResultMessage::Error(msg) => rsx! {
+                        div { class: "text-center text-red-400 text-lg", "{msg}" }
+                    },
+                    ResultMessage::Success(msg) => rsx! {
+                        div { class: "text-center text-green-400 text-2xl", "{msg}" }
+                    },
+                }
             }
 
             div { class: "p-0 flex",
@@ -108,7 +102,7 @@ pub fn TemplateAdd() -> Element {
                                     placeholder: "e.g. https://github.com/yeajustmars/boilermaker",
                                     oninput: move |e| template.set(e.value()),
                                     value: "{template}",
-                                    onblur: move |e| validate_template(e, &template, &mut status),
+                                    onblur: move |e| async move { validate_template(e, &template, &mut status) },
                                 }
                             }
                             div { class: "mb-4",
@@ -276,13 +270,18 @@ pub fn validate_template(
     let tpl_val = sigval(signal);
 
     if tpl_val.is_empty() {
-        set_status(status, "repo", false, "Repo URL is required");
+        set_status(status, "template", false, "Repo URL is required");
         return;
     }
 
     let remote = git2::Remote::create_detached(tpl_val.clone());
     if let Err(e) = remote {
-        set_status(status, "repo", false, &format!("Invalid repo URL: {}", e));
+        set_status(
+            status,
+            "template",
+            false,
+            &format!("Invalid repo URL: {}", e),
+        );
         return;
     }
 
@@ -290,12 +289,17 @@ pub fn validate_template(
     match remote.connect(git2::Direction::Fetch) {
         Ok(_) => {}
         Err(e) => {
-            set_status(status, "repo", false, &format!("Invalid repo URL: {}", e));
+            set_status(
+                status,
+                "template",
+                false,
+                &format!("Invalid repo URL: {}", e),
+            );
             return;
         }
     }
 
-    set_status(status, "repo", true, "is valid");
+    set_status(status, "template", true, "is valid");
 }
 
 pub fn validate_branch(
