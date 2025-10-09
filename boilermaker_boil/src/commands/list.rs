@@ -14,14 +14,12 @@ pub struct List {
 }
 
 pub async fn list(app_state: &AppState, _cmd: &List) -> Result<()> {
-    let result = {
-        let cache = app_state
-            .template_db
-            .write()
-            .map_err(|e| eyre!("Failed to acquire write lock: {}", e))?;
+    let cache = app_state
+        .template_db
+        .write()
+        .map_err(|e| eyre!("Failed to acquire write lock: {}", e))?;
 
-        cache.list_templates(None).await?
-    };
+    let result = cache.list_templates(None).await?;
 
     let rows = result
         .into_iter()

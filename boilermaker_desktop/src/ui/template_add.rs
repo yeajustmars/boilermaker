@@ -336,20 +336,6 @@ pub fn validate_description(
     set_status(status, "description", true, "is valid");
 }
 
-/*
-pub fn add_template(e: Event<FormData>) {
-    e.prevent_default();
-    let add_args = e.to_add();
-
-    let rt = Runtime::new().unwrap();
-    let app_state = APP_STATE.get().expect("APP_STATE not initialized");
-    let result = rt.block_on(async { add(&app_state, &add_args).await });
-    println!("FormData: {:?}", e);
-    println!("Add Args: {:?}", add_args);
-    println!("Add Result: {:?}", result);
-}
- */
-
 trait AsOption {
     fn as_option(&self) -> Option<String>;
 }

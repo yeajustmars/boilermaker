@@ -44,9 +44,9 @@ impl TemplateDb for LocalCache {
         let result = sqlx::query_as::<_, TemplateResult>(
             r#"
             SELECT *
-            FROM template 
-            WHERE 
-                name = ?1 AND 
+            FROM template
+            WHERE
+                name = ?1 AND
                 lang = ?2 AND
                 repo = ?3;
             "#,
@@ -91,8 +91,8 @@ impl TemplateDb for LocalCache {
                 name TEXT NOT NULL,
                 lang TEXT,
                 template_dir TEXT,
-                created_at TIMESTAMP NOT NULL, 
-                updated_at TIMESTAMP, 
+                created_at TIMESTAMP NOT NULL,
+                updated_at TIMESTAMP,
                 repo TEXT,
                 branch TEXT,
                 subdir TEXT,
@@ -158,8 +158,8 @@ impl TemplateDb for LocalCache {
     ) -> Result<Vec<TemplateResult>> {
         let results = sqlx::query_as::<_, TemplateResult>(
             r#"
-            SELECT * 
-            FROM template 
+            SELECT *
+            FROM template
             ORDER BY created_at DESC;
             "#,
         )
@@ -173,8 +173,8 @@ impl TemplateDb for LocalCache {
     async fn get_template(&self, id: i64) -> Result<Option<TemplateResult>> {
         let result = sqlx::query_as::<_, TemplateResult>(
             r#"
-            SELECT * 
-            FROM template 
+            SELECT *
+            FROM template
             WHERE id = ?;
             "#,
         )
