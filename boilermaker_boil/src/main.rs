@@ -7,9 +7,9 @@ use tracing::warn;
 
 use boilermaker_boil::{commands, logging};
 use boilermaker_core::{
-    config::{get_system_config, DEFAULT_LOCAL_CACHE_PATH_STRING}, 
+    config::{DEFAULT_LOCAL_CACHE_PATH_STRING, get_system_config},
     db::LocalCache,
-    state::AppState
+    state::AppState,
 };
 
 //TODO: 1. [ ] add custom macro for logging to reduce icon/symbol duplication, etc (possibly just a function?)
@@ -27,9 +27,9 @@ struct Cli {
     config: Option<PathBuf>,
 
     #[arg(
-        short = 'D', 
-        long, 
-        action = clap::ArgAction::Count, 
+        short = 'D',
+        long,
+        action = clap::ArgAction::Count,
         help = "Turn on debug logging (use -D[DDD] for more verbosity)")]
     debug: u8,
 
@@ -62,10 +62,20 @@ async fn main() -> Result<()> {
 
     // TODO: check global boilermaker config for local vs remote db option
     let app_state = AppState {
-        template_db: Arc::new(RwLock::new(LocalCache::new(DEFAULT_LOCAL_CACHE_PATH_STRING.as_str()).await?)),
+        template_db: Arc::new(RwLock::new(
+            LocalCache::new(DEFAULT_LOCAL_CACHE_PATH_STRING.as_str()).await?,
+        )),
         sys_config: get_system_config(cli.config.as_deref())?,
         log_level: cli.debug,
     };
+
+    {
+        let cache = app_state.template_db.clone();
+        let template_table_exists = cache.read().unwrap().template_table_exists().await?;
+        if !template_table_exists {
+            cache.write().unwrap().create_template_table().await?;
+        }
+    }
 
     if let Some(command) = cli.command {
         match command {
