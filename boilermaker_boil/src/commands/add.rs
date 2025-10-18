@@ -1,13 +1,12 @@
 use clap::Parser;
-use color_eyre::{Result, eyre::eyre};
+use color_eyre::{eyre::eyre, Result};
 use tracing::info;
 
 use crate::AppState;
 use boilermaker_core::db::TemplateRow;
 use boilermaker_core::template::{
-    CloneContext, clean_dir_if_overwrite, clone_repo, create_template_dir, get_lang,
-    get_template_config, install_template, make_name_from_url, make_tmp_dir_from_url,
-    remove_git_dir,
+    clean_dir_if_overwrite, clone_repo, get_lang, get_template_config, get_template_dir_path,
+    install_template, make_name_from_url, make_tmp_dir_from_url, remove_git_dir, CloneContext,
 };
 
 #[derive(Debug, Parser)]
@@ -54,11 +53,11 @@ pub async fn add(app_state: &AppState, cmd: &Add) -> Result<()> {
 
     let cnf = get_template_config(work_dir.as_path())?;
     let lang = get_lang(&cnf, &cmd.lang)?;
-    let template_dir = create_template_dir(name.as_str())?;
+    let template_dir = get_template_dir_path(&name)?;
     let row = TemplateRow {
         name,
         lang,
-        template_dir: template_dir.to_str().unwrap().to_string(),
+        template_dir: template_dir.display().to_string(),
         repo: cmd.template.to_owned(),
         branch: cmd.branch.to_owned(),
         subdir: cmd.subdir.to_owned(),
