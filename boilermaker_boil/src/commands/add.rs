@@ -62,7 +62,7 @@ pub async fn add(app_state: &AppState, cmd: &Add) -> Result<()> {
         branch: cmd.branch.to_owned(),
         subdir: cmd.subdir.to_owned(),
     };
-    let new_id = add_template_to_cache(app_state, row).await?;
+    let new_id = add_template_to_cache(app_state, row, cmd.overwrite).await?;
 
     info!("Template added with ID: {}", new_id);
 
@@ -93,7 +93,11 @@ impl From<&Add> for CloneContext {
 }
 
 #[tracing::instrument]
-async fn add_template_to_cache(app_state: &AppState, row: TemplateRow) -> Result<i64> {
+async fn add_template_to_cache(
+    app_state: &AppState,
+    row: TemplateRow,
+    overwrite: bool,
+) -> Result<i64> {
     let cache = app_state
         .template_db
         .write()
@@ -104,6 +108,9 @@ async fn add_template_to_cache(app_state: &AppState, row: TemplateRow) -> Result
     }
 
     if let Some(existing_template) = cache.check_unique(&row).await? {
+        if overwrite {
+            return Ok(existing_template.id);
+        }
         return Err(eyre!(
             "💥 Template with the same name/lang/repo already exists: {:?}.",
             existing_template
