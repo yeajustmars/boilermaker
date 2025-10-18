@@ -1,14 +1,14 @@
 use std::{collections::HashMap, env, fs, path::PathBuf};
 
-use color_eyre::{Result, eyre::eyre};
+use color_eyre::{eyre::eyre, Result};
 use dirs;
 use fs_extra::{copy_items, dir::CopyOptions};
-use git2::{FetchOptions, Repository, build::RepoBuilder};
+use git2::{build::RepoBuilder, FetchOptions, Repository};
 use minijinja;
 use walkdir::WalkDir;
 
-use crate::config::TemplateConfig;
 pub use crate::config::get_template_config;
+use crate::config::TemplateConfig;
 
 #[derive(Debug)]
 pub struct CloneContext {
@@ -129,7 +129,7 @@ pub fn create_work_dir_clean(name: &str) -> Result<PathBuf> {
 }
 
 #[tracing::instrument]
-fn make_template_dir_path(name: &str) -> Result<PathBuf> {
+pub fn get_template_dir_path(name: &str) -> Result<PathBuf> {
     let home_dir = dirs::home_dir().ok_or_else(|| eyre!("💥 Can't find home directory"))?;
     let templates_dir = home_dir.join(".boilermaker").join("templates").join(name);
     Ok(templates_dir)
@@ -137,21 +137,11 @@ fn make_template_dir_path(name: &str) -> Result<PathBuf> {
 
 #[tracing::instrument]
 pub fn create_template_dir(name: &str) -> Result<PathBuf> {
-    let template_dir = make_template_dir_path(name)?;
+    let template_dir = get_template_dir_path(name)?;
     if !template_dir.exists() {
         fs::create_dir_all(&template_dir)?;
     }
     Ok(template_dir)
-}
-
-#[tracing::instrument]
-pub fn get_template_dir(name: &str) -> Result<PathBuf> {
-    let template_dir = make_template_dir_path(name)?;
-    if !template_dir.exists() {
-        Err(eyre!("💥 Cannot find template directory for {name}"))
-    } else {
-        Ok(template_dir)
-    }
 }
 
 #[tracing::instrument]
