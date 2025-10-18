@@ -5,13 +5,13 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use color_eyre::eyre::{Error, Result, eyre};
+use color_eyre::eyre::{eyre, Error, Result};
 use dirs::home_dir;
 use lazy_static::lazy_static;
-use serde::Deserialize;
 use serde::de::{self, MapAccess, Visitor};
+use serde::Deserialize;
 use std::fmt;
-use toml::{Value, map::Map as TomlMap};
+use toml::{map::Map as TomlMap, Value};
 use tracing::{info, warn};
 
 lazy_static! {
@@ -78,6 +78,10 @@ pub fn get_system_config(config_path: Option<&Path>) -> Result<Value> {
 #[tracing::instrument]
 pub fn make_boilermaker_local_cache_path() -> Result<PathBuf> {
     let home_dir = dirs::home_dir().ok_or_else(|| eyre!("Can't find home directory"))?;
+    let local_cache_dir = home_dir.join(".boilermaker");
+
+    fs::create_dir_all(local_cache_dir)?;
+
     let local_cache_path = home_dir.join(".boilermaker").join("local_cache.db");
 
     match OpenOptions::new()
