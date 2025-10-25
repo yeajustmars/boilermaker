@@ -1,8 +1,8 @@
 use std::{collections::HashMap, path::PathBuf};
 
 use clap::Parser;
-use color_eyre::{Result, eyre::eyre};
-use tabled::{Table, Tabled, settings::Style};
+use color_eyre::{eyre::eyre, Result};
+use tabled::{settings::Style, Table, Tabled};
 use tracing::{error, info};
 
 use crate::db::{TemplateFindParams, TemplateResult};
@@ -35,7 +35,7 @@ pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
 
     info!("Creating new project: {project_name}");
 
-    let existing_templates = get_existing_templates(&app_state, &cmd).await?;
+    let existing_templates = get_existing_templates(app_state, cmd).await?;
     match existing_templates.len() {
         0 => {
             return Err(eyre!("💥 Cannot find template: {}.", cmd.name));
@@ -54,7 +54,7 @@ pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
     //TODO: clean up and refactor
     let template_base_dir = PathBuf::from(&t.template_dir);
     let template_dir = template_base_dir.join(&t.lang);
-    let _ = tpl::copy_dir(&template_dir, &work_dir).await?;
+    tpl::copy_dir(&template_dir, &work_dir).await?;
 
     let template_paths: Vec<PathBuf> = tpl::list_dir(&work_dir)
         .await?
@@ -75,18 +75,7 @@ pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
         return Err(eyre!("💥 Failed to render template files: {e}"));
     }
 
-    let out_dir = tpl::get_or_create_project_dir(&project_name, cmd.dir.as_deref()).await?;
-
-    if out_dir.exists() {
-        if cmd.overwrite {
-            tpl::clean_dir(&out_dir)?;
-        } else {
-            return Err(eyre!(
-                "💥 Output directory already exists: {}. (Use --overwrite to force.)",
-                out_dir.display()
-            ));
-        }
-    }
+    let out_dir = tpl::create_project_dir(project_name, cmd.dir.as_deref(), cmd.overwrite).await?;
 
     if let Err(e) = tpl::move_file(&work_dir, &out_dir).await {
         return Err(eyre!("💥 Failed to move project to output directory: {e}"));
