@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-cd web && dx serve
+cd boilermarker_web && dx serve

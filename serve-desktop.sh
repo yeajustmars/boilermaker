@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-cd desktop && dx serve --platform macos
+cd boilermaker_desktop && dx serve --platform macos
