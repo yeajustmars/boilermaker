@@ -8,7 +8,10 @@ use tracing_subscriber::fmt::{FmtContext, FormatEvent, FormatFields};
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::registry::LookupSpan;
 
-use boilermaker_core::util::fmt::{DEBUG_STR, ERROR_STR, INFO_STR, TRACE_STR, WARN_STR};
+//TODO: 1. [ ] add custom macro for logging to reduce icon/symbol duplication, etc (possibly just a function?)
+//TODO: 2. [ ] add ability to use YAML for config files as well as TOML
+
+use crate::util::fmt::{DEBUG_STR, ERROR_STR, INFO_STR, TRACE_STR, WARN_STR};
 
 struct DefaultFormatter;
 

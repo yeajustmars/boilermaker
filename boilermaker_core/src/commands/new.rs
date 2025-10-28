@@ -5,9 +5,9 @@ use color_eyre::{Result, eyre::eyre};
 use tabled::{Table, Tabled, settings::Style};
 use tracing::{error, info};
 
-use crate::AppState;
-use boilermaker_core::db::{TemplateFindParams, TemplateResult};
-use boilermaker_core::template as tpl;
+use crate::db::{TemplateFindParams, TemplateResult};
+use crate::state::AppState;
+use crate::template as tpl;
 
 #[derive(Debug, Parser)]
 pub struct New {

@@ -4,7 +4,7 @@ use dioxus::prelude::*;
 use git2;
 use tokio::time::{sleep, Duration};
 
-use boilermaker_boil::commands::add::{add, Add}; // TODO: move actual cmds to Core
+use boilermaker_core::commands::add::{add, Add}; // TODO: move actual cmds to Core
 use boilermaker_core::constants::{BRANCH_PATTERN, SUBDIR_PATTERN};
 use boilermaker_desktop::APP_STATE;
 use boilermaker_views::{BTN_CREATE_STYLE, INPUT_STYLE, LABEL_STYLE, PRELOADER, TEXTAREA_STYLE};

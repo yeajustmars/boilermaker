@@ -7,12 +7,14 @@ edition = "2024"
 # External
 async-trait = { workspace = true }
 chrono = { workspace = true }
+clap = { workspace = true }
 color-eyre = { workspace = true }
 dirs = { workspace = true }
 fs_extra = { workspace = true }
 git2 = { workspace = true }
 lazy_static = { workspace = true }
 minijinja = { workspace = true }
+nu-ansi-term = { workspace = true }
 regex = { workspace = true }
 serde = { workspace = true }
 sqlx = { workspace = true }

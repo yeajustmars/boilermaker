@@ -2,8 +2,8 @@ use clap::Parser;
 use color_eyre::{Result, eyre::eyre};
 use tabled::{Table, Tabled, settings::Style};
 
-use crate::AppState;
-use boilermaker_core::db::TemplateResult;
+use crate::db::TemplateResult;
+use crate::state::AppState;
 
 #[derive(Parser)]
 pub struct List {

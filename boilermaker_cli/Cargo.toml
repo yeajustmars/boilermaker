@@ -1,5 +1,5 @@
 [package]
-name = "boilermaker_boil"
+name = "boilermaker_cli"
 version = "0.1.0"
 edition = "2024"
 
@@ -14,7 +14,7 @@ fs_extra = { workspace = true }
 git2 = { workspace = true }
 lazy_static = { workspace = true }
 minijinja = { workspace = true }
-nu-ansi-term = { workspace = true }
+#nu-ansi-term = { workspace = true }
 serde = { workspace = true }
 sqlx = { workspace = true }
 tabled = { workspace = true }
