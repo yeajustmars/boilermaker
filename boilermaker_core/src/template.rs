@@ -65,16 +65,22 @@ pub fn get_lang(tpl_cnf: &TemplateConfig, option: &Option<String>) -> Result<Str
         return Ok(default_lang.clone());
     }
 
-    return Err(eyre!(
+    Err(eyre!(
         "💥 Can't find language. Pass `--lang` option or add `default_lang` to `boilermaker.toml`."
-    ));
+    ))
+}
+
+#[tracing::instrument]
+pub fn remove_dir_if_exists(dir: &PathBuf) -> Result<()> {
+    if dir.as_path().exists() {
+        fs::remove_dir_all(dir)?;
+    }
+    Ok(())
 }
 
 #[tracing::instrument]
 pub fn clean_dir(work_dir: &PathBuf) -> Result<()> {
-    if work_dir.as_path().exists() {
-        fs::remove_dir_all(work_dir)?;
-    }
+    remove_dir_if_exists(work_dir)?;
     Ok(())
 }
 
@@ -82,7 +88,7 @@ pub fn clean_dir(work_dir: &PathBuf) -> Result<()> {
 #[tracing::instrument]
 pub fn clean_dir_if_overwrite(work_dir: &PathBuf, overwrite: bool) -> Result<()> {
     if overwrite {
-        clean_dir(work_dir)?;
+        remove_dir_if_exists(work_dir)?;
     }
     Ok(())
 }

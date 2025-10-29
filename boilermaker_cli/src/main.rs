@@ -43,10 +43,10 @@ enum Commands {
     List(commands::List),
     #[command(about = "Create a new project from a template")]
     New(commands::new::New),
-    //#[command(about = "Remove a template from the local cache")]
-    // Remove(remove::Remove),
+    #[command(about = "Remove a template from the local cache")]
+    Remove(commands::Remove),
     //#[command(about = "Update an existing template in the cache")]
-    // Update(commands::update::Update),
+    //Update(commands::update::Update),
 }
 
 #[tokio::main]
@@ -80,6 +80,7 @@ async fn main() -> Result<()> {
             Commands::Add(cmd) => commands::add(&app_state, &cmd).await?,
             Commands::List(cmd) => commands::list(&app_state, &cmd).await?,
             Commands::New(cmd) => commands::new(&app_state, &cmd).await?,
+            Commands::Remove(cmd) => commands::remove(&app_state, &cmd).await?,
             // Commands::Update(cmd) => commands::update::update(&sys_config, &cmd).await?,
         }
     } else {

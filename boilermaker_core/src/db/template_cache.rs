@@ -1,5 +1,6 @@
 use color_eyre::Result;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePool};
+use tabled::Tabled;
 
 #[async_trait::async_trait]
 pub trait TemplateDb: Send + Sync {
@@ -107,8 +108,18 @@ impl TemplateDb for LocalCache {
     }
 
     #[tracing::instrument]
-    async fn delete_template(&self, _id: i64) -> Result<i64> {
-        todo!()
+    async fn delete_template(&self, id: i64) -> Result<i64> {
+        let _result = sqlx::query(
+            r#"
+            DELETE FROM template
+            WHERE id = ?;
+            "#,
+        )
+        .bind(id)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(id)
     }
 
     //TODO: add regexs, fuzzy matching, predicates, etc
@@ -240,4 +251,33 @@ pub struct ListTemplateOptions {
     pub order_by: Option<String>,
     pub limit: Option<u64>,
     pub offset: Option<u64>,
+}
+
+#[derive(Debug, Tabled)]
+pub struct DisplayableTemplateListResult {
+    pub id: i64,
+    pub name: String,
+    pub lang: String,
+    pub repo: String,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+impl DisplayableTemplateListResult {
+    pub fn to_std_row(row: TemplateResult) -> Self {
+        Self {
+            id: row.id,
+            name: row.name,
+            lang: row.lang,
+            repo: row.repo,
+            created_at: row
+                .created_at
+                .map(|v| v.to_string())
+                .unwrap_or_else(|| "-".to_string()),
+            updated_at: row
+                .updated_at
+                .map(|v| v.to_string())
+                .unwrap_or_else(|| "-".to_string()),
+        }
+    }
 }
