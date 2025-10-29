@@ -88,8 +88,8 @@ Template. This file only affects the text files under the root directory.
 ## Runtime Configuration
 
 All declared variables are available to pass as BASH-style options when creating a project from
-a Template. For example, if you have a variable `project_name` declared in your Template's
-`boilermaker.toml`, you can override its value at runtime like so:
+a Template. For example, if you have the variables `some_var` and `another_var` declared in your
+Template's `boilermaker.toml`, you can override its value at runtime like so:
 
 ```bash
 boilermaker new TEMPLATE --var some_var="Some Value" --var another_var=123
