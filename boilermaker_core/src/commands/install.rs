@@ -11,7 +11,7 @@ use crate::template::{
 };
 
 #[derive(Debug, Parser)]
-pub struct Add {
+pub struct Install {
     #[arg(required = true)]
     pub template: String,
     #[arg(short, long)]
@@ -27,14 +27,14 @@ pub struct Add {
 }
 
 #[tracing::instrument]
-pub async fn add(app_state: &AppState, cmd: &Add) -> Result<()> {
+pub async fn install(app_state: &AppState, cmd: &Install) -> Result<()> {
     let name = if let Some(name) = &cmd.name {
         name.to_owned()
     } else {
         make_name_from_url(&cmd.template)
     };
 
-    info!("Adding template: {name}");
+    info!("Installing template: {name}");
 
     let repo_ctx = CloneContext::from(cmd);
     let clone_dir = repo_ctx.dest.as_ref().unwrap();
@@ -82,9 +82,9 @@ pub async fn add(app_state: &AppState, cmd: &Add) -> Result<()> {
     Ok(())
 }
 
-impl From<&Add> for CloneContext {
+impl From<&Install> for CloneContext {
     #[tracing::instrument]
-    fn from(cmd: &Add) -> Self {
+    fn from(cmd: &Install) -> Self {
         Self {
             url: cmd.template.to_owned(),
             branch: cmd.branch.to_owned(),

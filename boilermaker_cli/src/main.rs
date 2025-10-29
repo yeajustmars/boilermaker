@@ -37,8 +37,8 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    #[command(about = "Add a template to the cache")]
-    Add(commands::Add),
+    #[command(about = "Install a template locally")]
+    Install(commands::Install),
     #[command(about = "List all templates in the local cache")]
     List(commands::List),
     #[command(about = "Create a new project from a template")]
@@ -77,7 +77,7 @@ async fn main() -> Result<()> {
 
     if let Some(command) = cli.command {
         match command {
-            Commands::Add(cmd) => commands::add(&app_state, &cmd).await?,
+            Commands::Install(cmd) => commands::install(&app_state, &cmd).await?,
             Commands::List(cmd) => commands::list(&app_state, &cmd).await?,
             Commands::New(cmd) => commands::new(&app_state, &cmd).await?,
             Commands::Remove(cmd) => commands::remove(&app_state, &cmd).await?,
