@@ -1,6 +1,7 @@
 use clap::Parser;
 use color_eyre::Result;
 use tabled::{Table, settings::Style};
+use tracing::info;
 
 use crate::db::template_cache::DisplayableTemplateListResult;
 use crate::state::AppState;
@@ -22,6 +23,12 @@ pub async fn list(app_state: &AppState, _cmd: &List) -> Result<()> {
         .into_iter()
         .map(DisplayableTemplateListResult::to_std_row)
         .collect::<Vec<_>>();
+
+    if rows.is_empty() {
+        info!("No templates found in the cache.");
+        info!("💡 Have a look at `boil install`");
+        return Ok(());
+    }
 
     let mut table = Table::new(&rows);
     table.with(Style::psql());
