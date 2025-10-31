@@ -28,7 +28,8 @@ struct Cli {
         short = 'D',
         long,
         action = clap::ArgAction::Count,
-        help = "Turn on debug logging (use -D[DDD] for more verbosity)")]
+        help = "Turn on debug logging (use -D[DDD] for more verbosity)"
+    )]
     debug: u8,
 
     #[command(subcommand)]
@@ -58,11 +59,11 @@ async fn main() -> Result<()> {
 
     logging::init_tracing(cli.debug)?;
 
+    let db_path = DEFAULT_LOCAL_CACHE_PATH_STRING.as_str();
+
     // TODO: check global boilermaker config for local vs remote db option
     let app_state = AppState {
-        template_db: Arc::new(RwLock::new(
-            LocalCache::new(DEFAULT_LOCAL_CACHE_PATH_STRING.as_str()).await?,
-        )),
+        template_db: Arc::new(RwLock::new(LocalCache::new(db_path).await?)),
         sys_config: get_system_config(cli.config.as_deref())?,
         log_level: cli.debug,
     };
