@@ -99,10 +99,7 @@ async fn add_template_to_cache(
     row: TemplateRow,
     overwrite: bool,
 ) -> Result<i64> {
-    let cache = app_state
-        .template_db
-        .write()
-        .map_err(|e| eyre!("💥 Failed to acquire write lock: {}", e))?;
+    let cache = app_state.template_db.clone();
 
     if !cache.template_table_exists().await? {
         cache.create_template_table().await?;

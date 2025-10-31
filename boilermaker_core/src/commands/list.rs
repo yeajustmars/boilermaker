@@ -1,5 +1,5 @@
 use clap::Parser;
-use color_eyre::{Result, eyre::eyre};
+use color_eyre::Result;
 use tabled::{Table, settings::Style};
 
 use crate::db::template_cache::DisplayableTemplateListResult;
@@ -14,10 +14,7 @@ pub struct List {
 }
 
 pub async fn list(app_state: &AppState, _cmd: &List) -> Result<()> {
-    let cache = app_state
-        .template_db
-        .write()
-        .map_err(|e| eyre!("Failed to acquire write lock: {}", e))?;
+    let cache = app_state.template_db.clone();
 
     let result = cache.list_templates(None).await?;
 

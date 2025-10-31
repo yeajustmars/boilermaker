@@ -1,10 +1,9 @@
 use std::collections::HashMap;
 
 use dioxus::prelude::*;
-use git2;
 use tokio::time::{sleep, Duration};
 
-use boilermaker_core::commands::add::{add, Add}; // TODO: move actual cmds to Core
+use boilermaker_core::commands::install::{install, Install}; // TODO: move actual cmds to Core
 use boilermaker_core::constants::{BRANCH_PATTERN, SUBDIR_PATTERN};
 use boilermaker_desktop::APP_STATE;
 use boilermaker_views::{BTN_CREATE_STYLE, INPUT_STYLE, LABEL_STYLE, PRELOADER, TEXTAREA_STYLE};
@@ -72,9 +71,9 @@ pub fn TemplateAdd() -> Element {
                                 e.prevent_default();
                                 processing.set(true);
                                 let app_state = APP_STATE.get().expect("APP_STATE not initialized");
-                                let add_args = e.to_add();
+                                let add_args = e.to_install();
                                 sleep(Duration::from_secs(3)).await;
-                                match add(&app_state, &add_args).await {
+                                match install(&app_state, &add_args).await {
                                     Ok(_) => {
                                         result_message
                                             .set(
@@ -351,12 +350,12 @@ impl AsOption for FormValue {
     }
 }
 
-trait ToAdd {
-    fn to_add(&self) -> Add;
+trait ToInstall {
+    fn to_install(&self) -> Install;
 }
 
-impl ToAdd for Event<FormData> {
-    fn to_add(&self) -> Add {
+impl ToInstall for Event<FormData> {
+    fn to_install(&self) -> Install {
         let values = &self.data.values();
         let template = values.get("template").unwrap().as_value();
         let branch = values.get("branch").unwrap().as_option();
@@ -365,7 +364,7 @@ impl ToAdd for Event<FormData> {
         let name = values.get("name").unwrap().as_option();
         //let description = values.get("description").unwrap().as_option();
 
-        Add {
+        Install {
             template,
             name,
             lang,

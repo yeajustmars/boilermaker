@@ -12,7 +12,7 @@ use crate::Route;
 #[component]
 pub fn Home() -> Element {
     let resource = use_resource(move || async move {
-        let cache = APP_STATE.get().unwrap().template_db.write().unwrap();
+        let cache = &APP_STATE.get().unwrap().template_db;
         let list_opts = Some(ListTemplateOptions {
             order_by: Some("created_at DESC, name ASC".to_string()),
             limit: Some(10),

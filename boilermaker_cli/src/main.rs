@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use clap::{Parser, Subcommand};
 use color_eyre::eyre::Result;
@@ -63,17 +63,15 @@ async fn main() -> Result<()> {
 
     // TODO: check global boilermaker config for local vs remote db option
     let app_state = AppState {
-        template_db: Arc::new(RwLock::new(LocalCache::new(db_path).await?)),
+        template_db: Arc::new(LocalCache::new(db_path).await?),
         sys_config: get_system_config(cli.config.as_deref())?,
         log_level: cli.debug,
     };
 
-    {
-        let cache = app_state.template_db.clone();
-        let template_table_exists = cache.read().unwrap().template_table_exists().await?;
-        if !template_table_exists {
-            cache.write().unwrap().create_template_table().await?;
-        }
+    let cache = app_state.template_db.clone();
+
+    if !cache.template_table_exists().await? {
+        cache.create_template_table().await?;
     }
 
     if let Some(command) = cli.command {
