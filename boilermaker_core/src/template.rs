@@ -91,15 +91,6 @@ pub fn clean_dir(dir: &PathBuf) -> Result<()> {
 
 //TODO: move to a more generic loc like util::file
 #[tracing::instrument]
-pub fn clean_dir_if_overwrite(dir: &PathBuf, overwrite: bool) -> Result<()> {
-    if overwrite {
-        remove_dir_if_exists(dir)?;
-    }
-    Ok(())
-}
-
-//TODO: move to a more generic loc like util::file
-#[tracing::instrument]
 pub fn remove_git_dir(dir: &PathBuf) -> Result<()> {
     let git_dir = dir.join(".git");
     if git_dir.exists() {
@@ -153,7 +144,7 @@ pub fn create_template_dir(name: &str) -> Result<PathBuf> {
 pub async fn install_template(src_path: &PathBuf, dest_path: &PathBuf) -> Result<()> {
     if dest_path.exists() {
         return Err(eyre!(
-            "💥 Template dir path exists: {}. (Pass --overwrite to force.)",
+            "💥 Template dir path exists: {}",
             dest_path.display()
         ));
     }

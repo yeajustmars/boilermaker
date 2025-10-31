@@ -2,6 +2,8 @@ use color_eyre::Result;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePool};
 use tabled::Tabled;
 
+use crate::util::time::timestamp_to_iso8601;
+
 #[async_trait::async_trait]
 pub trait TemplateDb: Send + Sync {
     async fn check_unique(&self, row: &TemplateRow) -> Result<Option<TemplateResult>>;
@@ -272,11 +274,11 @@ impl DisplayableTemplateListResult {
             repo: row.repo,
             created_at: row
                 .created_at
-                .map(|v| v.to_string())
+                .map(|v| timestamp_to_iso8601(v as i64))
                 .unwrap_or_else(|| "-".to_string()),
             updated_at: row
                 .updated_at
-                .map(|v| v.to_string())
+                .map(|v| timestamp_to_iso8601(v as i64))
                 .unwrap_or_else(|| "-".to_string()),
         }
     }
