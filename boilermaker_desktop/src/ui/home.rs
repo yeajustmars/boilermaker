@@ -4,7 +4,7 @@ use tracing::error;
 use boilermaker_core::db::ListTemplateOptions;
 use boilermaker_desktop::APP_STATE;
 use boilermaker_views::{
-    BTN_DELETE_STYLE, BTN_EDIT_STYLE, LINK_STYLE, TD_STYLE, TH_MUTED_STYLE, TH_STYLE,
+    BTN_BLUE_STYLE, BTN_GREEN_STYLE, BTN_RED_STYLE, LINK_STYLE, TD_STYLE, TH_MUTED_STYLE, TH_STYLE,
 };
 
 use crate::Route;
@@ -37,7 +37,7 @@ pub fn Home() -> Element {
         document::Title { "Boilermaker" }
 
         div { class: "py-4 px-2",
-            h1 { class: "text-2xl text-neutral-500", "Latest Boilermaker Templates" }
+            h1 { class: "text-2xl text-neutral-500", "My Templates" }
 
             match result_signal {
                 Err(e) => {
@@ -88,12 +88,17 @@ pub fn Home() -> Element {
                                                 div { class: "flex gap-2",
                                                     // TODO: Add global fn for creating buttons
                                                     button {
-                                                        class: BTN_EDIT_STYLE,
+                                                        class: BTN_GREEN_STYLE,
                                                         "aria-label": "Edit Template",
-                                                        i { class: "fas fa-edit" }
+                                                        i { class: "fas fa-clone" }
                                                     }
                                                     button {
-                                                        class: BTN_DELETE_STYLE,
+                                                        class: BTN_BLUE_STYLE,
+                                                        "aria-label": "Template Details",
+                                                        i { class: "fas fa-eye" }
+                                                    }
+                                                    button {
+                                                        class: BTN_RED_STYLE,
                                                         "aria-label": "Delete Template",
                                                         i { class: "fas fa-trash" }
                                                     }

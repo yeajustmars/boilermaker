@@ -72,7 +72,7 @@ pub async fn install(app_state: &AppState, cmd: &Install) -> Result<()> {
     if let Some(t) = existing_db_entry {
         if template_dir.exists() {
             error!(
-                "💥 Template with the same name/lang/repo already exists: {}/{}/{}.",
+                "💥 Template with the same name/lang/repo already exists: {}, {}, {}",
                 t.name, t.lang, t.repo
             );
             return Ok(());
