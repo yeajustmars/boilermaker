@@ -67,8 +67,6 @@ async fn main() -> Result<()> {
         sys_config: get_system_config(cli.config.as_deref())?,
         log_level: cli.debug,
     };
-    println!("🔨 Boilermaker - The Project Template Manager 🔨");
-    println!("config: {:?}", app_state.sys_config);
 
     let cache = app_state.template_db.clone();
 
@@ -90,3 +88,16 @@ async fn main() -> Result<()> {
 
     Ok(())
 }
+
+/*
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    fn it_works() {
+        let result = add(2, 2);
+        assert_eq!(result, 4);
+    }
+}
+ */
