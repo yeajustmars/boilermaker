@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use clap::{Parser, Subcommand};
 use color_eyre::eyre::Result;
-use tracing::warn;
+use tracing::info;
 
 use boilermaker_core::{
     commands,
@@ -67,8 +67,6 @@ async fn main() -> Result<()> {
         sys_config: get_system_config(cli.config.as_deref())?,
         log_level: cli.debug,
     };
-    println!("🔨 Boilermaker - The Project Template Manager 🔨");
-    println!("config: {:?}", app_state.sys_config);
 
     let cache = app_state.template_db.clone();
 
@@ -85,7 +83,8 @@ async fn main() -> Result<()> {
             // Commands::Update(cmd) => commands::update::update(&sys_config, &cmd).await?,
         }
     } else {
-        warn!("❗ No command provided. Use --help for usage.");
+        println!("🔨 Boilermaker - Hopefully making project templates more sane.");
+        info!("No command provided. Use --help for usage.");
     }
 
     Ok(())

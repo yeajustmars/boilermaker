@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use dioxus::prelude::*;
-use tokio::time::{sleep, Duration};
 
 use boilermaker_core::commands::install::{install, Install};
 use boilermaker_core::constants::{BRANCH_PATTERN, SUBDIR_PATTERN};
@@ -71,7 +70,6 @@ pub fn TemplateAdd() -> Element {
                                 processing.set(true);
                                 let app_state = APP_STATE.get().expect("APP_STATE not initialized");
                                 let add_args = e.to_install();
-                                sleep(Duration::from_secs(3)).await;
                                 match install(app_state, &add_args).await {
                                     Ok(_) => {
                                         result_message
