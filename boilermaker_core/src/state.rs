@@ -1,9 +1,9 @@
 use std::fmt;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use crate::db::TemplateDb;
 
-pub type TemplateDbType = Arc<RwLock<dyn TemplateDb + Send + Sync>>;
+pub type TemplateDbType = Arc<dyn TemplateDb + Send + Sync>;
 
 pub struct AppState {
     pub template_db: TemplateDbType,

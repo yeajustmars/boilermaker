@@ -1,8 +1,8 @@
 use std::{collections::HashMap, path::PathBuf};
 
 use clap::Parser;
-use color_eyre::{eyre::eyre, Result};
-use tabled::{settings::Style, Table, Tabled};
+use color_eyre::{Result, eyre::eyre};
+use tabled::{Table, Tabled, settings::Style};
 use tracing::{error, info};
 
 use crate::db::{TemplateFindParams, TemplateResult};
@@ -96,10 +96,7 @@ async fn get_existing_templates(app_state: &AppState, cmd: &New) -> Result<Vec<T
         subdir: None,
     };
 
-    let cache = app_state
-        .template_db
-        .read()
-        .map_err(|e| eyre!("💥 Failed to acquire template_db read lock: {e}"))?;
+    let cache = app_state.template_db.clone();
 
     let existing_templates = { cache.find_templates(find_params).await? };
 

@@ -1,9 +1,9 @@
 use std::path::PathBuf;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use clap::{Parser, Subcommand};
 use color_eyre::eyre::Result;
-use tracing::warn;
+use tracing::info;
 
 use boilermaker_core::{
     commands,
@@ -28,7 +28,8 @@ struct Cli {
         short = 'D',
         long,
         action = clap::ArgAction::Count,
-        help = "Turn on debug logging (use -D[DDD] for more verbosity)")]
+        help = "Turn on debug logging (use -D[DDD] for more verbosity)"
+    )]
     debug: u8,
 
     #[command(subcommand)]
@@ -58,21 +59,19 @@ async fn main() -> Result<()> {
 
     logging::init_tracing(cli.debug)?;
 
+    let db_path = DEFAULT_LOCAL_CACHE_PATH_STRING.as_str();
+
     // TODO: check global boilermaker config for local vs remote db option
     let app_state = AppState {
-        template_db: Arc::new(RwLock::new(
-            LocalCache::new(DEFAULT_LOCAL_CACHE_PATH_STRING.as_str()).await?,
-        )),
+        template_db: Arc::new(LocalCache::new(db_path).await?),
         sys_config: get_system_config(cli.config.as_deref())?,
         log_level: cli.debug,
     };
 
-    {
-        let cache = app_state.template_db.clone();
-        let template_table_exists = cache.read().unwrap().template_table_exists().await?;
-        if !template_table_exists {
-            cache.write().unwrap().create_template_table().await?;
-        }
+    let cache = app_state.template_db.clone();
+
+    if !cache.template_table_exists().await? {
+        cache.create_template_table().await?;
     }
 
     if let Some(command) = cli.command {
@@ -84,7 +83,8 @@ async fn main() -> Result<()> {
             // Commands::Update(cmd) => commands::update::update(&sys_config, &cmd).await?,
         }
     } else {
-        warn!("❗ No command provided. Use --help for usage.");
+        println!("🔨 Boilermaker - Hopefully making project templates more sane.");
+        info!("No command provided. Use --help for usage.");
     }
 
     Ok(())

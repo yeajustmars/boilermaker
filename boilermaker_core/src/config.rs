@@ -5,13 +5,13 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use color_eyre::eyre::{eyre, Error, Result};
+use color_eyre::eyre::{Error, Result, eyre};
 use dirs::home_dir;
 use lazy_static::lazy_static;
-use serde::de::{self, MapAccess, Visitor};
 use serde::Deserialize;
+use serde::de::{self, MapAccess, Visitor};
 use std::fmt;
-use toml::{map::Map as TomlMap, Value};
+use toml::{Value, map::Map as TomlMap};
 use tracing::{info, warn};
 
 lazy_static! {

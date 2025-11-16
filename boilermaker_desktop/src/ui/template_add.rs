@@ -1,13 +1,11 @@
 use std::collections::HashMap;
 
 use dioxus::prelude::*;
-use git2;
-use tokio::time::{sleep, Duration};
 
-use boilermaker_core::commands::add::{add, Add}; // TODO: move actual cmds to Core
+use boilermaker_core::commands::install::{install, Install};
 use boilermaker_core::constants::{BRANCH_PATTERN, SUBDIR_PATTERN};
 use boilermaker_desktop::APP_STATE;
-use boilermaker_views::{BTN_CREATE_STYLE, INPUT_STYLE, LABEL_STYLE, PRELOADER, TEXTAREA_STYLE};
+use boilermaker_views::{BTN_GREEN_STYLE, INPUT_STYLE, LABEL_STYLE, PRELOADER, TEXTAREA_STYLE};
 
 type SignalStringType = Signal<String>;
 type StatusHashMapType = HashMap<String, Option<(bool, String)>>;
@@ -19,16 +17,15 @@ enum ResultMessage {
     Success(String),
 }
 
-// TODO: add select to choose whether to overwrite
 #[component]
 pub fn TemplateAdd() -> Element {
-    let mut template = use_signal(|| String::new());
-    let mut branch = use_signal(|| String::new());
-    let mut subdir = use_signal(|| String::new());
-    let mut lang = use_signal(|| String::new());
-    let mut name = use_signal(|| String::new());
-    let mut description = use_signal(|| String::new());
-    let mut status = use_signal(|| StatusHashMapType::new());
+    let mut template = use_signal(String::new);
+    let mut branch = use_signal(String::new);
+    let mut subdir = use_signal(String::new);
+    let mut lang = use_signal(String::new);
+    let mut name = use_signal(String::new);
+    let mut description = use_signal(String::new);
+    let mut status = use_signal(StatusHashMapType::new);
     let mut processing = use_signal(|| false);
     let mut result_message = use_signal(|| ResultMessage::None);
 
@@ -72,9 +69,8 @@ pub fn TemplateAdd() -> Element {
                                 e.prevent_default();
                                 processing.set(true);
                                 let app_state = APP_STATE.get().expect("APP_STATE not initialized");
-                                let add_args = e.to_add();
-                                sleep(Duration::from_secs(3)).await;
-                                match add(&app_state, &add_args).await {
+                                let add_args = e.to_install();
+                                match install(app_state, &add_args).await {
                                     Ok(_) => {
                                         result_message
                                             .set(
@@ -85,7 +81,7 @@ pub fn TemplateAdd() -> Element {
                                     }
                                     Err(err) => {
                                         result_message
-                                            .set(ResultMessage::Error(format!("Error adding template: {}", err)))
+                                            .set(ResultMessage::Error(format!("Error adding template: {err}")))
                                     }
                                 }
                                 processing.set(false);
@@ -180,14 +176,14 @@ pub fn TemplateAdd() -> Element {
                                 }
                             }
                             div { class: "mb-6",
-                                button { class: BTN_CREATE_STYLE, r#type: "submit", "Add Template" }
+                                button { class: BTN_GREEN_STYLE, r#type: "submit", "Add Template" }
                             }
                         }
                     }
                 }
                 div { class: "w-128 p-4 rounded border border-neutral-200 dark:border-neutral-800 mr-4",
                     h2 { class: "text-xl mb-4", "Status" }
-                    AddTemplateStatusSidebar { status: status.clone() }
+                    AddTemplateStatusSidebar { status: status }
                 }
             }
         }
@@ -276,12 +272,7 @@ pub fn validate_template(
 
     let remote = git2::Remote::create_detached(tpl_val.clone());
     if let Err(e) = remote {
-        set_status(
-            status,
-            "template",
-            false,
-            &format!("Invalid repo URL: {}", e),
-        );
+        set_status(status, "template", false, &format!("Invalid repo URL: {e}"));
         return;
     }
 
@@ -289,12 +280,7 @@ pub fn validate_template(
     match remote.connect(git2::Direction::Fetch) {
         Ok(_) => {}
         Err(e) => {
-            set_status(
-                status,
-                "template",
-                false,
-                &format!("Invalid repo URL: {}", e),
-            );
+            set_status(status, "template", false, &format!("Invalid repo URL: {e}"));
             return;
         }
     }
@@ -307,7 +293,7 @@ pub fn validate_branch(
     signal: &SignalStringType,
     status: &mut StatusSignalType,
 ) {
-    let branch_val = sigval(&signal);
+    let branch_val = sigval(signal);
     if branch_val.is_empty() || BRANCH_PATTERN.is_match(&branch_val) {
         set_status(status, "branch", true, "is valid");
     } else {
@@ -320,7 +306,7 @@ pub fn validate_subdir(
     signal: &SignalStringType,
     status: &mut StatusSignalType,
 ) {
-    let subdir_val = sigval(&signal);
+    let subdir_val = sigval(signal);
     if subdir_val.is_empty() || SUBDIR_PATTERN.is_match(&subdir_val) {
         set_status(status, "subdir", true, "is valid");
     } else {
@@ -351,12 +337,12 @@ impl AsOption for FormValue {
     }
 }
 
-trait ToAdd {
-    fn to_add(&self) -> Add;
+trait ToInstall {
+    fn to_install(&self) -> Install;
 }
 
-impl ToAdd for Event<FormData> {
-    fn to_add(&self) -> Add {
+impl ToInstall for Event<FormData> {
+    fn to_install(&self) -> Install {
         let values = &self.data.values();
         let template = values.get("template").unwrap().as_value();
         let branch = values.get("branch").unwrap().as_option();
@@ -365,13 +351,12 @@ impl ToAdd for Event<FormData> {
         let name = values.get("name").unwrap().as_option();
         //let description = values.get("description").unwrap().as_option();
 
-        Add {
+        Install {
             template,
             name,
             lang,
             branch,
             subdir,
-            overwrite: true,
         }
     }
 }

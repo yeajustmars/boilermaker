@@ -1,14 +1,14 @@
 use std::{collections::HashMap, env, fs, path::PathBuf};
 
-use color_eyre::{eyre::eyre, Result};
+use color_eyre::{Result, eyre::eyre};
 use dirs;
 use fs_extra::{copy_items, dir::CopyOptions};
-use git2::{build::RepoBuilder, FetchOptions, Repository};
+use git2::{FetchOptions, Repository, build::RepoBuilder};
 use minijinja;
 use walkdir::WalkDir;
 
-pub use crate::config::get_template_config;
 use crate::config::TemplateConfig;
+pub use crate::config::get_template_config;
 
 #[derive(Debug)]
 pub struct CloneContext {
@@ -71,6 +71,11 @@ pub fn get_lang(tpl_cnf: &TemplateConfig, option: &Option<String>) -> Result<Str
 }
 
 #[tracing::instrument]
+pub fn dir_exists(dir: &PathBuf) -> bool {
+    dir.as_path().exists()
+}
+
+#[tracing::instrument]
 pub fn remove_dir_if_exists(dir: &PathBuf) -> Result<()> {
     if dir.as_path().exists() {
         fs::remove_dir_all(dir)?;
@@ -79,24 +84,15 @@ pub fn remove_dir_if_exists(dir: &PathBuf) -> Result<()> {
 }
 
 #[tracing::instrument]
-pub fn clean_dir(work_dir: &PathBuf) -> Result<()> {
-    remove_dir_if_exists(work_dir)?;
+pub fn clean_dir(dir: &PathBuf) -> Result<()> {
+    remove_dir_if_exists(dir)?;
     Ok(())
 }
 
 //TODO: move to a more generic loc like util::file
 #[tracing::instrument]
-pub fn clean_dir_if_overwrite(work_dir: &PathBuf, overwrite: bool) -> Result<()> {
-    if overwrite {
-        remove_dir_if_exists(work_dir)?;
-    }
-    Ok(())
-}
-
-//TODO: move to a more generic loc like util::file
-#[tracing::instrument]
-pub fn remove_git_dir(work_dir: &PathBuf) -> Result<()> {
-    let git_dir = work_dir.join(".git");
+pub fn remove_git_dir(dir: &PathBuf) -> Result<()> {
+    let git_dir = dir.join(".git");
     if git_dir.exists() {
         fs::remove_dir_all(git_dir)?;
     }
@@ -145,30 +141,22 @@ pub fn create_template_dir(name: &str) -> Result<PathBuf> {
 }
 
 #[tracing::instrument]
-pub async fn install_template(
-    src_path: &PathBuf,
-    dest_path: &PathBuf,
-    overwrite: bool,
-) -> Result<()> {
+pub async fn install_template(src_path: &PathBuf, dest_path: &PathBuf) -> Result<()> {
     if dest_path.exists() {
-        if overwrite {
-            if let Err(e) = fs::remove_dir_all(&dest_path) {
-                return Err(eyre!("💥 Failed to remove existing output directory: {e}"));
-            }
-        } else {
-            return Err(eyre!(
-                "💥 Output dir path exists: {}. (Pass --overwrite to force.)",
-                dest_path.display()
-            ));
-        }
-    } else {
-        if let Err(e) = fs::create_dir_all(&dest_path) {
-            return Err(eyre!("💥 Failed to create output directory: {e}"));
-        }
+        return Err(eyre!(
+            "💥 Template dir path exists: {}",
+            dest_path.display()
+        ));
     }
 
-    if let Err(e) = fs::rename(&src_path, &dest_path) {
-        return Err(eyre!("💥 Failed to move project to output directory: {e}"));
+    if let Err(e) = fs::create_dir_all(dest_path) {
+        return Err(eyre!("💥 Failed to create template directory: {e}"));
+    }
+
+    if let Err(e) = fs::rename(src_path, dest_path) {
+        return Err(eyre!(
+            "💥 Failed to move project to template directory: {e}"
+        ));
     }
 
     Ok(())

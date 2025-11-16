@@ -1,4 +1,4 @@
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use color_eyre::eyre::{eyre, Result};
 use once_cell::sync::OnceCell;
@@ -9,8 +9,6 @@ use boilermaker_core::{
     state::AppState,
 };
 
-pub type TemplateDbType = Arc<RwLock<dyn TemplateDb + Send + Sync>>;
-
 pub static APP_STATE: OnceCell<AppState> = OnceCell::new();
 
 /// Initialize the global application state into a OnceCell APP_STATE
@@ -20,22 +18,17 @@ pub fn init_app_state() -> Result<()> {
         .build()
         .unwrap()
         .block_on(async {
-            let template_db = Arc::new(RwLock::new(
-                LocalCache::new(DEFAULT_LOCAL_CACHE_PATH_STRING.as_str())
-                    .await
-                    .expect("Failed to initialize local cache"),
-            ));
+            let db_path = DEFAULT_LOCAL_CACHE_PATH_STRING.as_str();
+            let cache = Arc::new(LocalCache::new(db_path).await.map_err(|err| {
+                eyre!(
+                    "Failed to initialize local cache at path '{}': {}",
+                    db_path,
+                    err
+                )
+            })?);
 
-            if !template_db
-                .read()
-                .unwrap()
-                .template_table_exists()
-                .await
-                .unwrap_or(false)
-            {
-                template_db
-                    .write()
-                    .unwrap()
+            if !cache.template_table_exists().await.unwrap_or(false) {
+                cache
                     .create_template_table()
                     .await
                     .map_err(|e| eyre!("Failed to create template table: {}", e))?;
@@ -44,7 +37,7 @@ pub fn init_app_state() -> Result<()> {
             let sys_config = get_system_config(None).expect("Failed to load system config");
 
             let app_state = AppState {
-                template_db,
+                template_db: cache,
                 sys_config,
                 log_level: 1,
             };
