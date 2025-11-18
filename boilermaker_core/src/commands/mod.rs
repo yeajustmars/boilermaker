@@ -9,3 +9,4 @@ pub use install::{Install, install};
 pub use list::{List, list};
 pub use new::{New, new};
 pub use remove::{Remove, remove};
+pub use update::{Update, update};
