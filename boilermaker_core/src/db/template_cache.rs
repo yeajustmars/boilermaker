@@ -2,6 +2,7 @@ use color_eyre::Result;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePool};
 use tabled::Tabled;
 
+use crate::util::crypto::sha256_hash_string;
 use crate::util::time::timestamp_to_iso8601;
 
 #[async_trait::async_trait]
@@ -67,8 +68,8 @@ impl TemplateDb for LocalCache {
     async fn create_template(&self, row: TemplateRow) -> Result<i64> {
         let result = sqlx::query(
             r#"
-            INSERT INTO template (name, lang, template_dir, created_at, repo, branch, subdir)
-            VALUES (?, ?, ?, strftime('%s','now'), ?, ?, ?);
+            INSERT INTO template (name, lang, template_dir, created_at, repo, branch, subdir, sha256_hash)
+            VALUES (?, ?, ?, strftime('%s','now'), ?, ?, ?, ?);
             "#,
         )
         .bind(&row.name)
@@ -77,6 +78,7 @@ impl TemplateDb for LocalCache {
         .bind(&row.repo)
         .bind(&row.branch)
         .bind(&row.subdir)
+        .bind(&row.sha256_hash)
         .execute(&self.pool)
         .await?;
 
@@ -99,6 +101,7 @@ impl TemplateDb for LocalCache {
                 repo TEXT,
                 branch TEXT,
                 subdir TEXT,
+                sha256_hash TEXT NOT NULL UNIQUE,
                 UNIQUE (name, repo, branch, subdir)
             );
             "#,
@@ -111,15 +114,10 @@ impl TemplateDb for LocalCache {
 
     #[tracing::instrument]
     async fn delete_template(&self, id: i64) -> Result<i64> {
-        let _result = sqlx::query(
-            r#"
-            DELETE FROM template
-            WHERE id = ?;
-            "#,
-        )
-        .bind(id)
-        .execute(&self.pool)
-        .await?;
+        let _result = sqlx::query("DELETE FROM template WHERE id = ?;")
+            .bind(id)
+            .execute(&self.pool)
+            .await?;
 
         Ok(id)
     }
@@ -224,6 +222,16 @@ pub struct TemplateRow {
     pub repo: String,
     pub branch: Option<String>,
     pub subdir: Option<String>,
+    pub sha256_hash: Option<String>,
+}
+
+impl TemplateRow {
+    #[tracing::instrument]
+    pub fn set_hash_string(mut self) -> Self {
+        let hash = hash_template_row(&self);
+        self.sha256_hash = Some(hash);
+        self
+    }
 }
 
 #[derive(Debug, Clone, sqlx::FromRow)]
@@ -235,6 +243,7 @@ pub struct TemplateResult {
     pub repo: String,
     pub branch: Option<String>,
     pub subdir: Option<String>,
+    pub sha256_hash: Option<String>,
     pub created_at: Option<i32>,
     pub updated_at: Option<i32>,
 }
@@ -246,6 +255,7 @@ pub struct TemplateFindParams {
     pub repo: Option<String>,
     pub branch: Option<String>,
     pub subdir: Option<String>,
+    pub sha256_hash: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -282,4 +292,16 @@ impl DisplayableTemplateListResult {
                 .unwrap_or_else(|| "-".to_string()),
         }
     }
+}
+
+pub fn hash_template_row(row: &TemplateRow) -> String {
+    let input = format!(
+        "{}~~{}~~{}~~{}~~{}",
+        row.repo,
+        row.name,
+        row.lang,
+        row.branch.as_deref().unwrap_or(""),
+        row.subdir.as_deref().unwrap_or(""),
+    );
+    sha256_hash_string(&input)
 }

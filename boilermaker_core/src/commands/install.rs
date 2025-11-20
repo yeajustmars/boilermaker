@@ -59,10 +59,13 @@ pub async fn install(app_state: &AppState, cmd: &Install) -> Result<()> {
         repo: cmd.template.to_owned(),
         branch: cmd.branch.to_owned(),
         subdir: cmd.subdir.to_owned(),
+        sha256_hash: None,
     };
+    let row = row.set_hash_string();
 
     let cache = app_state.template_db.clone();
 
+    // TODO: also create template_content + FTS tables
     if !cache.template_table_exists().await? {
         cache.create_template_table().await?;
     }

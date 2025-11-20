@@ -1,1 +1,10 @@
--- Add down migration script here
+DROP TABLE IF EXISTS template;
+DROP TABLE IF EXISTS template_fts;
+DROP TRIGGER IF EXISTS template_after_insert;
+DROP TRIGGER IF EXISTS template_after_update;
+DROP TRIGGER IF EXISTS template_after_delete;
+DROP TABLE IF EXISTS template_content;
+DROP TABLE IF EXISTS template_content_fts;
+DROP TRIGGER IF EXISTS template_content_after_insert;
+DROP TRIGGER IF EXISTS template_content_after_update;
+DROP TRIGGER IF EXISTS template_content_after_delete;
