@@ -1,6 +1,5 @@
 CREATE TABLE IF NOT EXISTS template (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  uuid TEXT NOT NULL UNIQUE,
   name TEXT NOT NULL,
   lang TEXT,
   template_dir TEXT,
@@ -9,5 +8,6 @@ CREATE TABLE IF NOT EXISTS template (
   repo TEXT,
   branch TEXT,
   subdir TEXT,
+  sha256_hash TEXT NOT NULL UNIQUE,
   UNIQUE (name, repo, branch, subdir)
 );

@@ -12,11 +12,13 @@ color-eyre = { workspace = true }
 dirs = { workspace = true }
 fs_extra = { workspace = true }
 git2 = { workspace = true }
+hex = { workspace = true }
 lazy_static = { workspace = true }
 minijinja = { workspace = true }
 nu-ansi-term = { workspace = true }
 regex = { workspace = true }
 serde = { workspace = true }
+sha2 = { workspace = true }
 sqlx = { workspace = true }
 tabled = { workspace = true }
 tokio = { workspace = true, features = ["full"] }

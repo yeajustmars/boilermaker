@@ -94,6 +94,7 @@ async fn get_existing_templates(app_state: &AppState, cmd: &New) -> Result<Vec<T
         repo: None,
         branch: None,
         subdir: None,
+        sha256_hash: None,
     };
 
     let cache = app_state.template_db.clone();

@@ -3,7 +3,6 @@
 
 CREATE TABLE IF NOT EXISTS template (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  uuid TEXT NOT NULL UNIQUE,
   name TEXT NOT NULL,
   lang TEXT,
   template_dir TEXT,
@@ -12,40 +11,41 @@ CREATE TABLE IF NOT EXISTS template (
   repo TEXT,
   branch TEXT,
   subdir TEXT,
+  sha256_hash TEXT NOT NULL UNIQUE,
   UNIQUE (name, repo, branch, subdir)
 );
 
-CREATE VIRTUAL TABLE template_fts USING fts5(
-  uuid,
+CREATE VIRTUAL TABLE IF NOT EXISTS template_fts USING fts5(
   name,
   lang,
   template_dir,
   repo,
   branch,
   subdir,
+  sha256_hash,
   content='template',
   content_rowid='id'
 );
 
 -- .................. template after insert
 CREATE TRIGGER IF NOT EXISTS template_after_insert AFTER INSERT ON template BEGIN
-    INSERT INTO template_fts (rowid, uuid, name, lang, template_dir, repo, branch, subdir)
-    VALUES (new.id, new.uuid, new.name, new.lang, new.template_dir, new.repo, new.branch, new.subdir);
+    INSERT INTO template_fts (rowid, name, lang, template_dir, repo, branch, subdir, sha256_hash)
+    VALUES (new.id, new.name, new.lang, new.template_dir, new.repo, new.branch, new.subdir, new.sha256_hash);
 END;
 
 -- .................. template after update
 CREATE TRIGGER IF NOT EXISTS template_after_update AFTER UPDATE ON template BEGIN
-    INSERT INTO template_fts (template_fts, rowid, uuid, name, lang, template_dir, repo, branch, subdir)
-    VALUES('delete', old.uuid, old.name, old.lang, old.template_dir, old.repo, old.branch, old.subdir);
+    INSERT INTO template_fts (template_fts, rowid, name, lang, template_dir, repo, branch, subdir, sha256_hash)
+    VALUES('delete', old.name, old.lang, old.template_dir, old.repo, old.branch, old.subdir, old.sha256_hash);
 
-    INSERT INTO template_fts (rowid, uuid, name, lang, template_dir, repo, branch, subdir)
-    VALUES (new.id, new.uuid, new.name, new.lang, new.template_dir, new.repo, new.branch, new.subdir);
+    INSERT INTO template_fts (rowid, name, lang, template_dir, repo, branch, subdir, sha256_hash)
+    VALUES (new.id, new.name, new.lang, new.template_dir, new.repo, new.branch, new.subdir, new.sha256_hash);
 END;
 
 -- .................. template after delete
 CREATE TRIGGER IF NOT EXISTS template_after_delete AFTER DELETE ON template BEGIN
-    INSERT INTO template_fts (template_fts, rowid, uuid, name, lang, template_dir, repo, branch, subdir)
-    VALUES('delete', old.rowid, old.uuid, old.name, old.lang, old.template_dir, old.repo, old.branch, old.subdir);
+    INSERT INTO template_fts (template_fts, rowid, name, lang, template_dir, repo, branch, subdir, sha256_hash)
+    VALUES('delete', old.rowid, old.name, old.lang, old.template_dir, old.repo, old.branch, old.subdir, old.sha256_hash);
 END;
 
 
@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS template_content (
   UNIQUE (template_id, file_path)
 );
 
-CREATE VIRTUAL TABLE template_content_fts USING fts5(
+CREATE VIRTUAL TABLE IF NOT EXISTS template_content_fts USING fts5(
   file_path,
   content,
   content='template_content',
@@ -97,8 +97,7 @@ CREATE TRIGGER IF NOT EXISTS template_content_after_delete AFTER DELETE ON templ
 END;
 
 -- ------------------------------------------------ sample queries
-
--- INSERT INTO template (uuid, name, lang, template_dir, created_at, updated_at, repo, branch, subdir) VALUES ('123e4567-e89b-12d3-a456-426614174000', 'Default Template', 'en', '/templates/default', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'some_repo_url', 'main', '');
+-- INSERT INTO template (name, lang, template_dir, created_at, updated_at, repo, branch, subdir, sha256_hash) VALUES ('Default Template', 'en', '/templates/default', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'some_repo_url', 'main', '', 'e47a957f3cfa3859c0353aac303e03b58927578249603048659ebbc31996c4a4');
 
 -- INSERT INTO template_content (template_id, file_path, content, created_at, updated_at) VALUES (1, 'index.html', '<html><body><h1>Welcome to the Default Template</h1></body></html>', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
