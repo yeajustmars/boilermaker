@@ -18,7 +18,7 @@ pub trait TemplateDb: Send + Sync {
         opts: Option<ListTemplateOptions>,
     ) -> Result<Vec<TemplateResult>>;
     async fn template_table_exists(&self) -> Result<bool>;
-    async fn update_template(&self, row: TemplateRow) -> Result<TemplateResult>;
+    async fn update_template(&self, id: i64, row: TemplateRow) -> Result<i64>;
 }
 
 #[derive(Debug)]
@@ -209,8 +209,32 @@ impl TemplateDb for LocalCache {
     }
 
     #[tracing::instrument]
-    async fn update_template(&self, _row: TemplateRow) -> Result<TemplateResult> {
-        todo!()
+    async fn update_template(&self, id: i64, row: TemplateRow) -> Result<i64> {
+        let _ = sqlx::query(
+            r#"
+            UPDATE template
+            SET name = ?,
+                lang = ?,
+                template_dir = ?,
+                repo = ?,
+                branch = ?,
+                subdir = ?,
+                updated_at = unixepoch()
+            WHERE id = ?
+            RETURNING id;
+            "#,
+        )
+        .bind(row.name)
+        .bind(row.lang)
+        .bind(row.template_dir)
+        .bind(row.repo)
+        .bind(row.branch)
+        .bind(row.subdir)
+        .bind(id)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(id)
     }
 }
 
@@ -231,6 +255,19 @@ impl TemplateRow {
         let hash = hash_template_row(&self);
         self.sha256_hash = Some(hash);
         self
+    }
+}
+
+impl From<TemplateResult> for TemplateRow {
+    fn from(value: TemplateResult) -> Self {
+        TemplateRow {
+            name: value.name,
+            lang: value.lang,
+            template_dir: value.template_dir,
+            repo: value.repo,
+            branch: value.branch,
+            subdir: value.subdir,
+        }
     }
 }
 

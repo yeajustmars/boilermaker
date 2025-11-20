@@ -5,8 +5,8 @@ use tracing::{error, info};
 use crate::db::TemplateRow;
 use crate::state::AppState;
 use crate::template::{
-    CloneContext, clean_dir, clone_repo, get_lang, get_template_config, get_template_dir_path,
-    install_template, make_name_from_url, make_tmp_dir_from_url, remove_git_dir,
+    clean_dir, clone_repo, get_lang, get_template_config, get_template_dir_path, install_template,
+    make_name_from_url, make_tmp_dir_from_url, remove_git_dir, CloneContext,
 };
 
 #[derive(Debug, Parser)]
