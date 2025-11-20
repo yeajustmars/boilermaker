@@ -67,7 +67,7 @@ pub async fn install(app_state: &AppState, cmd: &Install) -> Result<()> {
 
     // TODO: also create template_content + FTS tables
     if !cache.template_table_exists().await? {
-        cache.create_template_table().await?;
+        cache.create_template_tables().await?;
     }
 
     let existing_db_entry = cache.check_unique(&row).await?;
