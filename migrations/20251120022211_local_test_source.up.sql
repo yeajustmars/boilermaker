@@ -100,5 +100,5 @@ END;
 
 -- INSERT INTO template (uuid, name, lang, template_dir, created_at, updated_at, repo, branch, subdir) VALUES ('123e4567-e89b-12d3-a456-426614174000', 'Default Template', 'en', '/templates/default', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'some_repo_url', 'main', '');
 
-INSERT INTO template_content (template_id, file_path, content, created_at, updated_at) VALUES (1, 'index.html', '<html><body><h1>Welcome to the Default Template</h1></body></html>', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+-- INSERT INTO template_content (template_id, file_path, content, created_at, updated_at) VALUES (1, 'index.html', '<html><body><h1>Welcome to the Default Template</h1></body></html>', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
