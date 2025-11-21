@@ -36,7 +36,7 @@ END;
 -- .................. template after update
 CREATE TRIGGER IF NOT EXISTS template_after_update AFTER UPDATE ON template BEGIN
     INSERT INTO template_fts (template_fts, rowid, name, lang, template_dir, repo, branch, subdir, sha256_hash)
-    VALUES('delete', old.name, old.lang, old.template_dir, old.repo, old.branch, old.subdir, old.sha256_hash);
+    VALUES('delete', old.rowid, old.name, old.lang, old.template_dir, old.repo, old.branch, old.subdir, old.sha256_hash);
 
     INSERT INTO template_fts (rowid, name, lang, template_dir, repo, branch, subdir, sha256_hash)
     VALUES (new.id, new.name, new.lang, new.template_dir, new.repo, new.branch, new.subdir, new.sha256_hash);
@@ -100,4 +100,3 @@ END;
 -- INSERT INTO template (name, lang, template_dir, created_at, updated_at, repo, branch, subdir, sha256_hash) VALUES ('Default Template', 'en', '/templates/default', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'some_repo_url', 'main', '', 'e47a957f3cfa3859c0353aac303e03b58927578249603048659ebbc31996c4a4');
 
 -- INSERT INTO template_content (template_id, file_path, content, created_at, updated_at) VALUES (1, 'index.html', '<html><body><h1>Welcome to the Default Template</h1></body></html>', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-
