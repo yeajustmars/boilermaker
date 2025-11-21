@@ -87,13 +87,13 @@ CREATE TRIGGER IF NOT EXISTS template_content_after_update AFTER UPDATE ON templ
     VALUES('delete', old.rowid, old.file_path, old.content);
 
     INSERT INTO template_content_fts (rowid, file_path, content)
-    VALUES (new.doc_id, new.file_path, new.content);
+    VALUES (new.rowid, new.file_path, new.content);
 END;
 
 -- .................. template after delete
 CREATE TRIGGER IF NOT EXISTS template_content_after_delete AFTER DELETE ON template_content BEGIN
     INSERT INTO template_content_fts (template_content_fts, rowid, file_path, content)
-    VALUES('delete', old.doc_id, old.file_path, old.content);
+    VALUES('delete', old.rowid, old.file_path, old.content);
 END;
 
 -- ------------------------------------------------ sample queries
