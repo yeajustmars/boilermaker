@@ -46,6 +46,7 @@ enum Commands {
     New(commands::new::New),
     #[command(about = "Remove a template from the local cache")]
     Remove(commands::Remove),
+    Search(commands::Search),
     //#[command(about = "Update an existing template in the cache")]
     //Update(commands::update::Update),
 }
@@ -80,6 +81,7 @@ async fn main() -> Result<()> {
             Commands::List(cmd) => commands::list(&app_state, &cmd).await?,
             Commands::New(cmd) => commands::new(&app_state, &cmd).await?,
             Commands::Remove(cmd) => commands::remove(&app_state, &cmd).await?,
+            Commands::Search(cmd) => commands::search(&app_state, &cmd).await?,
             // Commands::Update(cmd) => commands::update::update(&sys_config, &cmd).await?,
         }
     } else {
