@@ -1,15 +1,20 @@
 use color_eyre::Result;
-use sqlx::sqlite::{SqliteConnectOptions, SqlitePool};
+use sqlx::{
+    migrate::Migrator,
+    sqlite::{SqliteConnectOptions, SqlitePool},
+};
 use tabled::Tabled;
 
 use crate::util::crypto::sha256_hash_string;
 use crate::util::time::timestamp_to_iso8601;
 
+static MIGRATOR: Migrator = sqlx::migrate!("../migrations");
+
 #[async_trait::async_trait]
 pub trait TemplateDb: Send + Sync {
     async fn check_unique(&self, row: &TemplateRow) -> Result<Option<TemplateResult>>;
     async fn create_template(&self, row: TemplateRow) -> Result<i64>;
-    async fn create_template_table(&self) -> Result<()>;
+    async fn create_template_tables(&self) -> Result<()>;
     async fn delete_template(&self, id: i64) -> Result<i64>;
     async fn find_templates(&self, query: TemplateFindParams) -> Result<Vec<TemplateResult>>;
     async fn get_template(&self, id: i64) -> Result<Option<TemplateResult>>;
@@ -18,7 +23,7 @@ pub trait TemplateDb: Send + Sync {
         opts: Option<ListTemplateOptions>,
     ) -> Result<Vec<TemplateResult>>;
     async fn template_table_exists(&self) -> Result<bool>;
-    async fn update_template(&self, row: TemplateRow) -> Result<TemplateResult>;
+    async fn update_template(&self, id: i64, row: TemplateRow) -> Result<i64>;
 }
 
 #[derive(Debug)]
@@ -86,29 +91,8 @@ impl TemplateDb for LocalCache {
     }
 
     #[tracing::instrument]
-    // TODO: move to migration
-    // TODO: rewrite with compile-time macros in sqlx
-    async fn create_template_table(&self) -> Result<()> {
-        sqlx::query(
-            r#"
-            CREATE TABLE IF NOT EXISTS template (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                lang TEXT,
-                template_dir TEXT,
-                created_at TIMESTAMP NOT NULL,
-                updated_at TIMESTAMP,
-                repo TEXT,
-                branch TEXT,
-                subdir TEXT,
-                sha256_hash TEXT NOT NULL UNIQUE,
-                UNIQUE (name, repo, branch, subdir)
-            );
-            "#,
-        )
-        .execute(&self.pool)
-        .await?;
-
+    async fn create_template_tables(&self) -> Result<()> {
+        MIGRATOR.run(&self.pool).await?;
         Ok(())
     }
 
@@ -209,8 +193,34 @@ impl TemplateDb for LocalCache {
     }
 
     #[tracing::instrument]
-    async fn update_template(&self, _row: TemplateRow) -> Result<TemplateResult> {
-        todo!()
+    async fn update_template(&self, id: i64, row: TemplateRow) -> Result<i64> {
+        let _ = sqlx::query(
+            r#"
+            UPDATE template
+            SET name = ?,
+                lang = ?,
+                template_dir = ?,
+                repo = ?,
+                branch = ?,
+                subdir = ?,
+                sha256_hash = ?,
+                updated_at = unixepoch()
+            WHERE id = ?
+            RETURNING id;
+            "#,
+        )
+        .bind(row.name)
+        .bind(row.lang)
+        .bind(row.template_dir)
+        .bind(row.repo)
+        .bind(row.branch)
+        .bind(row.subdir)
+        .bind(row.sha256_hash)
+        .bind(id)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(id)
     }
 }
 
@@ -231,6 +241,20 @@ impl TemplateRow {
         let hash = hash_template_row(&self);
         self.sha256_hash = Some(hash);
         self
+    }
+}
+
+impl From<TemplateResult> for TemplateRow {
+    fn from(value: TemplateResult) -> Self {
+        TemplateRow {
+            name: value.name,
+            lang: value.lang,
+            template_dir: value.template_dir,
+            repo: value.repo,
+            branch: value.branch,
+            subdir: value.subdir,
+            sha256_hash: value.sha256_hash,
+        }
     }
 }
 

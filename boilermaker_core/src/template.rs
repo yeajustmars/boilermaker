@@ -1,20 +1,30 @@
 use std::{collections::HashMap, env, fs, path::PathBuf};
 
-use color_eyre::{Result, eyre::eyre};
+use color_eyre::{eyre::eyre, Result};
 use dirs;
 use fs_extra::{copy_items, dir::CopyOptions};
-use git2::{FetchOptions, Repository, build::RepoBuilder};
+use git2::{build::RepoBuilder, FetchOptions, Repository};
 use minijinja;
 use walkdir::WalkDir;
 
-use crate::config::TemplateConfig;
 pub use crate::config::get_template_config;
+use crate::config::TemplateConfig;
 
 #[derive(Debug)]
 pub struct CloneContext {
     pub url: String,
     pub dest: Option<PathBuf>,
     pub branch: Option<String>,
+}
+
+impl CloneContext {
+    pub fn new(url: &str, dest: Option<PathBuf>, branch: Option<String>) -> Self {
+        CloneContext {
+            url: url.to_owned(),
+            branch,
+            dest,
+        }
+    }
 }
 
 #[tracing::instrument]

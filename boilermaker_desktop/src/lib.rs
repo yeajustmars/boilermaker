@@ -29,7 +29,7 @@ pub fn init_app_state() -> Result<()> {
 
             if !cache.template_table_exists().await.unwrap_or(false) {
                 cache
-                    .create_template_table()
+                    .create_template_tables()
                     .await
                     .map_err(|e| eyre!("Failed to create template table: {}", e))?;
             }
