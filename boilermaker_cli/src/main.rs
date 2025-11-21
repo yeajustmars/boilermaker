@@ -7,7 +7,7 @@ use tracing::info;
 
 use boilermaker_core::{
     commands,
-    config::{DEFAULT_LOCAL_CACHE_PATH_STRING, get_system_config},
+    config::{get_system_config, DEFAULT_LOCAL_CACHE_PATH_STRING},
     db::LocalCache,
     logging,
     state::AppState,
@@ -46,6 +46,7 @@ enum Commands {
     New(commands::New),
     #[command(about = "Remove a template from the local cache")]
     Remove(commands::Remove),
+    Search(commands::Search),
     #[command(about = "Update an installed template")]
     Update(commands::Update),
 }
@@ -75,7 +76,7 @@ async fn main() -> Result<()> {
 
     // TODO: add Sqlite FTS index here as well (also check code for where else this is done)
     if !cache.template_table_exists().await? {
-        cache.create_template_table().await?;
+        cache.create_template_tables().await?;
     }
 
     if let Some(command) = cli.command {
@@ -84,6 +85,7 @@ async fn main() -> Result<()> {
             Commands::List(cmd) => commands::list(&app_state, &cmd).await?,
             Commands::New(cmd) => commands::new(&app_state, &cmd).await?,
             Commands::Remove(cmd) => commands::remove(&app_state, &cmd).await?,
+            Commands::Search(cmd) => commands::search(&app_state, &cmd).await?,
             Commands::Update(cmd) => commands::update(&app_state, &cmd).await?,
         }
     } else {
