@@ -219,6 +219,7 @@ impl TemplateDb for LocalCache {
                 repo = ?,
                 branch = ?,
                 subdir = ?,
+                sha256_hash = ?,
                 updated_at = unixepoch()
             WHERE id = ?
             RETURNING id;
@@ -230,6 +231,7 @@ impl TemplateDb for LocalCache {
         .bind(row.repo)
         .bind(row.branch)
         .bind(row.subdir)
+        .bind(row.sha256_hash)
         .bind(id)
         .execute(&self.pool)
         .await?;
@@ -267,6 +269,7 @@ impl From<TemplateResult> for TemplateRow {
             repo: value.repo,
             branch: value.branch,
             subdir: value.subdir,
+            sha256_hash: value.sha256_hash,
         }
     }
 }
