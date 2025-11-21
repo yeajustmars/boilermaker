@@ -65,7 +65,6 @@ pub async fn install(app_state: &AppState, cmd: &Install) -> Result<()> {
 
     let cache = app_state.template_db.clone();
 
-    // TODO: also create template_content + FTS tables
     if !cache.template_table_exists().await? {
         cache.create_template_tables().await?;
     }
