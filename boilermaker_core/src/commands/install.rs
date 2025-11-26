@@ -5,8 +5,8 @@ use tracing::{error, info};
 use crate::db::TemplateRow;
 use crate::state::AppState;
 use crate::template::{
-    CloneContext, clean_dir, clone_repo, get_lang, get_template_config, get_template_dir_path,
-    install_template, make_name_from_url, make_tmp_dir_from_url, remove_git_dir,
+    clean_dir, clone_repo, get_lang, get_template_config, get_template_dir_path, install_template,
+    make_name_from_url, make_tmp_dir_from_url, remove_git_dir, CloneContext,
 };
 
 #[derive(Debug, Parser)]
@@ -65,9 +65,8 @@ pub async fn install(app_state: &AppState, cmd: &Install) -> Result<()> {
 
     let cache = app_state.template_db.clone();
 
-    // TODO: also create template_content + FTS tables
     if !cache.template_table_exists().await? {
-        cache.create_template_table().await?;
+        cache.create_template_tables().await?;
     }
 
     let existing_db_entry = cache.check_unique(&row).await?;

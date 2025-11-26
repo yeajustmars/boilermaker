@@ -1,61 +1,48 @@
-/*
-use clap::Parser;
+use std::path::PathBuf;
 
+use clap::Parser;
+use color_eyre::eyre::eyre;
 use color_eyre::Result;
 use tracing::info;
 
-use crate::local_cache::TemplateRow;
-
-use crate::template::TemplateCommand;
+use crate::db::TemplateRow;
+use crate::state::AppState;
+use crate::template::{
+    clean_dir, clone_repo, install_template, make_tmp_dir_from_url, remove_git_dir, CloneContext,
+};
 
 #[derive(Debug, Parser)]
-pub(crate) struct Update {
+pub struct Update {
     #[arg(required = true)]
-    pub name: String,
-    #[arg(short, long)]
-    pub template: String,
-    #[arg(short, long)]
-    pub lang: Option<String>,
-    #[arg(short, long)]
-    pub branch: Option<String>,
-    #[arg(short = 'd', long)]
-    pub subdir: Option<String>,
-    #[arg(short, long = "output-dir")]
-    pub output_dir: Option<String>,
-}
-
-impl From<&Update> for TemplateCommand {
-    #[tracing::instrument]
-    fn from(cmd: &Update) -> Self {
-        Self {
-            name: cmd.name.to_owned(),
-            template: cmd.template.to_owned(),
-            branch: cmd.branch.to_owned(),
-            subdir: cmd.subdir.to_owned(),
-            lang: cmd.lang.to_owned(),
-            output_dir: cmd.output_dir.to_owned(),
-            overwrite: true,
-        }
-    }
-}
-
-impl From<&Update> for TemplateRow {
-    #[tracing::instrument]
-    fn from(cmd: &Update) -> Self {
-        Self {
-            name: cmd.name.to_owned(),
-            lang: cmd.lang.to_owned().unwrap_or_default(),
-            template_dir: cmd.output_dir.to_owned().unwrap_or_default(),
-            repo: cmd.template.to_owned(),
-            branch: cmd.branch.to_owned(),
-            subdir: cmd.subdir.to_owned(),
-        }
-    }
+    pub id: i32,
 }
 
 #[tracing::instrument]
-pub async fn update(sys_config: &toml::Value, cmd: &Update) -> Result<()> {
-    info!("Updating template: {}", &cmd.name);
+pub async fn update(app_state: &AppState, cmd: &Update) -> Result<()> {
+    let cache = app_state.template_db.clone();
+    let Some(templ) = cache.get_template(cmd.id as i64).await? else {
+        return Err(eyre!("💥 Cannot find template: {}.", cmd.id));
+    };
+
+    info!("Updating template #{}: {}", templ.id, templ.name);
+
+    let template_dir = PathBuf::from(templ.template_dir.clone());
+    let tmp_clone_dir = make_tmp_dir_from_url(&templ.repo);
+
+    // We need a new clone as we don't keep .git dirs.
+    let clone_ctx = CloneContext::new(
+        &templ.repo,
+        Some(tmp_clone_dir.clone()),
+        templ.branch.clone(),
+    );
+    clone_repo(&clone_ctx).await?;
+    clean_dir(&template_dir)?;
+    install_template(&tmp_clone_dir, &template_dir).await?;
+    remove_git_dir(&template_dir)?;
+
+    let row = TemplateRow::from(templ.clone());
+    cache.update_template(templ.id, row).await?;
+
+    info!("✅ Template updated!");
     Ok(())
 }
- */
