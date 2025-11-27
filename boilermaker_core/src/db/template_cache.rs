@@ -71,10 +71,12 @@ impl TemplateDb for LocalCache {
 
     #[tracing::instrument]
     async fn create_template(&self, row: TemplateRow) -> Result<i64> {
-        let result = sqlx::query(
+        let template_result = sqlx::query(
             r#"
-            INSERT INTO template (name, lang, template_dir, created_at, repo, branch, subdir, sha256_hash)
-            VALUES (?, ?, ?, strftime('%s','now'), ?, ?, ?, ?);
+            INSERT INTO template
+                (name, lang, template_dir, created_at, repo, branch, subdir, sha256_hash)
+            VALUES
+                (?, ?, ?, strftime('%s','now'), ?, ?, ?, ?);
             "#,
         )
         .bind(&row.name)
@@ -87,7 +89,12 @@ impl TemplateDb for LocalCache {
         .execute(&self.pool)
         .await?;
 
-        Ok(result.last_insert_rowid())
+        // TODO:
+        // 0. add to template_fts
+        // 1. read name/content for each file in dir
+        // 2. add to template_content & template_content_fts
+
+        Ok(template_result.last_insert_rowid())
     }
 
     #[tracing::instrument]
