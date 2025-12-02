@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
 use tracing::error;
 
-use boilermaker_core::db::ListTemplateOptions;
+use boilermaker_core::db::{ListTemplateOptions, TemplateResult};
 use boilermaker_desktop::APP_STATE;
 use boilermaker_views::{
     BTN_BLUE_STYLE, BTN_GREEN_STYLE, BTN_RED_STYLE, LINK_STYLE, TD_STYLE, TH_MUTED_STYLE, TH_STYLE,
@@ -11,6 +11,7 @@ use crate::Route;
 
 #[component]
 pub fn Home() -> Element {
+    let navigator = use_navigator();
     let resource = use_resource(move || async move {
         let cache = &APP_STATE.get().unwrap().template_db;
         let list_opts = Some(ListTemplateOptions {
@@ -89,8 +90,9 @@ pub fn Home() -> Element {
                                                     // TODO: Add global fn for creating buttons
                                                     button {
                                                         class: BTN_GREEN_STYLE,
-                                                        "aria-label": "Edit Template",
-                                                        i { class: "fas fa-clone" }
+                                                        "aria-label": "New Project",
+                                                        onclick:  move |_| { navigator.push(Route::NewProject { i }); },
+                                                        i { class: "fas fa-play" },
                                                     }
                                                     button {
                                                         class: BTN_BLUE_STYLE,

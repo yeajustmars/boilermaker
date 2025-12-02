@@ -2,7 +2,7 @@ use color_eyre::eyre::Result;
 use dioxus::prelude::*;
 
 mod ui;
-use ui::{Home, TemplateAdd};
+use ui::{Home, NewProject, TemplateAdd};
 
 use boilermaker_desktop::init_app_state;
 
@@ -26,6 +26,8 @@ enum Route {
         Templates {},
         #[route("/templates/new")]
         TemplateAdd {},
+        #[route("/templates/pre_render")]
+        NewProject {i: usize},
         #[route("/get-involved")]
         GetInvolved {},
 }
