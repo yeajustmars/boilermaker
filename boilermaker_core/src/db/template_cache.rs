@@ -24,6 +24,7 @@ pub trait TemplateDb: Send + Sync {
         &self,
         opts: Option<ListTemplateOptions>,
     ) -> Result<Vec<TemplateResult>>;
+    async fn search_templates(&self, term: &str) -> Result<Vec<SearchResult>>;
     async fn template_table_exists(&self) -> Result<bool>;
     async fn update_template(&self, id: i64, row: TemplateRow) -> Result<i64>;
 }
@@ -218,6 +219,30 @@ impl TemplateDb for LocalCache {
     }
 
     #[tracing::instrument]
+    async fn search_templates(&self, term: &str) -> Result<Vec<SearchResult>> {
+        let term = term.trim();
+        let results = sqlx::query_as::<_, SearchResult>(
+            r#"
+            SELECT
+                src.template_id,
+                t.name, t.lang, t.template_dir, t.repo, t.branch, t.subdir,
+                t.created_at, t.updated_at, t.sha256_hash,
+                src.file_path, src.content
+            FROM template_content_fts AS ft_search
+                LEFT JOIN template_content AS src ON ft_search.rowid=src.id
+                LEFT JOIN template as t ON src.template_id=t.id
+            WHERE
+                template_content_fts MATCH ?
+            "#,
+        )
+        .bind(term)
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(results)
+    }
+
+    #[tracing::instrument]
     async fn template_table_exists(&self) -> Result<bool> {
         // TODO: rewrite with compile-time macros in sqlx
         let row: (i64,) = sqlx::query_as(
@@ -365,4 +390,20 @@ pub fn hash_template_row(row: &TemplateRow) -> String {
         row.subdir.as_deref().unwrap_or(""),
     );
     sha256_hash_string(&input)
+}
+
+#[derive(Debug, Clone, sqlx::FromRow)]
+pub struct SearchResult {
+    pub template_id: i64,
+    pub name: String,
+    pub lang: String,
+    pub template_dir: String,
+    pub repo: String,
+    pub branch: Option<String>,
+    pub subdir: Option<String>,
+    pub created_at: Option<i32>,
+    pub updated_at: Option<i32>,
+    pub sha256_hash: Option<String>,
+    pub file_path: String,
+    pub content: String,
 }
