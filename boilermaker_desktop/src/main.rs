@@ -1,10 +1,12 @@
+use boilermaker_core::db::{ListTemplateOptions, TemplateResult};
 use color_eyre::eyre::Result;
 use dioxus::prelude::*;
 
 mod ui;
+use tracing::error;
 use ui::{Home, NewProject, TemplateAdd};
 
-use boilermaker_desktop::init_app_state;
+use boilermaker_desktop::{init_app_state, APP_STATE};
 
 use boilermaker_views::{
     Docs, GetInvolved, Search, Templates,
@@ -40,6 +42,22 @@ fn main() -> Result<()> {
 
 #[component]
 fn App() -> Element {
+    // Try to load templates in App context.
+    let mut templates = use_signal::<Vec<TemplateResult>>(|| vec![]);
+    let _ = use_resource(move || async move {
+        let cache = &APP_STATE.get().unwrap().template_db;
+        let list_opts = Some(ListTemplateOptions {
+            order_by: Some("created_at DESC, name ASC".to_string()),
+            limit: Some(10),
+            offset: None,
+        });
+        match cache.list_templates(list_opts).await {
+            Ok(rows) => templates.set(rows),
+            Err(e) => error!("Error fetching templates: {}", e),
+        }
+    });
+    use_context_provider(|| templates);
+
     rsx! {
         document::Link { rel: "icon", href: FAVICON }
         document::Title { "Boilermaker - Project Templates Made Easy" }

@@ -1,67 +1,71 @@
-use boilermaker_core::db::ListTemplateOptions;
-use boilermaker_desktop::APP_STATE;
-use boilermaker_views::LINK_STYLE;
 use dioxus::prelude::*;
-use tracing::error;
+
+use boilermaker_core::db::TemplateResult;
+use boilermaker_core::template::static_analysis::find_variables_in_path;
+use boilermaker_views::{BTN_GREEN_STYLE, INPUT_STYLE, LABEL_STYLE, LINK_STYLE};
+use tracing::debug;
 
 use crate::Route;
 
 #[component]
 pub fn NewProject(i: usize) -> Element {
-    // FIXME: refactor this list into shared state.
-    let resource = use_resource(move || async move {
-        let cache = &APP_STATE.get().unwrap().template_db;
-        let list_opts = Some(ListTemplateOptions {
-            order_by: Some("created_at DESC, name ASC".to_string()),
-            limit: Some(10),
-            offset: None,
-        });
-        match cache.list_templates(list_opts).await {
-            Ok(templates) => Ok(templates),
-            Err(e) => {
-                error!("Error fetching templates: {}", e);
-                Err(e)
+    // Get pre-loaded templates from context.
+    let tpl_context = use_context::<Signal<Vec<TemplateResult>>>();
+    let templates = tpl_context.read();
+    let content = if templates.is_empty() {
+        rsx! {
+            div { class: "py-4 text-neutral-500 dark:text-neutral-200",
+                "No templates found. "
+                Link { class: LINK_STYLE, to: Route::TemplateAdd {}, "Add some templates to get started!" }
             }
         }
-    });
-
-    let result_signal = resource.suspend().with_loading_placeholder(|| {
+    } else {
+        let t = &templates[i];
+        // TODO: Use template's context + "allowed" vars to build a form with default values.
+        let vars = find_variables_in_path(&t.template_dir).unwrap_or_default();
         rsx! {
-            div { "Loading template..." }
+            div {
+                class: "py-4 px-2",
+                h1 { class: "text-2xl text-neutral-500", "New Project: {t.name}" }
+                form {
+                    class: "p-4",
+                    onsubmit: move |_| { debug!("FIXME :)") },
+                    for name in vars.iter() {
+                        div { class: "mb-4",
+                            label { class: LABEL_STYLE,
+                                i { class: "fa-solid fa-link" }
+                                span { class: "ml-2", "{name}" }
+                            }
+                            input {
+                                name: "{name}",
+                                r#type: "text",
+                                class: INPUT_STYLE,
+                                placeholder: "{name}"
+                            }
+                        }
+                    }
+                    div { class: "mb-4",
+                        label { class: LABEL_STYLE,
+                            i { class: "fa-solid fa-link" }
+                            span { class: "ml-2", "Target directory" }
+                        }
+                        input {
+                            name: "output_dir",
+                            r#type: "text",
+                            class: INPUT_STYLE,
+                            placeholder: "/tmp"
+                        }
+                    }
+                    div { class: "mb-6",
+                        button { class: BTN_GREEN_STYLE, r#type: "submit", "Create project" }
+                    }
+                }
+            }
         }
-    });
+    };
 
     rsx! {
         document::Title { "Boilermaker" }
-
-        div { class: "py-4 px-2",
-            h1 { class: "text-2xl text-neutral-500", "New Project" }
-
-            match result_signal {
-                Err(e) => {
-                    error!("Failed to load templates: {}", e);
-                    rsx! {
-                        div { class: "text-red-400", "Failed to load templates." }
-                    }
-                }
-                Ok(signal) => {
-                    let signal_value = signal.try_read_unchecked().unwrap();
-                    let templates = signal_value.as_ref().unwrap();
-                    if templates.is_empty() {
-                        rsx! {
-                            div { class: "py-4 text-neutral-500 dark:text-neutral-200",
-                                "No templates found. "
-                                Link { class: LINK_STYLE, to: Route::TemplateAdd {}, "Add some templates to get started!" }
-                            }
-                        }
-                    } else {
-                        let t = &templates[i];
-                        rsx!{
-                            div { "New project with template {t.name}!" }
-                        }
-                    }
-                }
-            }
-        }
+        { content }
     }
 }
