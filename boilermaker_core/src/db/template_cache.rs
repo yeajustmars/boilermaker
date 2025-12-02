@@ -1,10 +1,11 @@
-use color_eyre::Result;
+use color_eyre::{Result, eyre::eyre};
 use sqlx::{
     migrate::Migrator,
     sqlite::{SqliteConnectOptions, SqlitePool},
 };
 use tabled::Tabled;
 
+use crate::template as tmpl;
 use crate::util::crypto::sha256_hash_string;
 use crate::util::time::timestamp_to_iso8601;
 
@@ -18,6 +19,7 @@ pub trait TemplateDb: Send + Sync {
     async fn delete_template(&self, id: i64) -> Result<i64>;
     async fn find_templates(&self, query: TemplateFindParams) -> Result<Vec<TemplateResult>>;
     async fn get_template(&self, id: i64) -> Result<Option<TemplateResult>>;
+    async fn index_template(&self, id: i64) -> Result<()>;
     async fn list_templates(
         &self,
         opts: Option<ListTemplateOptions>,
@@ -89,11 +91,6 @@ impl TemplateDb for LocalCache {
         .execute(&self.pool)
         .await?;
 
-        // TODO:
-        // 0. add to template_fts
-        // 1. read name/content for each file in dir
-        // 2. add to template_content & template_content_fts
-
         Ok(template_result.last_insert_rowid())
     }
 
@@ -150,6 +147,39 @@ impl TemplateDb for LocalCache {
         let results = q.fetch_all(&self.pool).await?;
 
         Ok(results)
+    }
+
+    #[tracing::instrument]
+    async fn index_template(&self, id: i64) -> Result<()> {
+        let t = self
+            .get_template(id)
+            .await?
+            .ok_or_else(|| eyre!("Template with id {} not found", id))?;
+
+        let files = tmpl::list_dir(&tmpl::get_template_dir_path(&t.name)?)
+            .await?
+            .into_iter()
+            .filter(|p| p.is_file() && !p.to_str().unwrap_or("").contains(".git"))
+            .collect::<Vec<_>>();
+
+        for file in files {
+            let content = tmpl::read_file_to_string(&file)?;
+            let _ = sqlx::query(
+                r#"
+                INSERT INTO template_content
+                    (template_id, file_path, content, created_at)
+                VALUES
+                    (?, ?, ?, strftime('%s','now'));
+                "#,
+            )
+            .bind(id)
+            .bind(file.to_string_lossy().to_string())
+            .bind(content)
+            .execute(&self.pool)
+            .await?;
+        }
+
+        Ok(())
     }
 
     // TODO: add options for ordering, pagination, filtering, etc

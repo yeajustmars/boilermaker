@@ -1,14 +1,14 @@
 use std::{collections::HashMap, env, fs, path::PathBuf};
 
-use color_eyre::{eyre::eyre, Result};
+use color_eyre::{Result, eyre::eyre};
 use dirs;
 use fs_extra::{copy_items, dir::CopyOptions};
-use git2::{build::RepoBuilder, FetchOptions, Repository};
+use git2::{FetchOptions, Repository, build::RepoBuilder};
 use minijinja;
 use walkdir::WalkDir;
 
-pub use crate::config::get_template_config;
 use crate::config::TemplateConfig;
+pub use crate::config::get_template_config;
 
 #[derive(Debug)]
 pub struct CloneContext {
@@ -52,7 +52,7 @@ pub async fn clone_repo(ctx: &CloneContext) -> Result<Repository> {
 #[tracing::instrument]
 pub fn make_name_from_url(url: &str) -> String {
     url.split('/')
-        .last()
+        .next_back()
         .unwrap()
         .split('.')
         .next()
@@ -269,4 +269,10 @@ pub async fn move_file(src: &PathBuf, dest: &PathBuf) -> Result<()> {
         return Err(eyre!("💥 Failed to move file: {e}"));
     }
     Ok(())
+}
+
+#[tracing::instrument]
+pub fn read_file_to_string(path: &PathBuf) -> Result<String> {
+    let content = fs::read_to_string(path)?;
+    Ok(content)
 }
