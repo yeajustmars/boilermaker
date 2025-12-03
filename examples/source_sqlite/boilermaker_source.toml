@@ -1,0 +1,16 @@
+[source]
+name = "example_sqlite_source"
+description = "Boilermaker Example Sqlite Source"
+type = "sql::sqlite"
+path = "~/.boilermaker/sources/example_sqlite_source.db"
+
+[[templates]]
+repo = "https://github.com/yeajustmars/hello-world-clj"
+lang = "clojure"
+
+[[templates]]
+repo = "https://github.com/yeajustmars/boilermaker"
+name = "hello-world-rs"
+lang = "rust"
+branch = "main"
+subdir = "examples/hello-world"
