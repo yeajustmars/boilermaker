@@ -92,9 +92,9 @@ pub fn make_boilermaker_local_cache_path() -> Result<PathBuf> {
         Ok(_) => Ok(local_cache_path),
         Err(e) => {
             if e.kind() == std::io::ErrorKind::AlreadyExists {
-                return Ok(local_cache_path);
+                Ok(local_cache_path)
             } else {
-                return Err(eyre!("💥 Failed to create local cache file: {}", e));
+                Err(eyre!("💥 Failed to create local cache file: {}", e))
             }
         }
     }
