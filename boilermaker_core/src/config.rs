@@ -29,10 +29,11 @@ lazy_static! {
 
 //TODO: add default configuration for boil cmd
 #[tracing::instrument]
-pub fn make_default_config() -> Value {
-    let mut config = TomlMap::new();
-    config.insert("log_level".to_string(), Value::String("INFO".into()));
-    Value::Table(config)
+pub fn make_default_config() -> SysConfig {
+    SysConfig {
+        log_level: Some("INFO".to_string()),
+        sources: None,
+    }
 }
 
 //TODO: add ability for config to be in YAML as well as TOML
@@ -57,18 +58,22 @@ pub fn get_system_config_path(config_path: Option<&Path>) -> Result<Option<&Path
     }
 }
 
-// TODO: return BoilermakerSysConfig struct for get_system_config (instead of generic toml::Value)
-// pub struct BoilermakerSysConfig {
+// TODO: return SysConfig struct for get_system_config (instead of generic toml::Value)
 
-// }
+#[derive(Debug, Deserialize)]
+pub struct SysConfig {
+    pub log_level: Option<String>,
+    pub sources: Option<Vec<HashMap<String, String>>>,
+}
 
 //TODO: add ability for config to be in YAML as well as TOML
 //TODO: remove Option<&Path>.
 #[tracing::instrument]
-pub fn get_system_config(config_path: Option<&Path>) -> Result<Value> {
+pub fn get_system_config(config_path: Option<&Path>) -> Result<SysConfig> {
     if let Some(path) = get_system_config_path(config_path)? {
         let config_content = fs::read_to_string(path)?;
-        let config: toml::Value = toml::from_str(&config_content)?;
+        // let config: toml::Value = toml::from_str(&config_content)?;
+        let config: SysConfig = toml::from_str(&config_content)?;
         Ok(config)
     } else {
         Ok(make_default_config())

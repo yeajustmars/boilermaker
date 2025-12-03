@@ -67,6 +67,7 @@ impl From<&toml::map::Map<String, toml::Value>> for SourceMap {
 // TODO: add filters/options
 pub async fn list(app_state: &AppState, _cmd: &List) -> Result<()> {
     println!("sys_config: {:?}", app_state.sys_config);
+    /*
     if let Some(TomlArray(raw_sources)) = app_state.sys_config.get("sources") {
         let rows = raw_sources
             .iter()
@@ -88,4 +89,6 @@ pub async fn list(app_state: &AppState, _cmd: &List) -> Result<()> {
         info!("No sources configured.");
         Ok(())
     }
+    */
+    Ok(())
 }
