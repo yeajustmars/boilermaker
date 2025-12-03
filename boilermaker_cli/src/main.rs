@@ -7,7 +7,7 @@ use tracing::info;
 
 use boilermaker_core::{
     commands,
-    config::{get_system_config, DEFAULT_LOCAL_CACHE_PATH_STRING},
+    config::{DEFAULT_LOCAL_CACHE_PATH_STRING, get_system_config},
     db::LocalCache,
     logging,
     state::AppState,
@@ -46,7 +46,10 @@ enum Commands {
     New(commands::New),
     #[command(about = "Remove a template from the local cache")]
     Remove(commands::Remove),
+    #[command(about = "Search for templates")]
     Search(commands::Search),
+    #[command(subcommand, about = "Manage Sources")]
+    Sources(commands::Sources),
     #[command(about = "Update an installed template")]
     Update(commands::Update),
 }
@@ -86,6 +89,9 @@ async fn main() -> Result<()> {
             Commands::New(cmd) => commands::new(&app_state, &cmd).await?,
             Commands::Remove(cmd) => commands::remove(&app_state, &cmd).await?,
             Commands::Search(cmd) => commands::search(&app_state, &cmd).await?,
+            Commands::Sources(subcmd) => match subcmd {
+                commands::Sources::List(cmd) => commands::sources::list(&app_state, &cmd).await?,
+            },
             Commands::Update(cmd) => commands::update(&app_state, &cmd).await?,
         }
     } else {

@@ -40,10 +40,10 @@ pub fn make_default_config() -> Value {
 pub fn get_system_config_path(config_path: Option<&Path>) -> Result<Option<&Path>> {
     if let Some(path) = config_path {
         if !path.exists() {
-            return Err(Error::msg(format!(
+            Err(Error::msg(format!(
                 "❗ Provided config file not found at `{}`.",
                 path.display()
-            )));
+            )))
         } else {
             info!(" Using provided config file: `{}`.", path.display());
             Ok(Some(path))
@@ -92,9 +92,9 @@ pub fn make_boilermaker_local_cache_path() -> Result<PathBuf> {
         Ok(_) => Ok(local_cache_path),
         Err(e) => {
             if e.kind() == std::io::ErrorKind::AlreadyExists {
-                return Ok(local_cache_path);
+                Ok(local_cache_path)
             } else {
-                return Err(eyre!("💥 Failed to create local cache file: {}", e));
+                Err(eyre!("💥 Failed to create local cache file: {}", e))
             }
         }
     }
