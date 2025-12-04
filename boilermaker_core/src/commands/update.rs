@@ -1,14 +1,14 @@
 use std::path::PathBuf;
 
 use clap::Parser;
-use color_eyre::eyre::eyre;
 use color_eyre::Result;
+use color_eyre::eyre::eyre;
 use tracing::info;
 
 use crate::db::TemplateRow;
 use crate::state::AppState;
 use crate::template::{
-    clean_dir, clone_repo, install_template, make_tmp_dir_from_url, remove_git_dir, CloneContext,
+    CloneContext, clean_dir, clone_repo, install_template, make_tmp_dir_from_url, remove_git_dir,
 };
 
 #[derive(Debug, Parser)]
@@ -19,7 +19,7 @@ pub struct Update {
 
 #[tracing::instrument]
 pub async fn update(app_state: &AppState, cmd: &Update) -> Result<()> {
-    let cache = app_state.template_db.clone();
+    let cache = app_state.cache_db.clone();
     let Some(templ) = cache.get_template(cmd.id as i64).await? else {
         return Err(eyre!("💥 Cannot find template: {}.", cmd.id));
     };

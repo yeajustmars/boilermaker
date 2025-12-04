@@ -7,7 +7,7 @@ subdir = "examples/hello-world"
 version = "0.1.0"
 authors = ["yeajustmars <yeajustmars@gmail.com>"]
 keywords = ["boilermaker", "example"]
-website = "https://dev/templates/hello-world"
+website = "https://boilermaker.dev/templates/hello-world"
 license = "MIT"
 
 [variables]

@@ -110,8 +110,3 @@ CREATE TRIGGER IF NOT EXISTS template_content_after_delete AFTER DELETE ON templ
     VALUES
       ('delete', old.rowid, old.file_path, old.content);
 END;
-
--- ------------------------------------------------ sample queries
--- INSERT INTO template (name, lang, template_dir, created_at, updated_at, repo, branch, subdir, sha256_hash) VALUES ('Default Template', 'en', '/templates/default', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'some_repo_url', 'main', '', 'e47a957f3cfa3859c0353aac303e03b58927578249603048659ebbc31996c4a4');
-
--- INSERT INTO template_content (template_id, file_path, content, created_at, updated_at) VALUES (1, 'index.html', '<html><body><h1>Welcome to the Default Template</h1></body></html>', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
