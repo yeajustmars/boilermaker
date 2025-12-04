@@ -24,6 +24,13 @@ lazy_static! {
         .to_str()
         .unwrap()
         .to_string();
+    pub static ref DEFAULT_LOCAL_SOURCES_PATH: PathBuf =
+        make_boilermaker_local_sources_path().unwrap();
+    pub static ref DEFAULT_LOCAL_SOURCES_PATH_STRING: String = DEFAULT_LOCAL_SOURCES_PATH
+        .as_path()
+        .to_str()
+        .unwrap()
+        .to_string();
 }
 
 //TODO: add default configuration for boil cmd
@@ -97,6 +104,32 @@ pub fn make_boilermaker_local_cache_path() -> Result<PathBuf> {
                 Ok(local_cache_path)
             } else {
                 Err(eyre!("💥 Failed to create local cache file: {}", e))
+            }
+        }
+    }
+}
+
+// TODO: unify with underlying make_boilermaker_local_cache_path logic (still 2 fn's)
+#[tracing::instrument]
+pub fn make_boilermaker_local_sources_path() -> Result<PathBuf> {
+    let home_dir = dirs::home_dir().ok_or_else(|| eyre!("Can't find home directory"))?;
+    let local_sources_dir = home_dir.join(".boilermaker");
+
+    fs::create_dir_all(local_sources_dir)?;
+
+    let local_sources_path = home_dir.join(".boilermaker").join("local_sources.db");
+
+    match OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&local_sources_path)
+    {
+        Ok(_) => Ok(local_sources_path),
+        Err(e) => {
+            if e.kind() == std::io::ErrorKind::AlreadyExists {
+                Ok(local_sources_path)
+            } else {
+                Err(eyre!("💥 Failed to create local sources file: {}", e))
             }
         }
     }

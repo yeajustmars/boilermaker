@@ -3,7 +3,7 @@ use color_eyre::Result;
 use tabled::{Table, settings::Style};
 use tracing::info;
 
-use crate::db::template_cache::DisplayableTemplateListResult;
+use crate::db::local_db::DisplayableTemplateListResult;
 use crate::state::AppState;
 
 #[derive(Parser)]
@@ -15,7 +15,7 @@ pub struct List {
 }
 
 pub async fn list(app_state: &AppState, _cmd: &List) -> Result<()> {
-    let cache = app_state.template_db.clone();
+    let cache = app_state.cache_db.clone();
 
     let result = cache.list_templates(None).await?;
 

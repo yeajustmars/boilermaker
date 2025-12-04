@@ -7,13 +7,14 @@ use crate::db::TemplateDb;
 pub type TemplateDbType = Arc<dyn TemplateDb + Send + Sync>;
 
 pub struct AppState {
-    pub template_db: TemplateDbType,
-    pub sys_config: SysConfig,
     pub log_level: u8,
+    pub sys_config: SysConfig,
+    pub cache_db: TemplateDbType,
+    pub source_db: TemplateDbType,
 }
 
 impl fmt::Debug for AppState {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "AppState {{ template_db: ... }}")
+        write!(f, "AppState {{ cache_db, source_db, sys_config, ... }}")
     }
 }
