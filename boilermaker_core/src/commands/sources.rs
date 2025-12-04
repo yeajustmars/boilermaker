@@ -11,8 +11,21 @@ use crate::util::string;
 
 #[derive(Subcommand)]
 pub enum Sources {
+    #[command(about = "Add a source")]
+    Add(Add),
     #[command(about = "List configured sources")]
     List(List),
+}
+
+#[derive(Debug, Parser)]
+pub struct Add {
+    #[arg(required = true, help = "Source URL or file path")]
+    coordinate: String,
+}
+
+pub async fn add(_app_state: &AppState, _cmd: &Add) -> Result<()> {
+    println!("> > > > > > > > > > > > Add a source!");
+    Ok(())
 }
 
 #[derive(Debug, Parser)]
@@ -65,27 +78,4 @@ pub async fn list(app_state: &AppState, _cmd: &List) -> Result<()> {
         info!("No sources configured.");
         Ok(())
     }
-    /*
-    if let Some(TomlArray(raw_sources)) = app_state.sys_config.get("sources") {
-        let rows = raw_sources
-            .iter()
-            .filter_map(|s| {
-                if let toml::Value::Table(table) = s {
-                    Some(SourceMap::from(table))
-                } else {
-                    None
-                }
-            })
-            .collect::<Vec<_>>();
-
-        println!("rows: {rows:?}");
-
-        print_sources_table(rows)?;
-
-        Ok(())
-    } else {
-        info!("No sources configured.");
-        Ok(())
-    }
-    */
 }
