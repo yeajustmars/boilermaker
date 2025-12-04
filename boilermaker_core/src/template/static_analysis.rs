@@ -8,7 +8,7 @@ use regex::Regex;
 use walkdir::WalkDir;
 
 // An alpha-numeric string enclosed in {{ }}.
-const JINJA_VAR_REGEX: &str = r"\{\{\s*(\w+)\s*\}\}";
+const JINJA_VAR_REGEX: &str = r"\{\{\s*([\w_-]+)\s*\}\}";
 
 // Find all template variables in files under `root`.
 #[tracing::instrument]

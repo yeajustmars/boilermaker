@@ -130,19 +130,14 @@ fn print_multiple_template_results_help(template_rows: &Vec<TemplateResult>) {
 
 // Turn a vec like ["foo=bar", "baz=quux"] into a HashMap
 fn vec_to_hashmap(vec: &Vec<String>) -> Result<HashMap<String, String>> {
-    let mut hm: HashMap<String, String> = HashMap::new();
-
-    for var in vec {
-        match var.split_once('=') {
-            Some((key, value)) => {
-                hm.insert(key.to_string(), value.to_string());
-            }
-            None => {
-                return Err(eyre!("💥 Invalid variable format: {var}"));
-            }
-        }
-    }
-    Ok(hm)
+    vec.iter()
+        .map(|mapping| {
+            mapping
+                .split_once("=")
+                .map(|(x, y)| (x.to_owned(), y.to_owned()))
+                .ok_or(eyre!("💥 Invalid variable format: {mapping}"))
+        })
+        .collect()
 }
 
 fn extend_template_context(
