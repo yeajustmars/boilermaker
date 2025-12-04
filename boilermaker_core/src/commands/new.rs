@@ -3,7 +3,7 @@ use std::{collections::HashMap, path::PathBuf};
 use clap::Parser;
 use color_eyre::{Result, eyre::eyre};
 use tabled::{Table, Tabled, settings::Style};
-use tracing::{error, info};
+use tracing::{debug, error, info};
 
 use crate::db::{TemplateFindParams, TemplateResult};
 use crate::state::AppState;
@@ -23,15 +23,13 @@ pub struct New {
     pub output_path: Option<String>,
     #[arg(short = 'O', long, default_value_t = false)]
     pub overwrite: bool,
+    #[arg(short = 'v', long = "var", value_name = "KEY=VALUE")]
+    pub vars: Vec<String>,
 }
 
 #[tracing::instrument]
 pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
-    let project_name = if let Some(rename) = &cmd.rename {
-        rename
-    } else {
-        &cmd.name
-    };
+    let project_name = cmd.rename.as_deref().unwrap_or(&cmd.name);
 
     info!("Creating new project: {project_name}");
 
@@ -47,31 +45,34 @@ pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
         _ => {}
     }
 
+    // Read template config. to get the default context & variables.
     let t = existing_templates.first().unwrap();
+    let base_dir = PathBuf::from(&t.template_dir);
+    let tpl_config = tpl::get_template_config(&base_dir)?;
+    let mut context = tpl_config
+        .variables
+        .as_ref()
+        .map(|vars| vars.as_map().clone())
+        .unwrap_or_default();
 
+    // Validate extra variables from CLI or app.
+    if !cmd.vars.is_empty() {
+        let user_vars = vec_to_hashmap(&cmd.vars)?;
+        extend_template_context(&mut context, &t.template_dir, user_vars)?;
+    }
+    debug!("Template context: {:?}", context);
+
+    // Copy template to work-dir before rendering.
+    let template_dir = base_dir.join(&t.lang);
     let work_dir = tpl::create_work_dir_clean(&t.name)?;
-
-    //TODO: clean up and refactor
-    let template_base_dir = PathBuf::from(&t.template_dir);
-    let template_dir = template_base_dir.join(&t.lang);
     tpl::copy_dir(&template_dir, &work_dir).await?;
-
     let template_paths: Vec<PathBuf> = tpl::list_dir(&work_dir)
         .await?
         .iter()
         .filter(|p| p.is_file())
         .map(|p| p.to_path_buf())
         .collect();
-
-    let template_config = tpl::get_template_config(&template_base_dir)?;
-    let template_context = if let Some(vars) = template_config.variables {
-        vars.as_map().clone()
-    } else {
-        let ctx: HashMap<String, String> = HashMap::new();
-        ctx
-    };
-
-    if let Err(e) = tpl::render_template_files(template_paths, template_context).await {
+    if let Err(e) = tpl::render_template_files(template_paths, context).await {
         return Err(eyre!("💥 Failed to render template files: {e}"));
     }
 
@@ -125,4 +126,40 @@ fn print_multiple_template_results_help(template_rows: &Vec<TemplateResult>) {
     let mut table = Table::new(&help_rows);
     table.with(Style::psql());
     error!("{}\n\n{table}\n", help_line);
+}
+
+// Turn a vec like ["foo=bar", "baz=quux"] into a HashMap
+fn vec_to_hashmap(vec: &Vec<String>) -> Result<HashMap<String, String>> {
+    vec.iter()
+        .map(|mapping| {
+            mapping
+                .split_once("=")
+                .map(|(x, y)| (x.to_owned(), y.to_owned()))
+                .ok_or(eyre!("💥 Invalid variable format: {mapping}"))
+        })
+        .collect()
+}
+
+fn extend_template_context(
+    template_context: &mut HashMap<String, String>,
+    template_dir: &str,
+    user_vars: HashMap<String, String>,
+) -> Result<()> {
+    let allowed_vars = tpl::static_analysis::find_variables_in_path(template_dir)?;
+    let bad_vars: Vec<_> = user_vars
+        .keys()
+        .filter(|var| !allowed_vars.contains(*var))
+        .map(|s| s.as_str())
+        .collect();
+
+    if !bad_vars.is_empty() {
+        return Err(eyre!(
+            "💥 Some variables aren't available in template: {}.\nKnown variables: {:?}",
+            bad_vars.join(", "),
+            allowed_vars,
+        ));
+    }
+    template_context.extend(user_vars);
+
+    return Ok(());
 }
