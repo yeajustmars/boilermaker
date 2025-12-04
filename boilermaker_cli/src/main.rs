@@ -90,6 +90,7 @@ async fn main() -> Result<()> {
             Commands::Remove(cmd) => commands::remove(&app_state, &cmd).await?,
             Commands::Search(cmd) => commands::search(&app_state, &cmd).await?,
             Commands::Sources(subcmd) => match subcmd {
+                commands::Sources::Add(cmd) => commands::sources::add(&app_state, &cmd).await?,
                 commands::Sources::List(cmd) => commands::sources::list(&app_state, &cmd).await?,
             },
             Commands::Update(cmd) => commands::update(&app_state, &cmd).await?,
