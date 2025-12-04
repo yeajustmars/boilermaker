@@ -11,7 +11,6 @@ use lazy_static::lazy_static;
 use serde::Deserialize;
 use serde::de::{self, MapAccess, Visitor};
 use std::fmt;
-use toml::{Value, map::Map as TomlMap};
 use tracing::{info, warn};
 
 lazy_static! {
@@ -57,8 +56,6 @@ pub fn get_system_config_path(config_path: Option<&Path>) -> Result<Option<&Path
         Ok(None)
     }
 }
-
-// TODO: return SysConfig struct for get_system_config (instead of generic toml::Value)
 
 #[derive(Debug, Deserialize)]
 pub struct SysConfig {

@@ -1,11 +1,13 @@
+use std::collections::HashMap;
+
 use clap::{Parser, Subcommand};
 use color_eyre::Result;
 use serde::Deserialize;
 use tabled::{Table, Tabled, settings::Style};
-use toml::Value::Array as TomlArray;
 use tracing::info;
 
 use crate::state::AppState;
+use crate::util::string;
 
 #[derive(Subcommand)]
 pub enum Sources {
@@ -19,8 +21,33 @@ pub struct List {
     pub local: bool,
 }
 
-// TODO: move into Core.Sources
-pub fn print_sources_table(rows: Vec<SourceMap>) -> Result<()> {
+#[derive(Debug, Deserialize, Tabled)]
+pub struct SourceMap {
+    pub name: String,
+    pub backend: String,
+    pub description: String,
+}
+
+impl From<&HashMap<String, String>> for SourceMap {
+    fn from(m: &HashMap<String, String>) -> Self {
+        let description = m.get("description").cloned().unwrap_or_default();
+        let description = if description.len() > 50 {
+            string::truncate_to_char_count(&description, 50) + "..."
+        } else {
+            description
+        };
+
+        SourceMap {
+            name: m.get("name").cloned().unwrap_or_default(),
+            backend: m.get("backend").cloned().unwrap_or_default(),
+            description,
+        }
+    }
+}
+
+pub fn print_sources_table(sources: Vec<HashMap<String, String>>) -> Result<()> {
+    let rows = sources.iter().map(SourceMap::from).collect::<Vec<_>>();
+
     let mut table = Table::new(&rows);
     table.with(Style::psql());
 
@@ -29,44 +56,15 @@ pub fn print_sources_table(rows: Vec<SourceMap>) -> Result<()> {
     Ok(())
 }
 
-// TODO: add created_at, updated_at fields
-#[derive(Debug, Deserialize, Tabled)]
-pub struct SourceMap {
-    pub name: String,
-    pub backend: String,
-    pub description: String,
-}
-
-// TODO: fix Serde deserialization to avoid manual mapping
-impl From<&toml::map::Map<String, toml::Value>> for SourceMap {
-    fn from(table: &toml::map::Map<String, toml::Value>) -> Self {
-        let name = table
-            .get("name")
-            .and_then(|v| v.as_str())
-            .unwrap()
-            .to_string();
-        let backend = table
-            .get("backend")
-            .and_then(|v| v.as_str())
-            .unwrap()
-            .to_string();
-        let description = table
-            .get("description")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
-
-        Self {
-            name,
-            backend,
-            description,
-        }
-    }
-}
-
 // TODO: add filters/options
 pub async fn list(app_state: &AppState, _cmd: &List) -> Result<()> {
-    println!("sys_config: {:?}", app_state.sys_config);
+    if let Some(sources) = &app_state.sys_config.sources {
+        print_sources_table(sources.to_vec())?;
+        Ok(())
+    } else {
+        info!("No sources configured.");
+        Ok(())
+    }
     /*
     if let Some(TomlArray(raw_sources)) = app_state.sys_config.get("sources") {
         let rows = raw_sources
@@ -90,5 +88,4 @@ pub async fn list(app_state: &AppState, _cmd: &List) -> Result<()> {
         Ok(())
     }
     */
-    Ok(())
 }
