@@ -2,10 +2,8 @@ use std::{collections::HashMap, env, fs, path::PathBuf};
 
 use color_eyre::{Result, eyre::eyre};
 use dirs;
-use fs_extra::{copy_items, dir::CopyOptions};
 use git2::{FetchOptions, Repository, build::RepoBuilder};
 use minijinja;
-use walkdir::WalkDir;
 
 use crate::config::TemplateConfig;
 pub use crate::config::get_template_config;
@@ -96,16 +94,6 @@ pub fn remove_dir_if_exists(dir: &PathBuf) -> Result<()> {
 #[tracing::instrument]
 pub fn clean_dir(dir: &PathBuf) -> Result<()> {
     remove_dir_if_exists(dir)?;
-    Ok(())
-}
-
-//TODO: move to a more generic loc like util::file
-#[tracing::instrument]
-pub fn remove_git_dir(dir: &PathBuf) -> Result<()> {
-    let git_dir = dir.join(".git");
-    if git_dir.exists() {
-        fs::remove_dir_all(git_dir)?;
-    }
     Ok(())
 }
 
@@ -233,46 +221,4 @@ pub async fn render_template_files(
     }
 
     Ok(())
-}
-
-//TODO: move to a more generic loc like util::file
-#[tracing::instrument]
-pub async fn list_dir(path: &PathBuf) -> Result<Vec<PathBuf>> {
-    let paths = WalkDir::new(path)
-        .into_iter()
-        .filter_map(|e| e.ok())
-        .map(|e| e.path().to_path_buf())
-        .collect::<Vec<_>>();
-    Ok(paths)
-}
-
-//TODO: move to a more generic loc like util::file
-#[tracing::instrument]
-pub async fn copy_dir(src_dir: &PathBuf, dest_dir: &PathBuf) -> Result<()> {
-    let files = fs::read_dir(src_dir)?
-        .filter_map(|entry| entry.ok().map(|e| e.path()))
-        .collect::<Vec<_>>();
-
-    let options = CopyOptions::new();
-
-    if let Err(e) = copy_items(&files, dest_dir, &options) {
-        return Err(eyre!("💥 Failed to copy template files: {e}"));
-    }
-
-    Ok(())
-}
-
-//TODO: move to a more generic loc like util::file
-#[tracing::instrument]
-pub async fn move_file(src: &PathBuf, dest: &PathBuf) -> Result<()> {
-    if let Err(e) = fs::rename(src, dest) {
-        return Err(eyre!("💥 Failed to move file: {e}"));
-    }
-    Ok(())
-}
-
-#[tracing::instrument]
-pub fn read_file_to_string(path: &PathBuf) -> Result<String> {
-    let content = fs::read_to_string(path)?;
-    Ok(content)
 }

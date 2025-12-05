@@ -13,7 +13,7 @@ use crate::util::string;
 pub enum Sources {
     #[command(about = "Add a source")]
     Add(Add),
-    #[command(about = "List configured sources")]
+    #[command(about = "List added sources")]
     List(List),
 }
 
@@ -23,8 +23,20 @@ pub struct Add {
     coordinate: String,
 }
 
-pub async fn add(_app_state: &AppState, _cmd: &Add) -> Result<()> {
-    println!("> > > > > > > > > > > > Add a source!");
+#[derive(Debug, Deserialize)]
+pub struct SourceConfig {
+    pub source: HashMap<String, String>,
+    pub templates: Vec<HashMap<String, String>>,
+}
+
+pub async fn add(_app_state: &AppState, cmd: &Add) -> Result<()> {
+    let coordinate = cmd.coordinate.trim().to_owned();
+    //let sources = app_state.source_db.clone();
+    let src_text = reqwest::get(&coordinate).await?.text().await?;
+    println!("src_text: {src_text}");
+    let src_config: SourceConfig = toml::from_str(&src_text)?;
+    println!("src_config: {src_config:?}");
+
     Ok(())
 }
 
@@ -75,7 +87,8 @@ pub async fn list(app_state: &AppState, _cmd: &List) -> Result<()> {
         print_sources_table(sources.to_vec())?;
         Ok(())
     } else {
-        info!("No sources configured.");
+        info!("No sources found.");
+        info!("💡 Have a look at `boil sources add`");
         Ok(())
     }
 }
