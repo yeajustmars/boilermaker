@@ -1,7 +1,7 @@
 [source]
 name = "example_sqlite_source"
 description = "Boilermaker Example Sqlite Source"
-type = "sql::sqlite"
+backend = "sql::sqlite"
 
 [[templates]]
 repo = "https://github.com/yeajustmars/hello-world-clj"
