@@ -31,12 +31,11 @@ pub struct SourceConfig {
 
 pub async fn add(_app_state: &AppState, cmd: &Add) -> Result<()> {
     let coordinate = cmd.coordinate.trim().to_owned();
-    //let sources = app_state.source_db.clone();
     let src_text = reqwest::get(&coordinate).await?.text().await?;
-    println!("src_text: {src_text}");
     let src_config: SourceConfig = toml::from_str(&src_text)?;
     println!("src_config: {src_config:?}");
 
+    //let sources = app_state.source_db.clone();
     Ok(())
 }
 
