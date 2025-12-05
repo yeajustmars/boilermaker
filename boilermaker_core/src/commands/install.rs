@@ -64,7 +64,7 @@ pub async fn install(app_state: &AppState, cmd: &Install) -> Result<()> {
     };
     let row = row.set_hash_string();
 
-    let cache = app_state.cache_db.clone();
+    let cache = app_state.local_db.clone();
 
     if !cache.template_table_exists().await? {
         cache.create_template_tables().await?;
