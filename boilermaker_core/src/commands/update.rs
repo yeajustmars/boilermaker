@@ -8,8 +8,9 @@ use tracing::info;
 use crate::db::TemplateRow;
 use crate::state::AppState;
 use crate::template::{
-    CloneContext, clean_dir, clone_repo, install_template, make_tmp_dir_from_url, remove_git_dir,
+    CloneContext, clean_dir, clone_repo, install_template, make_tmp_dir_from_url,
 };
+use crate::util::file::remove_git_dir;
 
 #[derive(Debug, Parser)]
 pub struct Update {

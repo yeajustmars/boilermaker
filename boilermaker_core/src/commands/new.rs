@@ -8,6 +8,7 @@ use tracing::{error, info};
 use crate::db::{TemplateFindParams, TemplateResult};
 use crate::state::AppState;
 use crate::template as tpl;
+use crate::util::file::{copy_dir, list_dir, move_file};
 
 #[derive(Debug, Parser)]
 pub struct New {
@@ -54,9 +55,9 @@ pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
     //TODO: clean up and refactor
     let template_base_dir = PathBuf::from(&t.template_dir);
     let template_dir = template_base_dir.join(&t.lang);
-    tpl::copy_dir(&template_dir, &work_dir).await?;
+    copy_dir(&template_dir, &work_dir).await?;
 
-    let template_paths: Vec<PathBuf> = tpl::list_dir(&work_dir)
+    let template_paths: Vec<PathBuf> = list_dir(&work_dir)
         .await?
         .iter()
         .filter(|p| p.is_file())
@@ -77,7 +78,7 @@ pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
 
     let out_dir = tpl::create_project_dir(project_name, cmd.dir.as_deref(), cmd.overwrite).await?;
 
-    if let Err(e) = tpl::move_file(&work_dir, &out_dir).await {
+    if let Err(e) = move_file(&work_dir, &out_dir).await {
         return Err(eyre!("💥 Failed to move project to output directory: {e}"));
     }
 

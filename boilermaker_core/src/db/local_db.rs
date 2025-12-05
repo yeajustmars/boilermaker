@@ -7,6 +7,7 @@ use tabled::Tabled;
 
 use crate::template as tmpl;
 use crate::util::crypto::sha256_hash_string;
+use crate::util::file::{list_dir, read_file_to_string};
 use crate::util::time::timestamp_to_iso8601;
 
 static MIGRATOR: Migrator = sqlx::migrate!("../migrations");
@@ -157,14 +158,14 @@ impl TemplateDb for LocalCache {
             .await?
             .ok_or_else(|| eyre!("Template with id {} not found", id))?;
 
-        let files = tmpl::list_dir(&tmpl::get_template_dir_path(&t.name)?)
+        let files = list_dir(&tmpl::get_template_dir_path(&t.name)?)
             .await?
             .into_iter()
             .filter(|p| p.is_file() && !p.to_str().unwrap_or("").contains(".git"))
             .collect::<Vec<_>>();
 
         for file in files {
-            let content = tmpl::read_file_to_string(&file)?;
+            let content = read_file_to_string(&file)?;
             let _ = sqlx::query(
                 r#"
                 INSERT INTO template_content
