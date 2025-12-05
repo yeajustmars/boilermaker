@@ -18,7 +18,7 @@ pub struct Remove {
 pub async fn remove(app_state: &AppState, cmd: &Remove) -> Result<()> {
     info!("Removing template: {}", cmd.id);
 
-    let cache = app_state.cache_db.clone();
+    let cache = app_state.local_db.clone();
 
     let template = match cache.get_template(cmd.id).await? {
         Some(template) => template,

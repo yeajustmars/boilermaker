@@ -101,7 +101,7 @@ async fn get_existing_templates(app_state: &AppState, cmd: &New) -> Result<Vec<T
         sha256_hash: None,
     };
 
-    let cache = app_state.cache_db.clone();
+    let cache = app_state.local_db.clone();
 
     let existing_templates = { cache.find_templates(find_params).await? };
 

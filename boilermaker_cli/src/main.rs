@@ -7,9 +7,7 @@ use tracing::info;
 
 use boilermaker_core::{
     commands,
-    config::{
-        DEFAULT_LOCAL_CACHE_PATH_STRING, DEFAULT_LOCAL_SOURCES_PATH_STRING, get_system_config,
-    },
+    config::{DEFAULT_LOCAL_CACHE_PATH_STRING, get_system_config},
     db::LocalCache,
     logging,
     state::AppState,
@@ -66,7 +64,6 @@ async fn main() -> Result<()> {
     logging::init_tracing(cli.debug)?;
 
     let cache_path = DEFAULT_LOCAL_CACHE_PATH_STRING.as_str();
-    let source_path = DEFAULT_LOCAL_SOURCES_PATH_STRING.as_str();
 
     // TODO: decide where a remote db should be allowed vs just searching remote and installing
     // locally
@@ -74,18 +71,12 @@ async fn main() -> Result<()> {
     let app_state = AppState {
         sys_config: get_system_config(cli.config.as_deref())?,
         log_level: cli.debug,
-        cache_db: Arc::new(LocalCache::new(cache_path).await?),
-        source_db: Arc::new(LocalCache::new(source_path).await?),
+        local_db: Arc::new(LocalCache::new(cache_path).await?),
     };
 
-    let cache = app_state.cache_db.clone();
+    let cache = app_state.local_db.clone();
     if !cache.template_table_exists().await? {
         cache.create_template_tables().await?;
-    }
-
-    let sources = app_state.source_db.clone();
-    if !sources.template_table_exists().await? {
-        sources.create_template_tables().await?;
     }
 
     if let Some(command) = cli.command {

@@ -15,7 +15,7 @@ pub struct List {
 }
 
 pub async fn list(app_state: &AppState, _cmd: &List) -> Result<()> {
-    let cache = app_state.cache_db.clone();
+    let cache = app_state.local_db.clone();
 
     let result = cache.list_templates(None).await?;
 

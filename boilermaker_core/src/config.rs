@@ -24,13 +24,6 @@ lazy_static! {
         .to_str()
         .unwrap()
         .to_string();
-    pub static ref DEFAULT_LOCAL_SOURCES_PATH: PathBuf =
-        make_boilermaker_local_sources_path().unwrap();
-    pub static ref DEFAULT_LOCAL_SOURCES_PATH_STRING: String = DEFAULT_LOCAL_SOURCES_PATH
-        .as_path()
-        .to_str()
-        .unwrap()
-        .to_string();
 }
 
 //TODO: add default configuration for boil cmd

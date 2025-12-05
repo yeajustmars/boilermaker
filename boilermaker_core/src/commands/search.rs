@@ -15,7 +15,7 @@ pub struct Search {
 
 pub async fn search(app_state: &AppState, cmd: &Search) -> Result<()> {
     let term = cmd.term.trim().to_owned();
-    let cache = app_state.cache_db.clone();
+    let cache = app_state.local_db.clone();
 
     let results = if cmd.local {
         cache.search_templates(&term).await?

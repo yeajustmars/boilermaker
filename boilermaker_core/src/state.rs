@@ -9,8 +9,7 @@ pub type TemplateDbType = Arc<dyn TemplateDb + Send + Sync>;
 pub struct AppState {
     pub log_level: u8,
     pub sys_config: SysConfig,
-    pub cache_db: TemplateDbType,
-    pub source_db: TemplateDbType,
+    pub local_db: TemplateDbType,
 }
 
 impl fmt::Debug for AppState {

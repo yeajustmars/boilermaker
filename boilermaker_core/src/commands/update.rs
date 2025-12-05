@@ -20,7 +20,7 @@ pub struct Update {
 
 #[tracing::instrument]
 pub async fn update(app_state: &AppState, cmd: &Update) -> Result<()> {
-    let cache = app_state.cache_db.clone();
+    let cache = app_state.local_db.clone();
     let Some(templ) = cache.get_template(cmd.id as i64).await? else {
         return Err(eyre!("💥 Cannot find template: {}.", cmd.id));
     };
@@ -30,7 +30,6 @@ pub async fn update(app_state: &AppState, cmd: &Update) -> Result<()> {
     let template_dir = PathBuf::from(templ.template_dir.clone());
     let tmp_clone_dir = make_tmp_dir_from_url(&templ.repo);
 
-    // We need a new clone as we don't keep .git dirs.
     let clone_ctx = CloneContext::new(
         &templ.repo,
         Some(tmp_clone_dir.clone()),
