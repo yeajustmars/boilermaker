@@ -6,6 +6,7 @@ use serde::Deserialize;
 use tabled::{Table, Tabled, settings::Style};
 use tracing::info;
 
+use crate::db::local_db::{SourceRow, SourceTemplateRow, hash_source};
 use crate::state::AppState;
 use crate::util::string;
 
@@ -32,10 +33,20 @@ pub struct SourceConfig {
 pub async fn add(_app_state: &AppState, cmd: &Add) -> Result<()> {
     let coordinate = cmd.coordinate.trim().to_owned();
     let src_text = reqwest::get(&coordinate).await?.text().await?;
-    let src_config: SourceConfig = toml::from_str(&src_text)?;
-    println!("src_config: {src_config:?}");
+    let cnf: SourceConfig = toml::from_str(&src_text)?;
+    println!("cnf: {cnf:?}");
 
-    //let sources = app_state.source_db.clone();
+    let source_row = SourceRow {
+        name: cnf.source.get("name").cloned().unwrap(),
+        backend: cnf.source.get("backend").cloned().unwrap(),
+        coordinate: coordinate.clone(),
+        sha256_hash: None,
+    };
+    let source_row = source_row.set_hash_string();
+    println!("source_row: {source_row:?}");
+
+    // let sources = app_state.local_db.clone();
+
     Ok(())
 }
 

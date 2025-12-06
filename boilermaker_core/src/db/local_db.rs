@@ -14,9 +14,12 @@ static MIGRATOR: Migrator = sqlx::migrate!("../migrations");
 
 #[async_trait::async_trait]
 pub trait TemplateDb: Send + Sync {
+    // ................................................. Schema
+    // TODO: rename create_template_tables to create_tables (now local_db has cache + sources)
+    async fn create_template_tables(&self) -> Result<()>;
+    // ................................................. Templates
     async fn check_unique(&self, row: &TemplateRow) -> Result<Option<TemplateResult>>;
     async fn create_template(&self, row: TemplateRow) -> Result<i64>;
-    async fn create_template_tables(&self) -> Result<()>;
     async fn delete_template(&self, id: i64) -> Result<i64>;
     async fn find_templates(&self, query: TemplateFindParams) -> Result<Vec<TemplateResult>>;
     async fn get_template(&self, id: i64) -> Result<Option<TemplateResult>>;
@@ -28,6 +31,9 @@ pub trait TemplateDb: Send + Sync {
     async fn search_templates(&self, term: &str) -> Result<Vec<SearchResult>>;
     async fn template_table_exists(&self) -> Result<bool>;
     async fn update_template(&self, id: i64, row: TemplateRow) -> Result<i64>;
+    // ................................................. Sources
+    async fn create_source(&self, row: SourceRow) -> Result<i64>;
+    async fn create_source_template(&self, row: SourceTemplateRow) -> Result<i64>;
 }
 
 #[derive(Debug)]
@@ -59,9 +65,9 @@ impl TemplateDb for LocalCache {
             SELECT *
             FROM template
             WHERE
-                name = ?1 AND
-                lang = ?2 AND
-                repo = ?3;
+              name = ?1 AND
+              lang = ?2 AND
+              repo = ?3;
             "#,
         )
         .bind(&row.name)
@@ -78,9 +84,9 @@ impl TemplateDb for LocalCache {
         let template_result = sqlx::query(
             r#"
             INSERT INTO template
-                (name, lang, template_dir, created_at, repo, branch, subdir, sha256_hash)
+              (name, lang, template_dir, created_at, repo, branch, subdir, sha256_hash)
             VALUES
-                (?, ?, ?, strftime('%s','now'), ?, ?, ?, ?);
+              (?, ?, ?, strftime('%s','now'), ?, ?, ?, ?);
             "#,
         )
         .bind(&row.name)
@@ -169,9 +175,9 @@ impl TemplateDb for LocalCache {
             let _ = sqlx::query(
                 r#"
                 INSERT INTO template_content
-                    (template_id, file_path, content, created_at)
+                  (template_id, file_path, content, created_at)
                 VALUES
-                    (?, ?, ?, strftime('%s','now'));
+                  (?, ?, ?, strftime('%s','now'));
                 "#,
             )
             .bind(id)
@@ -190,31 +196,20 @@ impl TemplateDb for LocalCache {
         &self,
         _opts: Option<ListTemplateOptions>,
     ) -> Result<Vec<TemplateResult>> {
-        let results = sqlx::query_as::<_, TemplateResult>(
-            r#"
-            SELECT *
-            FROM template
-            ORDER BY created_at DESC;
-            "#,
-        )
-        .fetch_all(&self.pool)
-        .await?;
+        let results =
+            sqlx::query_as::<_, TemplateResult>("SELECT * FROM template ORDER BY created_at DESC;")
+                .fetch_all(&self.pool)
+                .await?;
 
         Ok(results)
     }
 
     #[tracing::instrument]
     async fn get_template(&self, id: i64) -> Result<Option<TemplateResult>> {
-        let result = sqlx::query_as::<_, TemplateResult>(
-            r#"
-            SELECT *
-            FROM template
-            WHERE id = ?;
-            "#,
-        )
-        .bind(id)
-        .fetch_optional(&self.pool)
-        .await?;
+        let result = sqlx::query_as::<_, TemplateResult>("SELECT * FROM template WHERE id = ?;")
+            .bind(id)
+            .fetch_optional(&self.pool)
+            .await?;
 
         Ok(result)
     }
@@ -225,15 +220,15 @@ impl TemplateDb for LocalCache {
         let results = sqlx::query_as::<_, SearchResult>(
             r#"
             SELECT
-                src.template_id,
-                t.name, t.lang, t.template_dir, t.repo, t.branch, t.subdir,
-                t.created_at, t.updated_at, t.sha256_hash,
-                src.file_path, src.content
+              src.template_id,
+              t.name, t.lang, t.template_dir, t.repo, t.branch, t.subdir,
+              t.created_at, t.updated_at, t.sha256_hash,
+              src.file_path, src.content
             FROM template_content_fts AS ft_search
-                LEFT JOIN template_content AS src ON ft_search.rowid=src.id
-                LEFT JOIN template as t ON src.template_id=t.id
+              LEFT JOIN template_content AS src ON ft_search.rowid=src.id
+              LEFT JOIN template as t ON src.template_id=t.id
             WHERE
-                template_content_fts MATCH ?
+              template_content_fts MATCH ?
             "#,
         )
         .bind(term)
@@ -284,6 +279,50 @@ impl TemplateDb for LocalCache {
         .await?;
 
         Ok(id)
+    }
+
+    #[tracing::instrument]
+    async fn create_source(&self, row: SourceRow) -> Result<i64> {
+        let source_result = sqlx::query(
+            r#"
+            INSERT INTO source
+              (name, backend, url, created_at, sha256_hash)
+            VALUES
+              (?, ?, ?, strftime('%s','now'), ?);
+            "#,
+        )
+        .bind(&row.name)
+        .bind(&row.backend)
+        .bind(&row.url)
+        .bind(&row.sha256_hash)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(source_result.last_insert_rowid())
+    }
+
+    #[tracing::instrument]
+    async fn create_source_template(&self, row: SourceTemplateRow) -> Result<i64> {
+        let template_result = sqlx::query(
+            r#"
+            INSERT INTO source_template
+              (source_id, name, lang, template_dir, created_at, repo, branch, subdir, sha256_hash)
+            VALUES
+              (?, ?, ?, ?, strftime('%s','now'), ?, ?, ?, ?);
+            "#,
+        )
+        .bind(row.source_id)
+        .bind(&row.name)
+        .bind(&row.lang)
+        .bind(&row.template_dir)
+        .bind(&row.repo)
+        .bind(&row.branch)
+        .bind(&row.subdir)
+        .bind(&row.sha256_hash)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(template_result.last_insert_rowid())
     }
 }
 
@@ -407,4 +446,38 @@ pub struct SearchResult {
     pub sha256_hash: Option<String>,
     pub file_path: String,
     pub content: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct SourceRow {
+    pub name: String,
+    pub backend: String,
+    pub coordinate: String,
+    pub sha256_hash: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct SourceTemplateRow {
+    pub source_id: i64,
+    pub name: String,
+    pub lang: String,
+    pub template_dir: String,
+    pub repo: String,
+    pub branch: Option<String>,
+    pub subdir: Option<String>,
+    pub sha256_hash: Option<String>,
+}
+
+impl SourceRow {
+    #[tracing::instrument]
+    pub fn set_hash_string(mut self) -> Self {
+        let hash = hash_source(&self);
+        self.sha256_hash = Some(hash);
+        self
+    }
+}
+
+pub fn hash_source(row: &SourceRow) -> String {
+    let input = format!("{}~~{}~~{}", row.name, row.backend, row.coordinate);
+    sha256_hash_string(&input)
 }
