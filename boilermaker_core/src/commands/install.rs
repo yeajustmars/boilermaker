@@ -32,6 +32,7 @@ pub async fn install(app_state: &AppState, cmd: &Install) -> Result<()> {
         make_name_from_url(&cmd.template)
     };
 
+    // TODO: consolidate with same clone logic in sources.rs
     let repo_ctx = CloneContext::from(cmd);
     let clone_dir = repo_ctx.dest.as_ref().unwrap();
 

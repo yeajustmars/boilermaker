@@ -1,13 +1,18 @@
 use std::collections::HashMap;
 
 use clap::{Parser, Subcommand};
+use color_eyre::eyre;
 use color_eyre::{Result, eyre::eyre};
 use serde::Deserialize;
 use tabled::{Table, Tabled, settings::Style};
 use tracing::info;
 
-use crate::db::local_db::{SourceRow, SourceTemplateRow, hashmap_into_source_template_row};
+//use crate::db::local_db::{SourceRow, SourceTemplateRow, hashmap_into_source_template_row};
 use crate::state::AppState;
+use crate::template::{
+    CloneContext, clean_dir, clone_repo, get_template_config, make_name_from_url,
+    make_tmp_dir_from_url,
+};
 use crate::util::string;
 
 #[derive(Subcommand)]
@@ -34,11 +39,54 @@ pub async fn add(_app_state: &AppState, cmd: &Add) -> Result<()> {
     let coordinate = cmd.coordinate.trim().to_owned();
     let src_text = reqwest::get(&coordinate).await?.text().await?;
     let cnf: SourceConfig = toml::from_str(&src_text)?;
+    println!("Source Config: {cnf:?}");
 
     // TODO: 1. [ ] Validate that each repo/lang is a real source
     //       NOTE: (just clone the repo as we'll need it on success anyway)
     // TODO: 2. [ ] Create source entry in DB
     // TODO: 3. [ ] Create template entries in DB
+
+    for template in cnf.templates.iter() {
+        let repo = match template.get("repo") {
+            Some(repo) => repo,
+            None => return Err(eyre!("Template missing 'repo' field")),
+        };
+
+        let name = if let Some(name) = &template.get("name") {
+            name.to_string()
+        } else {
+            make_name_from_url(repo)
+        };
+
+        // TODO: consolidate with same clone logic in install.rs
+        let repo_ctx = CloneContext::from(template);
+        let clone_dir = repo_ctx.dest.as_ref().unwrap();
+
+        if let Err(err) = clean_dir(clone_dir) {
+            return Err(eyre!("💥 Failed setting up clone dir: {}", err));
+        }
+
+        info!("Cloning template");
+        if let Err(err) = clone_repo(&repo_ctx).await {
+            return Err(eyre!("💥 Failed to clone template: {}", err));
+        }
+
+        let work_dir = if let Some(subdir) = &template.get("subdir") {
+            clone_dir.join(subdir)
+        } else {
+            clone_dir.to_path_buf()
+        };
+
+        // let cnf = get_template_config(work_dir.as_path())?;
+        // let lang = get_lang(&cnf, &template.lang)?;
+        // let template_dir = get_template_dir_path(&name)?;
+
+        println!("\n==========================================================");
+        println!("Cloning template repo: {repo_ctx:?}");
+        println!("\tname: {name:?}");
+        println!("\tclone_dir: {clone_dir:?}");
+        println!("\twork_dir: {work_dir:?}");
+    }
 
     /*
     for template in cnf.templates.iter() {
@@ -88,6 +136,7 @@ pub struct SourceMap {
 }
 
 impl From<&HashMap<String, String>> for SourceMap {
+    #[tracing::instrument]
     fn from(m: &HashMap<String, String>) -> Self {
         let description = m.get("description").cloned().unwrap_or_default();
         let description = if description.len() > 50 {
@@ -104,6 +153,7 @@ impl From<&HashMap<String, String>> for SourceMap {
     }
 }
 
+#[tracing::instrument]
 pub fn print_sources_table(sources: Vec<HashMap<String, String>>) -> Result<()> {
     let rows = sources.iter().map(SourceMap::from).collect::<Vec<_>>();
 
@@ -116,6 +166,7 @@ pub fn print_sources_table(sources: Vec<HashMap<String, String>>) -> Result<()> 
 }
 
 // TODO: add filters/options
+#[tracing::instrument]
 pub async fn list(app_state: &AppState, _cmd: &List) -> Result<()> {
     if let Some(sources) = &app_state.sys_config.sources {
         print_sources_table(sources.to_vec())?;
@@ -124,5 +175,17 @@ pub async fn list(app_state: &AppState, _cmd: &List) -> Result<()> {
         info!("No sources found.");
         info!("💡 Have a look at `boil sources add`");
         Ok(())
+    }
+}
+
+impl From<&HashMap<String, String>> for CloneContext {
+    #[tracing::instrument]
+    fn from(m: &HashMap<String, String>) -> Self {
+        let repo = m.get("repo").cloned().unwrap();
+        Self {
+            url: repo.clone(),
+            branch: m.get("branch").cloned(),
+            dest: Some(make_tmp_dir_from_url(&repo)),
+        }
     }
 }
