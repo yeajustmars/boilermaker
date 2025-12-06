@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use color_eyre::{Result, eyre::eyre};
 use sqlx::{
     migrate::Migrator,
@@ -286,9 +288,9 @@ impl TemplateDb for LocalCache {
         let source_result = sqlx::query(
             r#"
             INSERT INTO source
-              (name, backend, coordinate, created_at, sha256_hash)
+              (name, backend, coordinate, sha256_hash, created_at)
             VALUES
-              (?, ?, ?, strftime('%s','now'), ?);
+              (?, ?, ?, ?, strftime('%s','now'));
             "#,
         )
         .bind(&row.name)
@@ -306,16 +308,15 @@ impl TemplateDb for LocalCache {
         let template_result = sqlx::query(
             r#"
             INSERT INTO source_template
-              (source_id, name, lang, template_dir, created_at, repo, branch, subdir, sha256_hash)
+              (source_id, repo, lang, name, branch, subdir, sha256_hash, created_at)
             VALUES
-              (?, ?, ?, ?, strftime('%s','now'), ?, ?, ?, ?);
+              (?, ?, ?, ?, ?, ?, ?, ?, strftime('%s','now'));
             "#,
         )
         .bind(row.source_id)
-        .bind(&row.name)
-        .bind(&row.lang)
-        .bind(&row.template_dir)
         .bind(&row.repo)
+        .bind(&row.lang)
+        .bind(&row.name)
         .bind(&row.branch)
         .bind(&row.subdir)
         .bind(&row.sha256_hash)
@@ -456,28 +457,78 @@ pub struct SourceRow {
     pub sha256_hash: Option<String>,
 }
 
-#[derive(Debug, Clone)]
-pub struct SourceTemplateRow {
-    pub source_id: i64,
-    pub name: String,
-    pub lang: String,
-    pub template_dir: String,
-    pub repo: String,
-    pub branch: Option<String>,
-    pub subdir: Option<String>,
-    pub sha256_hash: Option<String>,
-}
-
 impl SourceRow {
     #[tracing::instrument]
     pub fn set_hash_string(mut self) -> Self {
-        let hash = hash_source(&self);
+        let hash = hash_source_row(&self);
         self.sha256_hash = Some(hash);
         self
     }
 }
 
-pub fn hash_source(row: &SourceRow) -> String {
+pub fn hash_source_row(row: &SourceRow) -> String {
     let input = format!("{}~~{}~~{}", row.name, row.backend, row.coordinate);
+    sha256_hash_string(&input)
+}
+
+#[derive(Debug, Clone)]
+pub struct SourceTemplateRow {
+    pub source_id: i64,
+    pub repo: String,
+    pub lang: String,
+    pub name: String,
+    pub branch: Option<String>,
+    pub subdir: Option<String>,
+    pub sha256_hash: Option<String>,
+}
+
+// TODO: increase validation
+pub fn hashmap_into_source_template_row(
+    source_id: i64,
+    m: &HashMap<String, String>,
+) -> Result<SourceTemplateRow> {
+    let repo = m
+        .get("repo")
+        .cloned()
+        .ok_or(eyre!("Template missing repo"))?;
+    let url = repo.clone();
+    let lang = m
+        .get("lang")
+        .cloned()
+        .ok_or(eyre!("Template missing lang"))?;
+
+    let mut row = SourceTemplateRow {
+        source_id,
+        repo,
+        lang,
+        name: tmpl::make_name_from_url(&url),
+        branch: m.get("branch").cloned(),
+        subdir: m.get("subdir").cloned(),
+        sha256_hash: None,
+    };
+    row = row.set_hash_string();
+
+    Ok(row)
+}
+
+impl SourceTemplateRow {
+    #[tracing::instrument]
+    pub fn set_hash_string(mut self) -> Self {
+        let hash = hash_source_template_row(&self);
+        self.sha256_hash = Some(hash);
+        self
+    }
+}
+
+// TODO: merge with hash_template_row (possibly via trait/impl or shared struct)
+pub fn hash_source_template_row(row: &SourceTemplateRow) -> String {
+    let input = format!(
+        "{}~~{}~~{}~~{}~~{}",
+        row.repo,
+        row.name,
+        row.lang,
+        row.branch.as_deref().unwrap_or(""),
+        row.subdir.as_deref().unwrap_or(""),
+    );
     sha256_hash_string(&input)
 }
