@@ -6,9 +6,7 @@ use serde::Deserialize;
 use tabled::{Table, Tabled, settings::Style};
 use tracing::info;
 
-use crate::db::local_db::{
-    SourceRow, SourceTemplateRow, hash_source, hashmap_into_source_template_row,
-};
+use crate::db::local_db::{SourceRow, SourceTemplateRow, hashmap_into_source_template_row};
 use crate::state::AppState;
 use crate::util::string;
 
