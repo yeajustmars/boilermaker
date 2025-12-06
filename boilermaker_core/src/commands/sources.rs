@@ -1,12 +1,13 @@
 use std::collections::HashMap;
 
 use clap::{Parser, Subcommand};
-use color_eyre::Result;
+use color_eyre::{Result, eyre::eyre};
 use serde::Deserialize;
 use tabled::{Table, Tabled, settings::Style};
 use tracing::info;
 
-use crate::db::local_db::{SourceRow, SourceTemplateRow, hash_source};
+use crate::db::local_db::SourceRow;
+//use crate::db::local_db::{SourceRow, SourceTemplateRow, hash_source};
 use crate::state::AppState;
 use crate::util::string;
 
@@ -30,22 +31,34 @@ pub struct SourceConfig {
     pub templates: Vec<HashMap<String, String>>,
 }
 
-pub async fn add(_app_state: &AppState, cmd: &Add) -> Result<()> {
+pub async fn add(app_state: &AppState, cmd: &Add) -> Result<()> {
     let coordinate = cmd.coordinate.trim().to_owned();
     let src_text = reqwest::get(&coordinate).await?.text().await?;
     let cnf: SourceConfig = toml::from_str(&src_text)?;
     println!("cnf: {cnf:?}");
 
+    let name = cnf.source.get("name").cloned().unwrap();
+
     let source_row = SourceRow {
-        name: cnf.source.get("name").cloned().unwrap(),
+        name: name.clone(),
         backend: cnf.source.get("backend").cloned().unwrap(),
         coordinate: coordinate.clone(),
         sha256_hash: None,
     };
     let source_row = source_row.set_hash_string();
-    println!("source_row: {source_row:?}");
 
-    // let sources = app_state.local_db.clone();
+    let sources = app_state.local_db.clone();
+
+    let source_id = match sources.create_source(source_row).await {
+        Ok(id) => {
+            info!("Source '{}' added successfully.", name);
+            id
+        }
+        Err(e) => {
+            return Err(eyre!("💥 Failed to add source: {}", e));
+        }
+    };
+    println!("source_id: {}", source_id);
 
     Ok(())
 }

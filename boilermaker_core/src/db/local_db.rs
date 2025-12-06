@@ -286,14 +286,14 @@ impl TemplateDb for LocalCache {
         let source_result = sqlx::query(
             r#"
             INSERT INTO source
-              (name, backend, url, created_at, sha256_hash)
+              (name, backend, coordinate, created_at, sha256_hash)
             VALUES
               (?, ?, ?, strftime('%s','now'), ?);
             "#,
         )
         .bind(&row.name)
         .bind(&row.backend)
-        .bind(&row.url)
+        .bind(&row.coordinate)
         .bind(&row.sha256_hash)
         .execute(&self.pool)
         .await?;
