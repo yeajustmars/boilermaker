@@ -5,7 +5,8 @@ CREATE TABLE IF NOT EXISTS source (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL UNIQUE,
   backend TEXT NOT NULL,
-  config TEXT,
+  coordinate TEXT,
+  sha256_hash TEXT NOT NULL UNIQUE,
   created_at TIMESTAMP NOT NULL,
   updated_at TIMESTAMP
 );
@@ -13,7 +14,8 @@ CREATE TABLE IF NOT EXISTS source (
 CREATE VIRTUAL TABLE IF NOT EXISTS source_fts USING fts5(
   name,
   backend,
-  config,
+  coordinate,,
+  sha256_hash,
   content='source',
   content_rowid='id'
 );
