@@ -6,8 +6,9 @@ use serde::Deserialize;
 use tabled::{Table, Tabled, settings::Style};
 use tracing::info;
 
-use crate::db::local_db::SourceRow;
-//use crate::db::local_db::{SourceRow, SourceTemplateRow, hash_source};
+use crate::db::local_db::{
+    SourceRow, SourceTemplateRow, hash_source, hashmap_into_source_template_row,
+};
 use crate::state::AppState;
 use crate::util::string;
 
@@ -31,12 +32,24 @@ pub struct SourceConfig {
     pub templates: Vec<HashMap<String, String>>,
 }
 
-pub async fn add(app_state: &AppState, cmd: &Add) -> Result<()> {
+pub async fn add(_app_state: &AppState, cmd: &Add) -> Result<()> {
     let coordinate = cmd.coordinate.trim().to_owned();
     let src_text = reqwest::get(&coordinate).await?.text().await?;
     let cnf: SourceConfig = toml::from_str(&src_text)?;
-    println!("cnf: {cnf:?}");
 
+    // TODO: 1. [ ] Validate that each repo/lang is a real source
+    //       NOTE: (just clone the repo as we'll need it on success anyway)
+    // TODO: 2. [ ] Create source entry in DB
+    // TODO: 3. [ ] Create template entries in DB
+
+    /*
+    for template in cnf.templates.iter() {
+        let row = hashmap_into_source_template_row(template, &coordinate)?;
+        println!("Template Row: {:?}", row);
+    }
+     */
+
+    /*
     let name = cnf.source.get("name").cloned().unwrap();
 
     let source_row = SourceRow {
@@ -58,7 +71,7 @@ pub async fn add(app_state: &AppState, cmd: &Add) -> Result<()> {
             return Err(eyre!("💥 Failed to add source: {}", e));
         }
     };
-    println!("source_id: {}", source_id);
+     */
 
     Ok(())
 }
