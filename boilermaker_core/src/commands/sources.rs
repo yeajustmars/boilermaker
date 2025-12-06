@@ -81,11 +81,12 @@ pub async fn add(_app_state: &AppState, cmd: &Add) -> Result<()> {
         // let lang = get_lang(&cnf, &template.lang)?;
         // let template_dir = get_template_dir_path(&name)?;
 
-        println!("\n==========================================================");
+        println!("\n\\==========================================================");
         println!("Cloning template repo: {repo_ctx:?}");
         println!("\tname: {name:?}");
         println!("\tclone_dir: {clone_dir:?}");
         println!("\twork_dir: {work_dir:?}");
+        println!("/==========================================================\n");
     }
 
     /*
