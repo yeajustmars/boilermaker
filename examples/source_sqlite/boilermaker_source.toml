@@ -5,7 +5,6 @@ backend = "sql::sqlite"
 
 [[templates]]
 repo = "https://github.com/yeajustmars/hello-world-clj"
-lang = "clojure"
 
 [[templates]]
 repo = "https://github.com/yeajustmars/boilermaker"
