@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use clap::{Parser, Subcommand};
-use color_eyre::eyre;
 use color_eyre::{Result, eyre::eyre};
 use serde::Deserialize;
 use tabled::{Table, Tabled, settings::Style};
@@ -52,6 +51,11 @@ pub async fn add(_app_state: &AppState, cmd: &Add) -> Result<()> {
             None => return Err(eyre!("Template missing 'repo' field")),
         };
 
+        let lang = match template.get("lang") {
+            Some(lang) => lang,
+            None => return Err(eyre!("Template missing 'lang' field")),
+        };
+
         let name = if let Some(name) = &template.get("name") {
             name.to_string()
         } else {
@@ -66,7 +70,7 @@ pub async fn add(_app_state: &AppState, cmd: &Add) -> Result<()> {
             return Err(eyre!("💥 Failed setting up clone dir: {}", err));
         }
 
-        info!("Cloning template");
+        info!("Cloning source template: {name}");
         if let Err(err) = clone_repo(&repo_ctx).await {
             return Err(eyre!("💥 Failed to clone template: {}", err));
         }
@@ -77,15 +81,17 @@ pub async fn add(_app_state: &AppState, cmd: &Add) -> Result<()> {
             clone_dir.to_path_buf()
         };
 
-        // let cnf = get_template_config(work_dir.as_path())?;
+        let cnf = get_template_config(work_dir.as_path())?;
         // let lang = get_lang(&cnf, &template.lang)?;
         // let template_dir = get_template_dir_path(&name)?;
 
         println!("\n\\==========================================================");
         println!("Cloning template repo: {repo_ctx:?}");
         println!("\tname: {name:?}");
+        println!("\tlang: {lang:?}");
         println!("\tclone_dir: {clone_dir:?}");
         println!("\twork_dir: {work_dir:?}");
+        println!("\tcnf: {cnf:?}");
         println!("/==========================================================\n");
     }
 
