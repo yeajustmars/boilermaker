@@ -22,33 +22,31 @@ CREATE VIRTUAL TABLE IF NOT EXISTS source_fts USING fts5(
   content_rowid='id'
 );
 
--- .................. template after insert
-CREATE TRIGGER IF NOT EXISTS source_after_insert AFTER INSERT ON source BEGIN
-    INSERT INTO source_fts
-      (rowid, name, backend, coordinate, sha256_hash)
-    VALUES
-      (new.id, new.name, new.backend, new.coordinate, new.sha256_hash);
+-- after insert
+CREATE TRIGGER IF NOT EXISTS source_after_insert
+AFTER INSERT ON source
+BEGIN
+  INSERT INTO source_fts(rowid, name, backend, coordinate, description, sha256_hash)
+  VALUES (new.id, new.name, new.backend, new.coordinate, new.description, new.sha256_hash);
 END;
 
--- .................. template after update
-CREATE TRIGGER IF NOT EXISTS source_after_update AFTER UPDATE ON source BEGIN
-    INSERT INTO source_fts
-      (source_fts, rowid, name, backend, coordinate, sha256_hash)
-    VALUES
-      ('delete', old.rowid, old.name, old.backend, old.coordinate, old.sha256_hash);
+-- after update
+CREATE TRIGGER IF NOT EXISTS source_after_update
+AFTER UPDATE ON source
+BEGIN
+  -- remove old entry from FTS
+  INSERT INTO source_fts(source_fts, rowid) VALUES('delete', old.id);
 
-    INSERT INTO source_fts
-      (source_fts, rowid, name, backend, coordinate, sha256_hash)
-    VALUES
-      (new.id, new.name, new.backend, new.coordinate, new.sha256_hash);
+  -- add new entry to FTS
+  INSERT INTO source_fts(rowid, name, backend, coordinate, description, sha256_hash)
+  VALUES (new.id, new.name, new.backend, new.coordinate, new.description, new.sha256_hash);
 END;
 
--- .................. template after delete
-CREATE TRIGGER IF NOT EXISTS source_after_delete AFTER DELETE ON source BEGIN
-    INSERT INTO source_fts
-      (source_fts, rowid, name, backend, coordinate, sha256_hash)
-    VALUES
-      ('delete', old.rowid, old.name, old.backend, old.coordinate, old.sha256_hash);
+-- after delete
+CREATE TRIGGER IF NOT EXISTS source_after_delete
+AFTER DELETE ON source
+BEGIN
+  INSERT INTO source_fts(source_fts, rowid) VALUES('delete', old.id);
 END;
 
 -- ------------------------------------------------ source_template
@@ -64,7 +62,7 @@ CREATE TABLE IF NOT EXISTS source_template (
   sha256_hash TEXT NOT NULL UNIQUE,
   created_at TIMESTAMP NOT NULL,
   updated_at TIMESTAMP,
-  UNIQUE (name, repo, branch, subdir)
+  UNIQUE (name, repo, branch, subdir),
   FOREIGN KEY (source_id) REFERENCES source(id) DEFERRABLE INITIALLY DEFERRED
 );
 
@@ -75,45 +73,34 @@ CREATE VIRTUAL TABLE IF NOT EXISTS source_template_fts USING fts5(
   branch,
   subdir,
   sha256_hash,
-  content='template',
+  content='source_template',
   content_rowid='id'
 );
 
--- .................. template after insert
-CREATE TRIGGER IF NOT EXISTS source_template_after_insert AFTER INSERT ON source_template BEGIN
-    INSERT INTO source_template_fts
-      (rowid, repo, lang, name, branch, subdir, sha256_hash)
-    VALUES
-      (new.id, new.repo, new.lang, new.name, new.branch, new.subdir, new.sha256_hash);
+-- after insert
+CREATE TRIGGER IF NOT EXISTS source_template_after_insert
+AFTER INSERT ON source_template
+BEGIN
+  INSERT INTO source_template_fts(rowid, repo, lang, name, branch, subdir, sha256_hash)
+  VALUES (new.id, new.repo, new.lang, new.name, new.branch, new.subdir, new.sha256_hash);
 END;
 
--- .................. template after update
-CREATE TRIGGER IF NOT EXISTS source_template_after_update AFTER UPDATE ON source_template BEGIN
-    INSERT INTO source_template_fts
-      (source_template_fts, rowid, repo, lang, name, branch, subdir, sha256_hash)
-    VALUES
-      ('delete', old.rowid, old.repo, old.lang, old.name, old.branch, old.subdir, old.sha256_hash);
+-- after update
+CREATE TRIGGER IF NOT EXISTS source_template_after_update
+AFTER UPDATE ON source_template
+BEGIN
+  INSERT INTO source_template_fts(source_template_fts, rowid) VALUES('delete', old.id);
 
-    INSERT INTO source_template_fts
-      (rowid, repo, lang, name, branch, subdir, sha256_hash)
-    VALUES
-      (new.id, new.repo, new.lang, new.name, new.branch, new.subdir, new.sha256_hash);
+  INSERT INTO source_template_fts(rowid, repo, lang, name, branch, subdir, sha256_hash)
+  VALUES (new.id, new.repo, new.lang, new.name, new.branch, new.subdir, new.sha256_hash);
 END;
 
--- .................. template after delete
-CREATE TRIGGER IF NOT EXISTS source_template_after_delete AFTER DELETE ON source_template BEGIN
-    INSERT INTO source_template_fts
-      (source_template_fts, rowid, repo, lang, name, branch, subdir, sha256_hash)
-    VALUES
-      ('delete', old.rowid, old.repo, old.lang, old.name, old.branch, old.subdir, old.sha256_hash);
+-- after delete
+CREATE TRIGGER IF NOT EXISTS source_template_after_delete
+AFTER DELETE ON source_template
+BEGIN
+  INSERT INTO source_template_fts(source_template_fts, rowid) VALUES('delete', old.id);
 END;
-
-
-
-
-
-
-
 
 -- ------------------------------------------------ source_template_content
 
@@ -131,35 +118,31 @@ CREATE TABLE IF NOT EXISTS source_template_content (
 CREATE VIRTUAL TABLE IF NOT EXISTS source_template_content_fts USING fts5(
   file_path,
   content,
-  content='template_content',
+  content='source_template_content',
   content_rowid='id'
 );
 
--- .................. template after insert
-CREATE TRIGGER IF NOT EXISTS source_template_content_after_insert AFTER INSERT ON source_template_content BEGIN
-    INSERT INTO source_template_content_fts
-      (rowid, file_path, content)
-    VALUES
-      (new.id, new.file_path, new.content);
+-- after insert
+CREATE TRIGGER IF NOT EXISTS source_template_content_after_insert
+AFTER INSERT ON source_template_content
+BEGIN
+  INSERT INTO source_template_content_fts(rowid, file_path, content)
+  VALUES (new.id, new.file_path, new.content);
 END;
 
--- .................. template after update
-CREATE TRIGGER IF NOT EXISTS source_template_content_after_update AFTER UPDATE ON source_template_content BEGIN
-    INSERT INTO source_template_content_fts
-      (source_template_content_fts, rowid, file_path, content)
-    VALUES
-      ('delete', old.rowid, old.file_path, old.content);
+-- after update
+CREATE TRIGGER IF NOT EXISTS source_template_content_after_update
+AFTER UPDATE ON source_template_content
+BEGIN
+  INSERT INTO source_template_content_fts(source_template_content_fts, rowid) VALUES('delete', old.id);
 
-    INSERT INTO source_template_content_fts
-      (rowid, file_path, content)
-    VALUES
-      (new.rowid, new.file_path, new.content);
+  INSERT INTO source_template_content_fts(rowid, file_path, content)
+  VALUES (new.id, new.file_path, new.content);
 END;
 
--- .................. template after delete
-CREATE TRIGGER IF NOT EXISTS source_template_content_after_delete AFTER DELETE ON source_template_content BEGIN
-    INSERT INTO source_template_content_fts
-      (source_template_content_fts, rowid, file_path, content)
-    VALUES
-      ('delete', old.rowid, old.file_path, old.content);
+-- after delete
+CREATE TRIGGER IF NOT EXISTS source_template_content_after_delete
+AFTER DELETE ON source_template_content
+BEGIN
+  INSERT INTO source_template_content_fts(source_template_content_fts, rowid) VALUES('delete', old.id);
 END;
