@@ -1,17 +1,16 @@
 use dioxus::prelude::*;
 
-use boilermaker_core::db::TemplateResult;
 use boilermaker_views::{
     BTN_BLUE_STYLE, BTN_GREEN_STYLE, BTN_RED_STYLE, LINK_STYLE, TD_STYLE, TH_MUTED_STYLE, TH_STYLE,
 };
 
-use crate::Route;
+use crate::{Route, TemplatesContext};
 
 #[component]
 pub fn Home() -> Element {
     // Get pre-loaded templates from context.
-    let tpl_context = use_context::<Signal<Vec<TemplateResult>>>();
-    let templates = tpl_context.read();
+    let templates_ctx = use_context::<TemplatesContext>();
+    let templates = templates_ctx.templates.read();
     let content = if templates.is_empty() {
         rsx! {
             div { class: "py-4 text-neutral-500 dark:text-neutral-200",

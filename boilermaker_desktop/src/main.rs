@@ -1,17 +1,17 @@
-use boilermaker_core::db::{ListTemplateOptions, TemplateResult};
 use color_eyre::eyre::Result;
 use dioxus::prelude::*;
 
+mod templates_context;
 mod ui;
-use tracing::error;
-use ui::{Home, NewProject, TemplateAdd};
 
 use boilermaker_desktop::{init_app_state, APP_STATE};
-
 use boilermaker_views::{
     Docs, GetInvolved, Search, Templates,
     {DROPDOWN_LINK_STYLE, FAVICON, INDENTED_DROPDOWN_LINK_STYLE, MAIN_CSS, TAILWIND_CSS},
 };
+use templates_context::init_templates_context;
+pub use templates_context::TemplatesContext;
+use ui::{Home, NewProject, TemplateAdd};
 
 //TODO: 1. [ ] Add a WASM-compiled playground for users to develop templates directly in the browser
 //TODO: 2. [ ] Add a user login system to save favorite templates and settings
@@ -42,21 +42,7 @@ fn main() -> Result<()> {
 
 #[component]
 fn App() -> Element {
-    // Try to load templates in App context.
-    let mut templates = use_signal::<Vec<TemplateResult>>(|| vec![]);
-    let _ = use_resource(move || async move {
-        let cache = &APP_STATE.get().unwrap().template_db;
-        let list_opts = Some(ListTemplateOptions {
-            order_by: Some("created_at DESC, name ASC".to_string()),
-            limit: Some(10),
-            offset: None,
-        });
-        match cache.list_templates(list_opts).await {
-            Ok(rows) => templates.set(rows),
-            Err(e) => error!("Error fetching templates: {}", e),
-        }
-    });
-    use_context_provider(|| templates);
+    init_templates_context();
 
     rsx! {
         document::Link { rel: "icon", href: FAVICON }

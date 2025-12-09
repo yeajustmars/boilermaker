@@ -5,7 +5,7 @@ use boilermaker_desktop::APP_STATE;
 use color_eyre::Result;
 use dioxus::prelude::*;
 
-use crate::Route;
+use crate::{Route, TemplatesContext};
 use boilermaker_core::commands::new as Command;
 use boilermaker_core::db::TemplateResult;
 use boilermaker_core::template as tpl;
@@ -19,6 +19,7 @@ enum ResultMessage {
     Success(String),
 }
 
+#[derive(Debug)]
 struct FormState {
     dir: String,
     overwrite: bool,
@@ -49,9 +50,8 @@ impl FormState {
 
 #[component]
 pub fn NewProject(i: usize) -> Element {
-    // Get pre-loaded templates from global context.
-    let tpl_context = use_context::<Signal<Vec<TemplateResult>>>();
-    let templates = tpl_context.read();
+    let templates_ctx = use_context::<TemplatesContext>();
+    let templates = templates_ctx.templates.read();
 
     let content = if templates.is_empty() {
         rsx! {

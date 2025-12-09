@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use dioxus::prelude::*;
 
+use crate::TemplatesContext;
 use boilermaker_core::commands::install::{install, Install};
 use boilermaker_core::constants::{BRANCH_PATTERN, SUBDIR_PATTERN};
 use boilermaker_desktop::APP_STATE;
@@ -28,6 +29,7 @@ pub fn TemplateAdd() -> Element {
     let mut status = use_signal(StatusHashMapType::new);
     let mut processing = use_signal(|| false);
     let mut result_message = use_signal(|| ResultMessage::None);
+    let mut templates_ctx = use_context::<TemplatesContext>();
 
     rsx! {
         document::Title { "Create New Template - Boilermaker" }
@@ -77,7 +79,8 @@ pub fn TemplateAdd() -> Element {
                                                 ResultMessage::Success(
                                                     "Template added successfully!".to_string(),
                                                 ),
-                                            )
+                                            );
+                                        templates_ctx.refresh();
                                     }
                                     Err(err) => {
                                         result_message
