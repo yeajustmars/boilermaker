@@ -5,7 +5,7 @@ use color_eyre::{Result, eyre::eyre};
 use tabled::{Table, settings::Style};
 use tracing::info;
 
-use crate::db::template_cache::DisplayableTemplateListResult;
+use crate::db::local_db::DisplayableTemplateListResult;
 use crate::state::AppState;
 use crate::template::remove_dir_if_exists;
 
@@ -18,7 +18,7 @@ pub struct Remove {
 pub async fn remove(app_state: &AppState, cmd: &Remove) -> Result<()> {
     info!("Removing template: {}", cmd.id);
 
-    let cache = app_state.template_db.clone();
+    let cache = app_state.local_db.clone();
 
     let template = match cache.get_template(cmd.id).await? {
         Some(template) => template,

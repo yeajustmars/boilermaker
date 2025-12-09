@@ -5,9 +5,10 @@ use tracing::{error, info};
 use crate::db::TemplateRow;
 use crate::state::AppState;
 use crate::template::{
-    clean_dir, clone_repo, get_lang, get_template_config, get_template_dir_path, install_template,
-    make_name_from_url, make_tmp_dir_from_url, remove_git_dir, CloneContext,
+    CloneContext, clean_dir, clone_repo, get_lang, get_template_config, get_template_dir_path,
+    install_template, make_name_from_url, make_tmp_dir_from_url,
 };
+use crate::util::file::remove_git_dir;
 
 #[derive(Debug, Parser)]
 pub struct Install {
@@ -63,10 +64,10 @@ pub async fn install(app_state: &AppState, cmd: &Install) -> Result<()> {
     };
     let row = row.set_hash_string();
 
-    let cache = app_state.template_db.clone();
+    let cache = app_state.local_db.clone();
 
     if !cache.template_table_exists().await? {
-        cache.create_template_tables().await?;
+        cache.create_schema().await?;
     }
 
     let existing_db_entry = cache.check_unique(&row).await?;
@@ -100,6 +101,9 @@ pub async fn install(app_state: &AppState, cmd: &Install) -> Result<()> {
             return Err(eyre!("💥 Failed to install template: {}", e));
         }
     }
+
+    cache.index_template(new_id).await?;
+    info!("Template indexed successfully.");
 
     remove_git_dir(&template_dir)?;
 

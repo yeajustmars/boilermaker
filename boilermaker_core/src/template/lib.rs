@@ -1,14 +1,13 @@
 use std::{collections::HashMap, env, fs, path::PathBuf};
 
-use color_eyre::{eyre::eyre, Result};
+use color_eyre::{Result, eyre::eyre};
 use dirs;
-use fs_extra::{copy_items, dir::CopyOptions};
-use git2::{build::RepoBuilder, FetchOptions, Repository};
+use git2::{FetchOptions, Repository, build::RepoBuilder};
 use minijinja;
-use walkdir::WalkDir;
 
-pub use crate::config::get_template_config;
 use crate::config::TemplateConfig;
+pub use crate::config::get_template_config;
+use crate::util::file::list_dir;
 
 #[derive(Debug)]
 pub struct CloneContext {
@@ -52,7 +51,7 @@ pub async fn clone_repo(ctx: &CloneContext) -> Result<Repository> {
 #[tracing::instrument]
 pub fn make_name_from_url(url: &str) -> String {
     url.split('/')
-        .last()
+        .next_back()
         .unwrap()
         .split('.')
         .next()
@@ -99,16 +98,6 @@ pub fn clean_dir(dir: &PathBuf) -> Result<()> {
     Ok(())
 }
 
-//TODO: move to a more generic loc like util::file
-#[tracing::instrument]
-pub fn remove_git_dir(dir: &PathBuf) -> Result<()> {
-    let git_dir = dir.join(".git");
-    if git_dir.exists() {
-        fs::remove_dir_all(git_dir)?;
-    }
-    Ok(())
-}
-
 #[tracing::instrument]
 pub fn make_work_dir_path(name: &str) -> Result<PathBuf> {
     let work_dir = env::temp_dir().join("boilermaker").join(name);
@@ -117,7 +106,7 @@ pub fn make_work_dir_path(name: &str) -> Result<PathBuf> {
 
 #[tracing::instrument]
 pub fn create_work_dir(name: &str) -> Result<PathBuf> {
-    let work_dir = make_work_dir_path(&name)?;
+    let work_dir = make_work_dir_path(name)?;
     if !work_dir.exists() {
         fs::create_dir_all(&work_dir)?;
     }
@@ -126,7 +115,7 @@ pub fn create_work_dir(name: &str) -> Result<PathBuf> {
 
 #[tracing::instrument]
 pub fn create_work_dir_clean(name: &str) -> Result<PathBuf> {
-    let work_dir = make_work_dir_path(&name)?;
+    let work_dir = make_work_dir_path(name)?;
     if work_dir.exists() {
         fs::remove_dir_all(&work_dir)?;
     }
@@ -235,38 +224,12 @@ pub async fn render_template_files(
     Ok(())
 }
 
-//TODO: move to a more generic loc like util::file
 #[tracing::instrument]
-pub async fn list_dir(path: &PathBuf) -> Result<Vec<PathBuf>> {
-    let paths = WalkDir::new(path)
+pub async fn list_template_files(dir: &PathBuf) -> Result<Vec<PathBuf>> {
+    let files = list_dir(dir)
+        .await?
         .into_iter()
-        .filter_map(|e| e.ok())
-        .map(|e| e.path().to_path_buf())
+        .filter(|p| p.is_file() && !p.to_str().unwrap_or("").contains(".git"))
         .collect::<Vec<_>>();
-    Ok(paths)
-}
-
-//TODO: move to a more generic loc like util::file
-#[tracing::instrument]
-pub async fn copy_dir(src_dir: &PathBuf, dest_dir: &PathBuf) -> Result<()> {
-    let files = fs::read_dir(src_dir)?
-        .filter_map(|entry| entry.ok().map(|e| e.path()))
-        .collect::<Vec<_>>();
-
-    let options = CopyOptions::new();
-
-    if let Err(e) = copy_items(&files, dest_dir, &options) {
-        return Err(eyre!("💥 Failed to copy template files: {e}"));
-    }
-
-    Ok(())
-}
-
-//TODO: move to a more generic loc like util::file
-#[tracing::instrument]
-pub async fn move_file(src: &PathBuf, dest: &PathBuf) -> Result<()> {
-    if let Err(e) = fs::rename(src, dest) {
-        return Err(eyre!("💥 Failed to move file: {e}"));
-    }
-    Ok(())
+    Ok(files)
 }

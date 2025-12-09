@@ -9,6 +9,8 @@ use boilermaker_core::{
     state::AppState,
 };
 
+pub type TemplateDbType = Arc<RwLock<dyn TemplateDb + Send + Sync>>;
+
 pub static APP_STATE: OnceCell<AppState> = OnceCell::new();
 
 /// Initialize the global application state into a OnceCell APP_STATE
@@ -29,7 +31,7 @@ pub fn init_app_state() -> Result<()> {
 
             if !cache.template_table_exists().await.unwrap_or(false) {
                 cache
-                    .create_template_tables()
+                    .create_template_table()
                     .await
                     .map_err(|e| eyre!("Failed to create template table: {}", e))?;
             }

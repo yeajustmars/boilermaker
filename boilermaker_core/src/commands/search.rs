@@ -1,41 +1,31 @@
 use clap::Parser;
 use color_eyre::Result;
-// use tabled::{Table, settings::Style};
-// use tracing::info;
 
-// use crate::db::template_cache::DisplayableTemplateListResult;
 use crate::state::AppState;
 
-#[derive(Parser)]
+#[derive(Debug, Parser)]
 pub struct Search {
-    #[arg(short = 'u', long)]
-    pub public: bool,
-    #[arg(short = 'p', long)]
-    pub private: bool,
+    #[arg(required = true, help = "Search term")]
+    pub term: String,
+    #[arg(short = 'l', long, help = "Search only installed templates")]
+    pub local: bool,
+    #[arg(short = 's', long, help = "Search a specific source")]
+    pub src: Option<String>,
 }
 
-pub async fn search(_app_state: &AppState, _cmd: &Search) -> Result<()> {
-    /*
-    let cache = app_state.template_db.clone();
+pub async fn search(app_state: &AppState, cmd: &Search) -> Result<()> {
+    let term = cmd.term.trim().to_owned();
+    let cache = app_state.local_db.clone();
 
-    let result = cache.list_templates(None).await?;
+    let results = if cmd.local {
+        cache.search_templates(&term).await?
+    } else {
+        // TODO: implement remote search
+        cache.search_templates(&term).await?
+    };
 
-    let rows = result
-        .into_iter()
-        .map(DisplayableTemplateListResult::to_std_row)
-        .collect::<Vec<_>>();
-
-    if rows.is_empty() {
-        info!("No templates found in the cache.");
-        info!("💡 Have a look at `boil install`");
-        return Ok(());
-    }
-
-    let mut table = Table::new(&rows);
-    table.with(Style::psql());
-
-    print!("\n\n{table}\n\n");
-     */
+    println!("Search results for '{}':", &cmd.term);
+    println!("{:#?}", &results);
 
     Ok(())
 }

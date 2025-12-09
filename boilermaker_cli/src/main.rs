@@ -7,7 +7,7 @@ use tracing::info;
 
 use boilermaker_core::{
     commands,
-    config::{get_system_config, DEFAULT_LOCAL_CACHE_PATH_STRING},
+    config::{DEFAULT_LOCAL_CACHE_PATH_STRING, get_system_config},
     db::LocalCache,
     logging,
     state::AppState,
@@ -46,7 +46,10 @@ enum Commands {
     New(commands::New),
     #[command(about = "Remove a template from the local cache")]
     Remove(commands::Remove),
+    #[command(about = "Search for templates")]
     Search(commands::Search),
+    #[command(subcommand, about = "Manage Sources")]
+    Sources(commands::Sources),
     #[command(about = "Update an installed template")]
     Update(commands::Update),
 }
@@ -60,23 +63,20 @@ async fn main() -> Result<()> {
 
     logging::init_tracing(cli.debug)?;
 
-    // TODO: allow custom local DB cache path from (global) boilermaker.toml
-    let db_path = DEFAULT_LOCAL_CACHE_PATH_STRING.as_str();
+    let cache_path = DEFAULT_LOCAL_CACHE_PATH_STRING.as_str();
 
     // TODO: decide where a remote db should be allowed vs just searching remote and installing
     // locally
     // TODO: If yes, check global boilermaker config for local vs remote db option
     let app_state = AppState {
-        template_db: Arc::new(LocalCache::new(db_path).await?),
         sys_config: get_system_config(cli.config.as_deref())?,
         log_level: cli.debug,
+        local_db: Arc::new(LocalCache::new(cache_path).await?),
     };
 
-    let cache = app_state.template_db.clone();
-
-    // TODO: add Sqlite FTS index here as well (also check code for where else this is done)
+    let cache = app_state.local_db.clone();
     if !cache.template_table_exists().await? {
-        cache.create_template_tables().await?;
+        cache.create_schema().await?;
     }
 
     if let Some(command) = cli.command {
@@ -86,6 +86,10 @@ async fn main() -> Result<()> {
             Commands::New(cmd) => commands::new(&app_state, &cmd).await?,
             Commands::Remove(cmd) => commands::remove(&app_state, &cmd).await?,
             Commands::Search(cmd) => commands::search(&app_state, &cmd).await?,
+            Commands::Sources(subcmd) => match subcmd {
+                commands::Sources::Add(cmd) => commands::sources::add(&app_state, &cmd).await?,
+                commands::Sources::List(cmd) => commands::sources::list(&app_state, &cmd).await?,
+            },
             Commands::Update(cmd) => commands::update(&app_state, &cmd).await?,
         }
     } else {
