@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS source (
   name TEXT NOT NULL UNIQUE,
   backend TEXT NOT NULL,
   coordinate TEXT,
+  description TEXT,
   sha256_hash TEXT NOT NULL UNIQUE,
   created_at TIMESTAMP NOT NULL,
   updated_at TIMESTAMP
@@ -14,7 +15,8 @@ CREATE TABLE IF NOT EXISTS source (
 CREATE VIRTUAL TABLE IF NOT EXISTS source_fts USING fts5(
   name,
   backend,
-  coordinate,,
+  coordinate,
+  description,
   sha256_hash,
   content='source',
   content_rowid='id'
@@ -63,7 +65,7 @@ CREATE TABLE IF NOT EXISTS source_template (
   created_at TIMESTAMP NOT NULL,
   updated_at TIMESTAMP,
   UNIQUE (name, repo, branch, subdir)
-  FOREIGN KEY (source_id) REFERENCES source(id)
+  FOREIGN KEY (source_id) REFERENCES source(id) DEFERRABLE INITIALLY DEFERRED
 );
 
 CREATE VIRTUAL TABLE IF NOT EXISTS source_template_fts USING fts5(
@@ -117,13 +119,13 @@ END;
 
 CREATE TABLE IF NOT EXISTS source_template_content (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  template_id INTEGER NOT NULL,
+  source_template_id INTEGER NOT NULL,
   file_path TEXT NOT NULL,
   content TEXT,
   created_at TIMESTAMP NOT NULL,
   updated_at TIMESTAMP,
-  FOREIGN KEY (template_id) REFERENCES template(id) ON DELETE CASCADE,
-  UNIQUE (template_id, file_path)
+  FOREIGN KEY (source_template_id) REFERENCES source_template(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+  UNIQUE (source_template_id, file_path)
 );
 
 CREATE VIRTUAL TABLE IF NOT EXISTS source_template_content_fts USING fts5(

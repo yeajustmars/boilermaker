@@ -7,6 +7,7 @@ use minijinja;
 
 use crate::config::TemplateConfig;
 pub use crate::config::get_template_config;
+use crate::util::file::list_dir;
 
 #[derive(Debug)]
 pub struct CloneContext {
@@ -105,7 +106,7 @@ pub fn make_work_dir_path(name: &str) -> Result<PathBuf> {
 
 #[tracing::instrument]
 pub fn create_work_dir(name: &str) -> Result<PathBuf> {
-    let work_dir = make_work_dir_path(&name)?;
+    let work_dir = make_work_dir_path(name)?;
     if !work_dir.exists() {
         fs::create_dir_all(&work_dir)?;
     }
@@ -114,7 +115,7 @@ pub fn create_work_dir(name: &str) -> Result<PathBuf> {
 
 #[tracing::instrument]
 pub fn create_work_dir_clean(name: &str) -> Result<PathBuf> {
-    let work_dir = make_work_dir_path(&name)?;
+    let work_dir = make_work_dir_path(name)?;
     if work_dir.exists() {
         fs::remove_dir_all(&work_dir)?;
     }
@@ -221,4 +222,14 @@ pub async fn render_template_files(
     }
 
     Ok(())
+}
+
+#[tracing::instrument]
+pub async fn list_template_files(dir: &PathBuf) -> Result<Vec<PathBuf>> {
+    let files = list_dir(dir)
+        .await?
+        .into_iter()
+        .filter(|p| p.is_file() && !p.to_str().unwrap_or("").contains(".git"))
+        .collect::<Vec<_>>();
+    Ok(files)
 }

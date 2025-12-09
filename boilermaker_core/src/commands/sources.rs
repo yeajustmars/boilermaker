@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 use color_eyre::{Result, eyre::eyre};
@@ -6,10 +7,10 @@ use serde::Deserialize;
 use tabled::{Table, Tabled, settings::Style};
 use tracing::info;
 
-//use crate::db::local_db::{SourceRow, SourceTemplateRow, hashmap_into_source_template_row};
+use crate::db::local_db::{PartialSourceTemplateRow, SourceRow};
 use crate::state::AppState;
 use crate::template::{
-    CloneContext, clean_dir, clone_repo, get_template_config, make_name_from_url,
+    CloneContext, clean_dir, clone_repo, get_lang, get_template_config, make_name_from_url,
     make_tmp_dir_from_url,
 };
 use crate::util::string;
@@ -34,26 +35,37 @@ pub struct SourceConfig {
     pub templates: Vec<HashMap<String, String>>,
 }
 
-pub async fn add(_app_state: &AppState, cmd: &Add) -> Result<()> {
+pub async fn add(app_state: &AppState, cmd: &Add) -> Result<()> {
     let coordinate = cmd.coordinate.trim().to_owned();
     let src_text = reqwest::get(&coordinate).await?.text().await?;
-    let cnf: SourceConfig = toml::from_str(&src_text)?;
-    println!("Source Config: {cnf:?}");
+    let src_cnf: SourceConfig = toml::from_str(&src_text)?;
 
-    // TODO: 1. [ ] Validate that each repo/lang is a real source
-    //       NOTE: (just clone the repo as we'll need it on success anyway)
-    // TODO: 2. [ ] Create source entry in DB
-    // TODO: 3. [ ] Create template entries in DB
+    let name = match src_cnf.source.get("name") {
+        Some(source_name) => source_name.to_string(),
+        None => return Err(eyre!("Template missing 'source_name' field")),
+    };
 
-    for template in cnf.templates.iter() {
+    let backend = match src_cnf.source.get("backend") {
+        Some(backend) => backend.to_string(),
+        None => return Err(eyre!("Template missing 'backend' field")),
+    };
+
+    let description = src_cnf.source.get("description");
+
+    let source_row = SourceRow {
+        name,
+        backend,
+        description: description.cloned(),
+        coordinate: coordinate.to_owned(),
+        sha256_hash: None,
+    };
+    let source_row = source_row.set_hash_string();
+
+    let mut partial_source_template_rows: Vec<(PathBuf, PartialSourceTemplateRow)> = Vec::new();
+    for template in src_cnf.templates.iter() {
         let repo = match template.get("repo") {
             Some(repo) => repo,
             None => return Err(eyre!("Template missing 'repo' field")),
-        };
-
-        let lang = match template.get("lang") {
-            Some(lang) => lang,
-            None => return Err(eyre!("Template missing 'lang' field")),
         };
 
         let name = if let Some(name) = &template.get("name") {
@@ -62,7 +74,6 @@ pub async fn add(_app_state: &AppState, cmd: &Add) -> Result<()> {
             make_name_from_url(repo)
         };
 
-        // TODO: consolidate with same clone logic in install.rs
         let repo_ctx = CloneContext::from(template);
         let clone_dir = repo_ctx.dest.as_ref().unwrap();
 
@@ -82,49 +93,24 @@ pub async fn add(_app_state: &AppState, cmd: &Add) -> Result<()> {
         };
 
         let cnf = get_template_config(work_dir.as_path())?;
-        // let lang = get_lang(&cnf, &template.lang)?;
-        // let template_dir = get_template_dir_path(&name)?;
+        let lang = get_lang(&cnf, &template.get("lang").cloned())?;
 
-        println!("\n\\==========================================================");
-        println!("Cloning template repo: {repo_ctx:?}");
-        println!("\tname: {name:?}");
-        println!("\tlang: {lang:?}");
-        println!("\tclone_dir: {clone_dir:?}");
-        println!("\twork_dir: {work_dir:?}");
-        println!("\tcnf: {cnf:?}");
-        println!("/==========================================================\n");
+        let partial_row = PartialSourceTemplateRow {
+            name: name.clone(),
+            lang: lang.clone(),
+            repo: repo.to_owned(),
+            branch: template.get("branch").cloned(),
+            subdir: template.get("subdir").cloned(),
+        };
+
+        partial_source_template_rows.push((work_dir, partial_row));
     }
-
-    /*
-    for template in cnf.templates.iter() {
-        let row = hashmap_into_source_template_row(template, &coordinate)?;
-        println!("Template Row: {:?}", row);
-    }
-     */
-
-    /*
-    let name = cnf.source.get("name").cloned().unwrap();
-
-    let source_row = SourceRow {
-        name: name.clone(),
-        backend: cnf.source.get("backend").cloned().unwrap(),
-        coordinate: coordinate.clone(),
-        sha256_hash: None,
-    };
-    let source_row = source_row.set_hash_string();
 
     let sources = app_state.local_db.clone();
-
-    let source_id = match sources.create_source(source_row).await {
-        Ok(id) => {
-            info!("Source '{}' added successfully.", name);
-            id
-        }
-        Err(e) => {
-            return Err(eyre!("💥 Failed to add source: {}", e));
-        }
-    };
-     */
+    let r = sources
+        .add_source(source_row, partial_source_template_rows)
+        .await?;
+    info!("Source added with ID: {r:#?}");
 
     Ok(())
 }

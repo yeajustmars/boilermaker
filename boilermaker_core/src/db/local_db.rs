@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::path::PathBuf;
 
 use color_eyre::{Result, eyre::eyre};
 use sqlx::{
@@ -9,7 +10,7 @@ use tabled::Tabled;
 
 use crate::template as tmpl;
 use crate::util::crypto::sha256_hash_string;
-use crate::util::file::{list_dir, read_file_to_string};
+use crate::util::file::read_file_to_string;
 use crate::util::time::timestamp_to_iso8601;
 
 static MIGRATOR: Migrator = sqlx::migrate!("../migrations");
@@ -17,8 +18,8 @@ static MIGRATOR: Migrator = sqlx::migrate!("../migrations");
 #[async_trait::async_trait]
 pub trait TemplateDb: Send + Sync {
     // ................................................. Schema
-    // TODO: rename create_template_tables to create_tables (now local_db has cache + sources)
-    async fn create_template_tables(&self) -> Result<()>;
+    // TODO: rename create_schema or similar (now local_db has cache + sources)
+    async fn create_schema(&self) -> Result<()>;
     // ................................................. Templates
     async fn check_unique(&self, row: &TemplateRow) -> Result<Option<TemplateResult>>;
     async fn create_template(&self, row: TemplateRow) -> Result<i64>;
@@ -34,8 +35,11 @@ pub trait TemplateDb: Send + Sync {
     async fn template_table_exists(&self) -> Result<bool>;
     async fn update_template(&self, id: i64, row: TemplateRow) -> Result<i64>;
     // ................................................. Sources
-    async fn create_source(&self, row: SourceRow) -> Result<i64>;
-    async fn create_source_template(&self, row: SourceTemplateRow) -> Result<i64>;
+    async fn add_source(
+        &self,
+        source_row: SourceRow,
+        partial_source_template_rows: Vec<(PathBuf, PartialSourceTemplateRow)>,
+    ) -> Result<AddSourceResult>;
 }
 
 #[derive(Debug)]
@@ -105,7 +109,7 @@ impl TemplateDb for LocalCache {
     }
 
     #[tracing::instrument]
-    async fn create_template_tables(&self) -> Result<()> {
+    async fn create_schema(&self) -> Result<()> {
         MIGRATOR.run(&self.pool).await?;
         Ok(())
     }
@@ -166,12 +170,7 @@ impl TemplateDb for LocalCache {
             .await?
             .ok_or_else(|| eyre!("Template with id {} not found", id))?;
 
-        let files = list_dir(&tmpl::get_template_dir_path(&t.name)?)
-            .await?
-            .into_iter()
-            .filter(|p| p.is_file() && !p.to_str().unwrap_or("").contains(".git"))
-            .collect::<Vec<_>>();
-
+        let files = tmpl::list_template_files(&PathBuf::from(&t.template_dir)).await?;
         for file in files {
             let content = read_file_to_string(&file)?;
             let _ = sqlx::query(
@@ -283,47 +282,93 @@ impl TemplateDb for LocalCache {
         Ok(id)
     }
 
+    // TODO: split up 3 types of queries into separate functions for readability
     #[tracing::instrument]
-    async fn create_source(&self, row: SourceRow) -> Result<i64> {
+    async fn add_source(
+        &self,
+        source_row: SourceRow,
+        partial_source_template_rows: Vec<(PathBuf, PartialSourceTemplateRow)>,
+    ) -> Result<AddSourceResult> {
+        let mut tx = self.pool.begin().await?;
+
         let source_result = sqlx::query(
             r#"
             INSERT INTO source
-              (name, backend, coordinate, sha256_hash, created_at)
+              (name, backend, coordinate, description, sha256_hash, created_at)
             VALUES
-              (?, ?, ?, ?, strftime('%s','now'));
+              (?, ?, ?, ?, ?, strftime('%s','now'));
             "#,
         )
-        .bind(&row.name)
-        .bind(&row.backend)
-        .bind(&row.coordinate)
-        .bind(&row.sha256_hash)
-        .execute(&self.pool)
+        .bind(&source_row.name)
+        .bind(&source_row.backend)
+        .bind(&source_row.coordinate)
+        .bind(&source_row.description)
+        .bind(&source_row.sha256_hash)
+        .execute(&mut *tx)
         .await?;
 
-        Ok(source_result.last_insert_rowid())
-    }
+        let source_id = source_result.last_insert_rowid();
 
-    #[tracing::instrument]
-    async fn create_source_template(&self, row: SourceTemplateRow) -> Result<i64> {
-        let template_result = sqlx::query(
-            r#"
-            INSERT INTO source_template
-              (source_id, repo, lang, name, branch, subdir, sha256_hash, created_at)
-            VALUES
-              (?, ?, ?, ?, ?, ?, ?, ?, strftime('%s','now'));
-            "#,
-        )
-        .bind(row.source_id)
-        .bind(&row.repo)
-        .bind(&row.lang)
-        .bind(&row.name)
-        .bind(&row.branch)
-        .bind(&row.subdir)
-        .bind(&row.sha256_hash)
-        .execute(&self.pool)
-        .await?;
+        let mut source_template_ids: Vec<i64> = Vec::new();
+        for (path, partial) in partial_source_template_rows.into_iter() {
+            let source_template_row = SourceTemplateRow {
+                source_id,
+                repo: partial.repo,
+                lang: partial.lang,
+                name: partial.name,
+                branch: partial.branch,
+                subdir: partial.subdir,
+                sha256_hash: None,
+            }
+            .set_hash_string();
 
-        Ok(template_result.last_insert_rowid())
+            let template_result = sqlx::query(
+                r#"
+                INSERT INTO source_template
+                  (source_id, repo, lang, name, branch, subdir, sha256_hash, created_at)
+                VALUES
+                  (?, ?, ?, ?, ?, ?, ?, strftime('%s','now'));
+                "#,
+            )
+            .bind(source_id)
+            .bind(&source_template_row.repo)
+            .bind(&source_template_row.lang)
+            .bind(&source_template_row.name)
+            .bind(&source_template_row.branch)
+            .bind(&source_template_row.subdir)
+            .bind(&source_template_row.sha256_hash)
+            .execute(&mut *tx)
+            .await?;
+
+            let source_template_id = template_result.last_insert_rowid();
+
+            let files = tmpl::list_template_files(&path).await?;
+            for file in files {
+                let content = read_file_to_string(&file)?;
+                let _ = sqlx::query(
+                    r#"
+                    INSERT INTO source_template_content
+                      (source_template_id, file_path, content, created_at)
+                    VALUES
+                      (?, ?, ?, strftime('%s','now'));
+                    "#,
+                )
+                .bind(source_template_id)
+                .bind(file.to_string_lossy().to_string())
+                .bind(content)
+                .execute(&mut *tx)
+                .await?;
+            }
+
+            source_template_ids.push(source_template_id);
+        }
+
+        tx.commit().await?;
+
+        Ok(AddSourceResult {
+            source_id,
+            source_template_ids,
+        })
     }
 }
 
@@ -454,6 +499,7 @@ pub struct SourceRow {
     pub name: String,
     pub backend: String,
     pub coordinate: String,
+    pub description: Option<String>,
     pub sha256_hash: Option<String>,
 }
 
@@ -469,6 +515,15 @@ impl SourceRow {
 pub fn hash_source_row(row: &SourceRow) -> String {
     let input = format!("{}~~{}~~{}", row.name, row.backend, row.coordinate);
     sha256_hash_string(&input)
+}
+
+#[derive(Debug, Clone)]
+pub struct PartialSourceTemplateRow {
+    pub repo: String,
+    pub lang: String,
+    pub name: String,
+    pub branch: Option<String>,
+    pub subdir: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -531,4 +586,10 @@ pub fn hash_source_template_row(row: &SourceTemplateRow) -> String {
         row.subdir.as_deref().unwrap_or(""),
     );
     sha256_hash_string(&input)
+}
+
+#[derive(Debug, Clone)]
+pub struct AddSourceResult {
+    pub source_id: i64,
+    pub source_template_ids: Vec<i64>,
 }

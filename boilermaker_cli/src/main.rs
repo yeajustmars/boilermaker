@@ -76,7 +76,7 @@ async fn main() -> Result<()> {
 
     let cache = app_state.local_db.clone();
     if !cache.template_table_exists().await? {
-        cache.create_template_tables().await?;
+        cache.create_schema().await?;
     }
 
     if let Some(command) = cli.command {
