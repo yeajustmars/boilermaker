@@ -53,9 +53,7 @@ impl WebAppState {
 
         let reloader = if is_dev_env {
             Some(AutoReloader::new(move |notifier| {
-                // TODO: resolve template path
-                // let template_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("templates");
-                let template_path = PathBuf::from("../templates");
+                let template_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("templates");
                 let mut env = minijinja::Environment::new();
                 env.set_loader(path_loader(&template_path));
                 notifier.watch_path(&template_path, true);
@@ -111,6 +109,8 @@ pub struct WebApp {
     pub address: String,
 }
 
+// TODO: figure out how to use assets directory from boilermaker_views in web crate
+// TODO: make sure there is one (and only one) assets/ dir for use by views + web crates
 impl WebApp {
     #[tracing::instrument]
     pub async fn build(address: &str, app_state: Arc<WebAppState>) -> Result<Self> {
@@ -120,7 +120,7 @@ impl WebApp {
         let router = Router::new()
             .route("/", get(routes::home))
             .route("/help", get(routes::help))
-            .nest_service("/static", ServeDir::new("static"))
+            .nest_service("/assets", ServeDir::new("assets"))
             .with_state(app_state);
 
         let server = axum::serve(listener, router);
