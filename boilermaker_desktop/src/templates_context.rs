@@ -20,16 +20,8 @@ impl TemplatesContext {
         self.refresh_trigger.set(current + 1);
     }
 
-    pub fn get_templates(&self) -> Vec<TemplateResult> {
-        self.templates.read().clone()
-    }
-
     pub fn is_empty(&self) -> bool {
         self.templates.read().is_empty()
-    }
-
-    pub fn len(&self) -> usize {
-        self.templates.read().len()
     }
 }
 
