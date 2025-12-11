@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Archivo{% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css"
+        integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body class="bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-100 min-h-screen">
+    {% include "nav.jinja" %}
+    {% block main %}{% endblock %}
+    <script src="/static/js/site.js"></script>
+</body>
+
+</html>

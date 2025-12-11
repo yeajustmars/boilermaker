@@ -1,0 +1,46 @@
+{% extends "layout.jinja" %}
+
+{% block title %} | {{title}}{% endblock %}
+
+{% block main %}
+<main class="pt-24 pb-8 px-4 container mx-auto">
+    <!-- <h1 class="text-4xl font-extrabold mb-6 text-neutral-900 dark:text-neutral-100">Home</h1> -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-10">
+        <div class="bg-white dark:bg-neutral-800 rounded-lg shadow-lg p-6">
+            <h2 class="text-2xl font-semibold text-purple-600 dark:text-purple-400 mb-3">
+                <i class="fa-solid fa-heart-circle-plus"></i>
+                Latest Uploads
+            </h2>
+            <p class="text-neutral-700 dark:text-neutral-300">
+                <a href="#">Disco Biscuits 2025/06/5</a>
+            </p>
+            <p class="text-neutral-700 dark:text-neutral-300">
+                <a href="#">Disco Biscuits 2025/06/7</a>
+            </p>
+            <p class="text-neutral-700 dark:text-neutral-300">
+                <a href="#">Disco Biscuits 2025/06/10</a>
+            </p>
+        </div>
+        <div class="bg-white dark:bg-neutral-800 rounded-lg shadow-lg p-6">
+            <h2 class="text-2xl font-semibold text-purple-600 dark:text-purple-400 mb-3">
+                <i class="fa-solid fa-champagne-glasses"></i>
+                Most Popular
+            </h2>
+            <p class="text-neutral-700 dark:text-neutral-300">
+                Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
+                consequat.
+            </p>
+        </div>
+        <div class="bg-white dark:bg-neutral-800 rounded-lg shadow-lg p-6">
+            <h2 class="text-2xl font-semibold text-purple-600 dark:text-purple-400 mb-3">
+                <i class="fa-solid fa-person-circle-plus"></i>
+                Your Most Recents
+            </h2>
+            <p class="text-neutral-700 dark:text-neutral-300">
+                Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
+                pariatur.
+            </p>
+        </div>
+    </div>
+</main>
+{% endblock %}

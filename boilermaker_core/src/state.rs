@@ -14,6 +14,6 @@ pub struct AppState {
 
 impl fmt::Debug for AppState {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "AppState {{ cache_db, source_db, sys_config, ... }}")
+        write!(f, "AppState {{ local_db, sys_config, ... }}")
     }
 }
