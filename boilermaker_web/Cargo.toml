@@ -4,11 +4,21 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+
 # External
+axum = { workspace = true }
+color-eyre = { workspace = true }
 dioxus = { workspace = true, features = ["router"] }
-indoc = { workspace = true }
+minijinja = { workspace = true }
+minijinja-autoreload = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+tower-http = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
 # Internal
 boilermaker_api = { workspace = true }
+boilermaker_core = { workspace = true }
 boilermaker_views = { workspace = true }
 
 [features]

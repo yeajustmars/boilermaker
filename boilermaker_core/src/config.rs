@@ -24,6 +24,13 @@ lazy_static! {
         .to_str()
         .unwrap()
         .to_string();
+    pub static ref DEFAULT_WEBSITE_DATABASE_PATH: PathBuf =
+        PathBuf::from("/var/lib/boilermaker/boilermaker.db");
+    pub static ref DEFAULT_WEBSITE_DATABASE_PATH_STRING: String = DEFAULT_WEBSITE_DATABASE_PATH
+        .as_path()
+        .to_str()
+        .unwrap()
+        .to_string();
 }
 
 //TODO: add default configuration for boil cmd
