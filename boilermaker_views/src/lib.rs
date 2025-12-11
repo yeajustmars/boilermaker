@@ -1,5 +1,5 @@
-mod constants;
-mod docs;
+pub mod constants;
+pub mod docs;
 mod echo;
 mod get_involved;
 mod search;

@@ -15,7 +15,7 @@ async fn main() {
             .expect("[boilermaker_web::main] Cannot create AppState"),
     );
 
-    let listen_addr = "0.0.0.0:3000";
+    let listen_addr = "0.0.0.0:8000";
 
     let app = WebApp::build(listen_addr, app_state)
         .await
