@@ -49,10 +49,7 @@ pub fn init_templates_context() {
 async fn load_templates(
     mut templates: Signal<Vec<TemplateResult>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let cache = &APP_STATE
-        .get()
-        .ok_or("APP_STATE not initialized")?
-        .template_db;
+    let cache = &APP_STATE.get().ok_or("APP_STATE not initialized")?.local_db;
     let list_opts = Some(ListTemplateOptions {
         order_by: Some("created_at DESC, name ASC".to_string()),
         limit: Some(10),
