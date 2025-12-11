@@ -28,7 +28,7 @@ enum Route {
         Templates {},
         #[route("/templates/new")]
         TemplateAdd {},
-        #[route("/templates/pre_render")]
+        #[route("/projects/new/:i")]
         NewProject {i: usize},
         #[route("/get-involved")]
         GetInvolved {},
