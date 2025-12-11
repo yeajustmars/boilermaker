@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use color_eyre::eyre::{eyre, Result};
 use once_cell::sync::OnceCell;
+use tokio::sync::RwLock;
 
 use boilermaker_core::{
     config::{get_system_config, DEFAULT_LOCAL_CACHE_PATH_STRING},
@@ -20,6 +21,7 @@ pub fn init_app_state() -> Result<()> {
         .build()
         .unwrap()
         .block_on(async {
+            // Init. local DB.
             let db_path = DEFAULT_LOCAL_CACHE_PATH_STRING.as_str();
             let cache = Arc::new(LocalCache::new(db_path).await.map_err(|err| {
                 eyre!(
@@ -28,22 +30,19 @@ pub fn init_app_state() -> Result<()> {
                     err
                 )
             })?);
-
             if !cache.template_table_exists().await.unwrap_or(false) {
                 cache
-                    .create_template_table()
+                    .create_schema()
                     .await
-                    .map_err(|e| eyre!("Failed to create template table: {}", e))?;
+                    .map_err(|e| eyre!("Failed to initialize local cache: {}", e))?;
             }
-
+            // App state
             let sys_config = get_system_config(None).expect("Failed to load system config");
-
             let app_state = AppState {
-                template_db: cache,
+                local_db: cache,
                 sys_config,
                 log_level: 1,
             };
-
             APP_STATE
                 .set(app_state)
                 .map_err(|_| eyre!("Failed to set APP_STATE"))?;

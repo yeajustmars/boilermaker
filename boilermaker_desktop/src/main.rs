@@ -1,15 +1,17 @@
 use color_eyre::eyre::Result;
 use dioxus::prelude::*;
 
+mod templates_context;
 mod ui;
-use ui::{Home, TemplateAdd};
 
-use boilermaker_desktop::init_app_state;
-
+use boilermaker_desktop::{init_app_state, APP_STATE};
 use boilermaker_views::{
     Docs, GetInvolved, Search, Templates,
     {DROPDOWN_LINK_STYLE, FAVICON, INDENTED_DROPDOWN_LINK_STYLE, MAIN_CSS, TAILWIND_CSS},
 };
+use templates_context::init_templates_context;
+pub use templates_context::TemplatesContext;
+use ui::{Home, NewProject, TemplateAdd};
 
 //TODO: 1. [ ] Add a WASM-compiled playground for users to develop templates directly in the browser
 //TODO: 2. [ ] Add a user login system to save favorite templates and settings
@@ -26,6 +28,8 @@ enum Route {
         Templates {},
         #[route("/templates/new")]
         TemplateAdd {},
+        #[route("/projects/new/:i")]
+        NewProject {i: usize},
         #[route("/get-involved")]
         GetInvolved {},
 }
@@ -38,6 +42,8 @@ fn main() -> Result<()> {
 
 #[component]
 fn App() -> Element {
+    init_templates_context();
+
     rsx! {
         document::Link { rel: "icon", href: FAVICON }
         document::Title { "Boilermaker - Project Templates Made Easy" }
