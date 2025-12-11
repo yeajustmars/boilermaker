@@ -66,8 +66,8 @@ pub fn NewProject(i: usize) -> Element {
             dir: "/tmp".to_owned(),
             rename: t.name.clone(),
             overwrite: false,
-            variables: get_all_variables(&t),
-            variable_values: get_default_values(&t).unwrap_or_default(),
+            variables: get_all_variables(t),
+            variable_values: get_default_values(t).unwrap_or_default(),
         });
 
         let tpl_name = use_signal(|| t.name.clone());

@@ -27,11 +27,13 @@ impl TemplatesContext {
 
 // Initialize once at the root (in App).
 pub fn init_templates_context() {
-    let templates = use_signal::<Vec<TemplateResult>>(|| vec![]);
+    let templates = use_signal::<Vec<TemplateResult>>(Vec::new);
     let refresh_trigger = use_signal(|| 0usize);
 
     let _ = use_resource(move || async move {
-        let _trigger = refresh_trigger.read();
+        let trigger = refresh_trigger.read();
+        // Drop immediately to avoid holding the read-references over an await call.
+        drop(trigger);
         if let Err(e) = load_templates(templates).await {
             error!("Error loading templates: {}", e);
         }
