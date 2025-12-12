@@ -1,6 +1,12 @@
-use clap::Parser;
-use color_eyre::Result;
+use std::collections::HashSet;
 
+use clap::Parser;
+use color_eyre::{eyre::eyre, Result};
+use tabled::settings::Style;
+use tabled::Table;
+use tracing::{debug, info};
+
+use crate::db::{DisplayableTemplateListResult, TemplateFindParams};
 use crate::state::AppState;
 
 #[derive(Debug, Parser)]
@@ -17,15 +23,40 @@ pub async fn search(app_state: &AppState, cmd: &Search) -> Result<()> {
     let term = cmd.term.trim().to_owned();
     let cache = app_state.local_db.clone();
 
-    let results = if cmd.local {
-        cache.search_templates(&term).await?
-    } else {
-        // TODO: implement remote search
-        cache.search_templates(&term).await?
-    };
+    if term.is_empty() {
+        return Err(eyre!("Empty search"));
+    }
+    debug!("Searching : {term}");
 
-    println!("Search results for '{}':", &cmd.term);
-    println!("{:#?}", &results);
+    // Search templates
+    let search_results = cache.search_templates(&term).await?;
+    debug!("Search results: {:?}", search_results);
+    if search_results.is_empty() {
+        info!("No results found for {term}.");
+        return Ok(());
+    }
+
+    // Load matching templates
+    let template_ids: HashSet<i64> = search_results.iter().map(|res| res.template_id).collect();
+    let find_params = TemplateFindParams {
+        ids: Some(template_ids.into_iter().collect()),
+        ..Default::default()
+    };
+    let templates = cache.find_templates(find_params).await?;
+
+    // Display
+    let rows = templates
+        .into_iter()
+        .map(DisplayableTemplateListResult::to_std_row)
+        .collect::<Vec<_>>();
+    if rows.is_empty() {
+        info!("No results found for {term}.");
+        return Ok(());
+    }
+
+    let mut table = Table::new(&rows);
+    table.with(Style::psql());
+    print!("\n\n{table}\n\n");
 
     Ok(())
 }
