@@ -1,10 +1,9 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use color_eyre::{Result, eyre::eyre};
+use color_eyre::{eyre::eyre, Result};
 use sqlx::{
-    migrate::Migrator,
-    sqlite::{SqliteConnectOptions, SqlitePool},
+    QueryBuilder, migrate::Migrator, sqlite::{SqliteConnectOptions, SqlitePool}
 };
 use tabled::Tabled;
 
@@ -127,37 +126,38 @@ impl TemplateDb for LocalCache {
     //TODO: add regexs, fuzzy matching, predicates, etc
     #[tracing::instrument]
     async fn find_templates(&self, params: TemplateFindParams) -> Result<Vec<TemplateResult>> {
-        let mut query = String::from("SELECT * FROM template WHERE 1=1"); //TODO: clean up the 1=1 hack
-        let mut bindings: Vec<String> = Vec::new();
+        let mut qb = QueryBuilder::new("SELECT * FROM template WHERE 1=1");
 
+        if let Some(ids) = params.ids && !ids.is_empty() {
+            qb.push(" AND id IN (");
+            let mut separated = qb.separated(",");
+            for id in ids {
+                separated.push_bind(id);
+            }
+            separated.push_unseparated(")");
+        }
         if let Some(name) = params.name {
-            query.push_str(" AND name = ?");
-            bindings.push(name);
+            qb.push(" AND name = ?");
+            qb.push_bind(name);
         }
         if let Some(lang) = params.lang {
-            query.push_str(" AND lang = ?");
-            bindings.push(lang);
+            qb.push(" AND lang = ?");
+            qb.push_bind(lang);
         }
         if let Some(repo) = params.repo {
-            query.push_str(" AND repo = ?");
-            bindings.push(repo);
+            qb.push(" AND repo = ?");
+            qb.push_bind(repo);
         }
         if let Some(branch) = params.branch {
-            query.push_str(" AND branch = ?");
-            bindings.push(branch);
+            qb.push(" AND branch = ?");
+            qb.push_bind(branch);
         }
         if let Some(subdir) = params.subdir {
-            query.push_str(" AND subdir = ?");
-            bindings.push(subdir);
+            qb.push(" AND subdir = ?");
+            qb.push_bind(subdir);
         }
-
-        query.push_str(" ORDER BY name ASC");
-
-        let mut q = sqlx::query_as::<_, TemplateResult>(&query);
-        for binding in &bindings {
-            q = q.bind(binding);
-        }
-
+        qb.push(" ORDER BY name ASC");
+        let q = qb.build_query_as::<TemplateResult>();
         let results = q.fetch_all(&self.pool).await?;
 
         Ok(results)
@@ -420,8 +420,9 @@ pub struct TemplateResult {
     pub updated_at: Option<i32>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct TemplateFindParams {
+    pub ids: Option<Vec<i64>>,
     pub name: Option<String>,
     pub lang: Option<String>,
     pub repo: Option<String>,
