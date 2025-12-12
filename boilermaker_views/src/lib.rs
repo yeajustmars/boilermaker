@@ -4,6 +4,8 @@ mod echo;
 mod get_involved;
 mod search;
 mod templates;
+pub mod util;
+pub mod web;
 
 pub use constants::*;
 pub use docs::*;

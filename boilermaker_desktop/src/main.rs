@@ -6,8 +6,8 @@ mod ui;
 
 use boilermaker_desktop::{init_app_state, APP_STATE};
 use boilermaker_views::{
-    Docs, GetInvolved, Search, Templates,
-    {DROPDOWN_LINK_STYLE, FAVICON, INDENTED_DROPDOWN_LINK_STYLE, MAIN_CSS, TAILWIND_CSS},
+    Docs, GetInvolved, Search, Templates, DROPDOWN_LINK_STYLE, FAVICON, FONT_AWESOME_URL,
+    FONT_FIRA_CODE_URL, FONT_ROBOTO_URL, INDENTED_DROPDOWN_LINK_STYLE, MAIN_CSS, TAILWIND_CSS,
 };
 use templates_context::init_templates_context;
 pub use templates_context::TemplatesContext;
@@ -54,9 +54,9 @@ fn App() -> Element {
             crossorigin: true,
         }
         // TODO: move to Dioxus.toml
-        document::Stylesheet { href: "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" }
-        document::Stylesheet { href: "https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" }
-        document::Stylesheet { href: "https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap" }
+        document::Stylesheet { href: FONT_AWESOME_URL }
+        document::Stylesheet { href: FONT_ROBOTO_URL }
+        document::Stylesheet { href: FONT_FIRA_CODE_URL}
         // TODO: move to Dioxus.toml
         document::Link { rel: "stylesheet", href: MAIN_CSS }
         document::Link { rel: "stylesheet", href: TAILWIND_CSS }
@@ -71,6 +71,7 @@ fn Layout() -> Element {
     rsx! {
         div {
             id: "layout",
+            // TODO: move layout tailwind to views::constants
             class: "min-h-screen bg-white text-neutral-800 dark:bg-neutral-900 dark:text-neutral-200",
             Navbar {}
 
