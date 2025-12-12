@@ -8,11 +8,11 @@ pub const MAIN_CSS: Asset = asset!("/assets/main.css");
 pub const PRELOADER: Asset = asset!("/assets/preloader.gif");
 pub const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 
-pub const CDN_URL_FONT_AWESOME: &str =
+pub const FONT_AWESOME_URL: &str =
     "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css";
-pub const FONT_URL_ROBOTO: &str =
+pub const FONT_ROBOTO_URL: &str =
     "https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap";
-pub const FONT_URL_FIRA_CODE: &str =
+pub const FONT_FIRA_CODE_URL: &str =
     "https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap";
 
 pub const LINK_STYLE: &str = "text-blue-400 px-1";

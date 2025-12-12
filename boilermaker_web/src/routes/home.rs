@@ -1,15 +1,29 @@
 use std::sync::Arc;
 
 use axum::{extract::State, http::StatusCode, response::Html};
-use minijinja::context;
+use dioxus::prelude::*;
+
+use boilermaker_views::{util::dioxus_to_html_page, web::HtmlLayout};
 
 use crate::WebAppState;
 
-pub async fn home(State(app): State<Arc<WebAppState>>) -> Result<Html<String>, StatusCode> {
-    let name = "home.jinja";
-    let context = context! {
-        title => "Home",
-        welcome_text => "Hello World!",
+#[component]
+pub fn Home() -> Element {
+    rsx! {
+        div {
+            h1 { "Welcome to Boilermaker!" }
+            p { "Your one-stop solution for project templates." }
+        }
+    }
+}
+
+pub async fn home(State(_app): State<Arc<WebAppState>>) -> Result<Html<String>, StatusCode> {
+    let page = || {
+        rsx! {
+            HtmlLayout {
+                Home {}
+            }
+        }
     };
-    Ok(Html(app.render(name, context)))
+    Ok(Html(dioxus_to_html_page(page)))
 }
