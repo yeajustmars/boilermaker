@@ -1,8 +1,8 @@
 use std::{collections::HashMap, path::PathBuf};
 
 use clap::Parser;
-use color_eyre::{Result, eyre::eyre};
-use tabled::{Table, Tabled, settings::Style};
+use color_eyre::{eyre::eyre, Result};
+use tabled::{settings::Style, Table, Tabled};
 use tracing::{debug, error, info};
 
 use crate::db::{TemplateFindParams, TemplateResult};
@@ -93,6 +93,7 @@ pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
 
 async fn get_existing_templates(app_state: &AppState, cmd: &New) -> Result<Vec<TemplateResult>> {
     let find_params = TemplateFindParams {
+        ids: None,
         name: Some(cmd.name.to_owned()),
         lang: cmd.lang.clone(),
         repo: None,
