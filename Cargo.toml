@@ -8,6 +8,7 @@ members = [
     "boilermaker_views",
     "boilermaker_web",
 ]
+exclude = [ "examples/hello-world/rust" ]
 
 [workspace.dependencies]
 async-trait = "0.1.89"
