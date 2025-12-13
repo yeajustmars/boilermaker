@@ -109,8 +109,7 @@ pub struct WebApp {
     pub address: String,
 }
 
-// TODO: figure out how to use assets directory from boilermaker_views in web crate
-// TODO: make sure there is one (and only one) assets/ dir for use by views + web crates
+// TODO: solve: ERROR tokio-runtime-worker ThreadId(03) dioxus_document: Unable to find a document in the renderer. Using the default no-op document.
 impl WebApp {
     #[tracing::instrument]
     pub async fn build(address: &str, app_state: Arc<WebAppState>) -> Result<Self> {

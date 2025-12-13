@@ -8,12 +8,25 @@ pub const MAIN_CSS: Asset = asset!("/assets/main.css");
 pub const PRELOADER: Asset = asset!("/assets/preloader.gif");
 pub const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 
+pub const WEB_FAVICON: &str = "/assets/logo-flame.png";
+pub const WEB_GITHUB_LIGHT_CSS: &str = "/assets/github.min.css";
+pub const WEB_GITHUB_DARK_CSS: &str = "/assets/github-dark.min.css";
+pub const WEB_HIGHLIGHT_JS: &str = "/assets/highlight.min.js";
+pub const WEB_MAIN_CSS: &str = "/assets/main.css";
+pub const WEB_PRELOADER: &str = "/assets/preloader.gif";
+pub const WEB_TAILWIND_CSS: &str = "/assets/tailwind.css";
+
 pub const FONT_AWESOME_URL: &str =
     "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css";
 pub const FONT_ROBOTO_URL: &str =
     "https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap";
 pub const FONT_FIRA_CODE_URL: &str =
     "https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap";
+
+pub const LAYOUT_STYLE: &str =
+    "min-h-screen bg-white text-neutral-800 dark:bg-neutral-900 dark:text-neutral-200";
+
+pub const NAVBAR_STYLE: &str = "flex flex-row space-x-4 p-2 items-center justify-between bg-gradient-to-b from-white to-neutral-100 dark:from-neutral-800 dark:to-neutral-900 border-b border-solid border-neutral-300 dark:border-neutral-950 text-neutral-600 dark:text-neutral-300";
 
 pub const LINK_STYLE: &str = "text-blue-400 px-1";
 
@@ -37,3 +50,5 @@ pub const LABEL_STYLE: &str = "block text-sm font-bold mb-2";
 pub const INPUT_STYLE: &str =
     "w-full p-2 border border-neutral-200 dark:border-neutral-400 dark:border-neutral-800 rounded";
 pub const TEXTAREA_STYLE: &str = "w-full p-2 border border-neutral-200 dark:border-neutral-400 dark:border-neutral-800 rounded h-24";
+
+pub const SEARCH_INPUT_STYLE: &str = "block w-full rounded-md py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-neutral-700 placeholder:text-gray-700 dark:placeholder:text-gray-100 focus:ring-2 focus:ring-inset focus:ring-neutral-600 sm:text-sm sm:leading-6 px-2 border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900";

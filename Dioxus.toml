@@ -5,6 +5,7 @@ asset_dir = "public"
 
 [web.app]
 title = "Boilermaker"
+asset_dir = "boilermaker_views/assets"
 
 [web.watcher]
 reload_html = true

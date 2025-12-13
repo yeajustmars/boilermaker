@@ -6,8 +6,9 @@ mod ui;
 
 use boilermaker_desktop::{init_app_state, APP_STATE};
 use boilermaker_views::{
-    Docs, GetInvolved, Search, Templates, DROPDOWN_LINK_STYLE, FAVICON, FONT_AWESOME_URL,
-    FONT_FIRA_CODE_URL, FONT_ROBOTO_URL, INDENTED_DROPDOWN_LINK_STYLE, MAIN_CSS, TAILWIND_CSS,
+    DesktopSearch, Docs, GetInvolved, MainSettings, Templates, DROPDOWN_LINK_STYLE, FAVICON,
+    FONT_AWESOME_URL, FONT_FIRA_CODE_URL, FONT_ROBOTO_URL, INDENTED_DROPDOWN_LINK_STYLE,
+    LAYOUT_STYLE, MAIN_CSS, NAVBAR_STYLE, TAILWIND_CSS,
 };
 use templates_context::init_templates_context;
 pub use templates_context::TemplatesContext;
@@ -72,7 +73,7 @@ fn Layout() -> Element {
         div {
             id: "layout",
             // TODO: move layout tailwind to views::constants
-            class: "min-h-screen bg-white text-neutral-800 dark:bg-neutral-900 dark:text-neutral-200",
+            class: LAYOUT_STYLE,
             Navbar {}
 
             Outlet::<Route> {}
@@ -86,19 +87,22 @@ fn close_main_dropdown() {
     *MAIN_DROPDOWN_OPEN_STATE.write() = false;
 }
 
+// TODO: [question] move Navbar to boilermaker_views?
+// NOTE: It's possible these need to behave differently in desktop vs web views as the
+// web view is static HTML, doesn't rely on a Dioxus signals, etc.
 #[component]
 pub fn Navbar() -> Element {
     rsx! {
         div {
             id: "navbar",
             onmouseleave: move |_| close_main_dropdown(),
-            class: "flex flex-row space-x-4 p-2 items-center justify-between bg-gradient-to-b from-white to-neutral-100 dark:from-neutral-800 dark:to-neutral-900 border-b border-solid border-neutral-300 dark:border-neutral-950 text-neutral-600 dark:text-neutral-300",
+            class: NAVBAR_STYLE,
 
             div { class: "w-1/4 text-2xl",
                 MainNavDropdownMenu {}
                 MainLinks {}
             }
-            div { class: "w-1/2", Search {} }
+            div { class: "w-1/2", DesktopSearch {} }
             div { class: "w-1/4 text-right", MainSettings {} }
         }
     }
@@ -159,18 +163,6 @@ fn MainNavDropdownMenu() -> Element {
                     span { class: "ml-2", "Get Involved" }
                 }
             }
-        }
-    }
-}
-
-#[component]
-pub fn MainSettings() -> Element {
-    rsx! {
-        a {
-            class: "px-4 py-2 rounded hover:bg-neutral-100 dark:hover:bg-neutral-700",
-            href: "/settings",
-            i { class: "fa-solid fa-gear" }
-            span { class: "ml-2", "Settings" }
         }
     }
 }
