@@ -1,11 +1,7 @@
 (function () {
-  const showElement = (el) => {
-      el.style.removeProperty("display");
-  };
+  const showElement = (el) => el.style.removeProperty("display");
 
-  const hideElement = (el) => {
-      el.style.display = "none";
-  };
+  const hideElement = (el) => el.style.display = "none";
 
   const toggleElement = (el) => {
     if (el.style.display === "none") {
@@ -26,7 +22,6 @@
     mainDropdown.addEventListener("mouseleave", () => {
       hideElement(mainDropdown);
     });
-
   });
 
 })();

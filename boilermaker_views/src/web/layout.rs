@@ -22,6 +22,10 @@ pub fn HtmlLayout(children: Element) -> Element {
             link { rel: "stylesheet", href: FONT_AWESOME_URL }
             link { rel: "stylesheet", href: WEB_MAIN_CSS }
             link { rel: "stylesheet", href: WEB_TAILWIND_CSS}
+            script { src: "https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js",
+                    integrity: "sha384-/TgkGk7p307TH7EXJDuUlgG3Ce1UVolAOFopFekQkkXihi5u/6OCvVKyz1W+idaz",
+                    crossorigin: "anonymous"
+            }
             script { src: WEB_MAIN_JS, defer: "true" }
         }
         body {
