@@ -7,7 +7,7 @@
       el.style.display = "none";
   };
 
-  const toggleDisplay = (el) => {
+  const toggleElement = (el) => {
     if (el.style.display === "none") {
       showElement(el);
     } else {
@@ -20,7 +20,7 @@
     const mainDropdown = document.querySelector("#main-nav-dropdown");
 
     mainMenu.addEventListener("click", () => {
-      toggleDisplay(mainDropdown);
+      toggleElement(mainDropdown);
     });
 
     mainDropdown.addEventListener("mouseleave", () => {
