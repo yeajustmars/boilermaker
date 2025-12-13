@@ -13,6 +13,7 @@ pub const WEB_GITHUB_LIGHT_CSS: &str = "/assets/github.min.css";
 pub const WEB_GITHUB_DARK_CSS: &str = "/assets/github-dark.min.css";
 pub const WEB_HIGHLIGHT_JS: &str = "/assets/highlight.min.js";
 pub const WEB_MAIN_CSS: &str = "/assets/main.css";
+pub const WEB_MAIN_JS: &str = "/assets/main.js";
 pub const WEB_PRELOADER: &str = "/assets/preloader.gif";
 pub const WEB_TAILWIND_CSS: &str = "/assets/tailwind.css";
 

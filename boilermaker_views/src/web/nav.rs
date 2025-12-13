@@ -22,7 +22,8 @@ pub fn Navbar() -> Element {
 #[component]
 fn MainHamburgerMenu() -> Element {
     rsx! {
-        span {
+        button {
+            id: "main-nav-menu",
             class: "pr-2",
             i { class: "fa-solid fa-bars" }
         }
@@ -30,22 +31,12 @@ fn MainHamburgerMenu() -> Element {
 }
 
 #[component]
-fn MainLink() -> Element {
-    rsx! {
-        span { class: "ml-2 text-lg",
-            a {
-                href: "/",
-                "Boilermaker"
-                img { class: "inline h-6 w-6 mr-1", src: WEB_FAVICON }
-            }
-        }
-    }
-}
-
-#[component]
 fn MainNavDropdownMenu() -> Element {
     rsx! {
-        div { class: "absolute left-0 top-13 w-48 bg-white dark:bg-neutral-900 rounded shadow-lg border border-l-0 border-t-0 border-neutral-300 dark:border-neutral-700 z-10 text-sm ",
+        div {
+            id: "main-nav-dropdown",
+            class: "absolute left-0 top-13 w-48 bg-white dark:bg-neutral-900 rounded shadow-lg border border-l-0 border-t-0 border-neutral-300 dark:border-neutral-700 z-10 text-sm invisible",
+            style: "display: none;",
             a { class: DROPDOWN_LINK_STYLE, href: "/" ,
                 i { class: "fa-solid fa-house" }
                 span { class: "ml-2", "Home" }
@@ -61,6 +52,18 @@ fn MainNavDropdownMenu() -> Element {
             a { class: DROPDOWN_LINK_STYLE, href: "/get-involved",
                 i { class: "fa-solid fa-hands-helping" }
                 span { class: "ml-2", "Get Involved" }
+            }
+        }
+    }
+}
+
+#[component]
+fn MainLink() -> Element {
+    rsx! {
+        span { class: "ml-2 text-lg",
+            a { href: "/",
+                "Boilermaker"
+                img { class: "inline h-6 w-6 mr-1", src: WEB_FAVICON }
             }
         }
     }

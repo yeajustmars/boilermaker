@@ -2,7 +2,7 @@ use dioxus::prelude::*; // Import the api module from your crate (adjust the pat
 
 use crate::{
     FONT_AWESOME_URL, FONT_FIRA_CODE_URL, FONT_ROBOTO_URL, LAYOUT_STYLE, WEB_FAVICON, WEB_MAIN_CSS,
-    WEB_TAILWIND_CSS, web::Navbar,
+    WEB_MAIN_JS, WEB_TAILWIND_CSS, web::Navbar,
 };
 
 #[component]
@@ -22,6 +22,7 @@ pub fn HtmlLayout(children: Element) -> Element {
             link { rel: "stylesheet", href: FONT_AWESOME_URL }
             link { rel: "stylesheet", href: WEB_MAIN_CSS }
             link { rel: "stylesheet", href: WEB_TAILWIND_CSS}
+            script { src: WEB_MAIN_JS, defer: "true" }
         }
         body {
             div { class: LAYOUT_STYLE,
