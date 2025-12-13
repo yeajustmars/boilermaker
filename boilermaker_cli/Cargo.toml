@@ -13,7 +13,6 @@ dirs = { workspace = true }
 fs_extra = { workspace = true }
 git2 = { workspace = true }
 lazy_static = { workspace = true }
-minijinja = { workspace = true }
 #nu-ansi-term = { workspace = true }
 serde = { workspace = true }
 sqlx = { workspace = true }

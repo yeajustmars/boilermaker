@@ -10,8 +10,6 @@ axum = { workspace = true }
 color-eyre = { workspace = true }
 dioxus = { workspace = true, features = ["router"] }
 include_dir = { workspace = true }
-minijinja = { workspace = true }
-minijinja-autoreload = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 tower-http = { workspace = true }
 tracing = { workspace = true }

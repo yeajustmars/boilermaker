@@ -8,20 +8,19 @@ use boilermaker_views::{util::dioxus_to_html_page, web::HtmlLayout};
 use crate::WebAppState;
 
 #[component]
-pub fn HomePage() -> Element {
+pub fn TemplatesPage() -> Element {
     rsx! {
         div {
-            h1 { "Welcome to Boilermaker!" }
-            p { "Your one-stop solution for project templates." }
+            h1 { "Templates" }
         }
     }
 }
 
-pub async fn home(State(_app): State<Arc<WebAppState>>) -> Result<Html<String>, StatusCode> {
+pub async fn templates(State(_app): State<Arc<WebAppState>>) -> Result<Html<String>, StatusCode> {
     let page = || {
         rsx! {
             HtmlLayout {
-                HomePage {}
+                TemplatesPage {}
             }
         }
     };

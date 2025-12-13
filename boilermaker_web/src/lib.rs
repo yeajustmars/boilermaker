@@ -1,9 +1,7 @@
-use std::{fmt, path::PathBuf, sync::Arc};
+use std::{fmt, sync::Arc};
 
 use axum::{routing::get, serve::Serve, Router};
 use color_eyre::eyre::Result;
-use minijinja::path_loader;
-use minijinja_autoreload::AutoReloader;
 use tower_http::services::ServeDir;
 
 use boilermaker_core::{
@@ -17,15 +15,13 @@ pub mod routes;
 
 pub struct WebAppState {
     pub db: TemplateDbType,
-    pub jinja: minijinja::Environment<'static>,
-    pub reloader: Option<AutoReloader>,
     pub is_dev_env: bool,
     pub log_level: u8,
 }
 
 impl fmt::Debug for WebAppState {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "WebAppState {{ db, jinja, ... }}")
+        write!(f, "WebAppState {{ db... }}")
     }
 }
 
@@ -49,58 +45,11 @@ impl WebAppState {
             }
         }
 
-        let mut jinja = minijinja::Environment::new();
-
-        let reloader = if is_dev_env {
-            Some(AutoReloader::new(move |notifier| {
-                let template_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("templates");
-                let mut env = minijinja::Environment::new();
-                env.set_loader(path_loader(&template_path));
-                notifier.watch_path(&template_path, true);
-                Ok(env)
-            }))
-        } else {
-            None
-        };
-
-        if !is_dev_env {
-            Self::load_templates(&mut jinja);
-        }
-
         Ok(WebAppState {
             db,
             log_level,
-            jinja,
-            reloader,
             is_dev_env,
         })
-    }
-
-    fn load_templates(jinja: &mut minijinja::Environment) {
-        jinja
-            .add_template("layout.jinja", include_str!("../templates/layout.jinja"))
-            .unwrap();
-        jinja
-            .add_template("nav.jinja", include_str!("../templates/nav.jinja"))
-            .unwrap();
-        jinja
-            .add_template("help.jinja", include_str!("../templates/help.jinja"))
-            .unwrap();
-        jinja
-            .add_template("home.jinja", include_str!("../templates/home.jinja"))
-            .unwrap();
-    }
-
-    #[tracing::instrument]
-    pub fn render(&self, name: &str, context: minijinja::value::Value) -> String {
-        if self.is_dev_env {
-            let env = self.reloader.as_ref().unwrap().acquire_env().unwrap();
-            let template = env.get_template(name).unwrap();
-            template.render(context).unwrap()
-        } else {
-            let template = self.jinja.get_template(name).unwrap();
-            template.render(context).unwrap()
-        }
     }
 }
 
@@ -118,7 +67,10 @@ impl WebApp {
 
         let router = Router::new()
             .route("/", get(routes::home))
-            .route("/help", get(routes::help))
+            .route("/docs", get(routes::docs))
+            .route("/get-involved", get(routes::get_involved))
+            .route("/settings", get(routes::settings))
+            .route("/templates", get(routes::templates))
             .nest_service("/assets", ServeDir::new("assets"))
             .with_state(app_state);
 
