@@ -4,13 +4,7 @@ use sqlx::{
     sqlite::{SqliteConnectOptions, SqlitePool},
 };
 
-pub use super::{
-    template::{
-        hash_template_row, DisplayableTemplateListResult, ListTemplateOptions, SearchResult,
-        TemplateFindParams, TemplateMethods, TemplateResult, TemplateRow,
-    },
-    SourceMethods,
-};
+use super::{SourceMethods, TemplateMethods};
 
 static MIGRATOR: Migrator = sqlx::migrate!("../migrations");
 

@@ -1,11 +1,11 @@
 use std::path::PathBuf;
 
 use clap::Parser;
-use color_eyre::{Result, eyre::eyre};
-use tabled::{Table, settings::Style};
+use color_eyre::{eyre::eyre, Result};
+use tabled::{settings::Style, Table};
 use tracing::info;
 
-use crate::db::local_db::DisplayableTemplateListResult;
+use crate::db::DisplayableTemplateListResult;
 use crate::state::AppState;
 use crate::template::remove_dir_if_exists;
 

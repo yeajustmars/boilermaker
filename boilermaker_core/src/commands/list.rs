@@ -1,9 +1,9 @@
 use clap::Parser;
 use color_eyre::Result;
-use tabled::{Table, settings::Style};
+use tabled::{settings::Style, Table};
 use tracing::info;
 
-use crate::db::local_db::DisplayableTemplateListResult;
+use crate::db::DisplayableTemplateListResult;
 use crate::state::AppState;
 
 #[derive(Parser)]
