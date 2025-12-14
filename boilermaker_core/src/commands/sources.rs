@@ -2,16 +2,17 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use color_eyre::{Result, eyre::eyre};
+use color_eyre::{eyre::eyre, Result};
 use serde::Deserialize;
-use tabled::{Table, Tabled, settings::Style};
+use tabled::{settings::Style, Table, Tabled};
 use tracing::info;
 
-use crate::db::local_db::{PartialSourceTemplateRow, SourceRow};
+use crate::db::source::{PartialSourceTemplateRow, SourceRow};
+use crate::db::DisplayableSourceRow;
 use crate::state::AppState;
 use crate::template::{
-    CloneContext, clean_dir, clone_repo, get_lang, get_template_config, make_name_from_url,
-    make_tmp_dir_from_url,
+    clean_dir, clone_repo, get_lang, get_template_config, make_name_from_url,
+    make_tmp_dir_from_url, CloneContext,
 };
 use crate::util::string;
 
@@ -147,28 +148,23 @@ impl From<&HashMap<String, String>> for SourceMap {
 }
 
 #[tracing::instrument]
-pub fn print_sources_table(sources: Vec<HashMap<String, String>>) -> Result<()> {
-    let rows = sources.iter().map(SourceMap::from).collect::<Vec<_>>();
+pub async fn list(app_state: &AppState, _cmd: &List) -> Result<()> {
+    let sources = app_state.local_db.list_sources().await?;
+    if sources.is_empty() {
+        info!("No sources found.");
+        info!("💡 Have a look at `boil sources add`");
+        return Ok(());
+    }
 
-    let mut table = Table::new(&rows);
+    let table_rows = sources
+        .into_iter()
+        .map(DisplayableSourceRow::from)
+        .collect::<Vec<_>>();
+    let mut table = Table::new(&table_rows);
     table.with(Style::psql());
-
     print!("\n\n{table}\n\n");
 
     Ok(())
-}
-
-// TODO: add filters/options
-#[tracing::instrument]
-pub async fn list(app_state: &AppState, _cmd: &List) -> Result<()> {
-    if let Some(sources) = &app_state.sys_config.sources {
-        print_sources_table(sources.to_vec())?;
-        Ok(())
-    } else {
-        info!("No sources found.");
-        info!("💡 Have a look at `boil sources add`");
-        Ok(())
-    }
 }
 
 impl From<&HashMap<String, String>> for CloneContext {

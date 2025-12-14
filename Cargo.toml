@@ -44,6 +44,7 @@ tracing-subscriber = { version = "0.3.20", features = [
     "registry",
     "env-filter",
 ] }
+unicode-truncate = { version = "2.0.0" }
 uuid = { version = "1.18.1", features = ["v4", "serde"] }
 walkdir = "2.5.0"
 
