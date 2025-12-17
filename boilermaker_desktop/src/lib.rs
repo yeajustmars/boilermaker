@@ -6,7 +6,7 @@ use tokio::sync::RwLock;
 
 use boilermaker_core::{
     config::{get_system_config, DEFAULT_LOCAL_CACHE_PATH_STRING},
-    db::{LocalCache, TemplateDb},
+    db::{LocalCache, TemplateDb, TemplateMethods},
     state::AppState,
 };
 

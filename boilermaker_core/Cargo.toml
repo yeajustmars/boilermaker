@@ -27,5 +27,6 @@ toml = { workspace = true }
 tracing = { workspace = true }
 tracing-error = { workspace = true }
 tracing-subscriber = { workspace = true }
+unicode-truncate = { workspace = true }
 walkdir = { workspace = true }
 # Internal
