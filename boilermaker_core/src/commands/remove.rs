@@ -1,11 +1,11 @@
 use std::path::PathBuf;
 
 use clap::Parser;
-use color_eyre::{eyre::eyre, Result};
-use tabled::{settings::Style, Table};
+use color_eyre::{Result, eyre::eyre};
+use tabled::{Table, settings::Style};
 use tracing::info;
 
-use crate::db::DisplayableTemplateListResult;
+use crate::db::TabledTemplateListResult;
 use crate::state::AppState;
 use crate::template::remove_dir_if_exists;
 
@@ -31,7 +31,7 @@ pub async fn remove(app_state: &AppState, cmd: &Remove) -> Result<()> {
 
     let rows = vec![template]
         .into_iter()
-        .map(DisplayableTemplateListResult::to_std_row)
+        .map(TabledTemplateListResult::from)
         .collect::<Vec<_>>();
 
     let mut table = Table::new(&rows);

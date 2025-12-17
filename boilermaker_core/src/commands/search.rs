@@ -1,12 +1,12 @@
-use std::collections::HashSet;
+use std::sync::Arc;
 
 use clap::Parser;
-use color_eyre::{eyre::eyre, Result};
-use tabled::settings::Style;
+use color_eyre::{Result, eyre::eyre};
 use tabled::Table;
+use tabled::settings::Style;
 use tracing::{debug, info};
 
-use crate::db::{DisplayableTemplateListResult, TemplateFindParams};
+use crate::db::{SearchResult, TabledSearchResult, TemplateDb};
 use crate::state::AppState;
 
 #[derive(Debug, Parser)]
@@ -28,35 +28,48 @@ pub async fn search(app_state: &AppState, cmd: &Search) -> Result<()> {
     }
     debug!("Searching : {term}");
 
-    // Search templates
-    let search_results = cache.search_templates(&term).await?;
+    // TODO: for now you MUST pick between templates installed locally (-l), or
+    //       templates from a remote source (-s): search w/o either flag will
+    //       error out.
+    let scope = if cmd.local {
+        SearchScope::Local
+    } else if let Some(source_name) = cmd.src.clone() {
+        SearchScope::Source(source_name)
+    } else {
+        return Err(eyre!(
+            "Use -l or -s to search for local templates, or sources"
+        ));
+    };
+    let search_results = search_templates(cache.clone(), &term, scope).await?;
     debug!("Search results: {:?}", search_results);
     if search_results.is_empty() {
         info!("No results found for {term}.");
         return Ok(());
     }
 
-    // Load matching templates
-    let template_ids: HashSet<i64> = search_results.iter().map(|res| res.template_id).collect();
-    let find_params = TemplateFindParams {
-        ids: Some(template_ids.into_iter().collect()),
-        ..Default::default()
-    };
-    let templates = cache.find_templates(find_params).await?;
-
-    // Display
-    let rows = templates
+    let tabled = search_results
         .into_iter()
-        .map(DisplayableTemplateListResult::to_std_row)
+        .map(TabledSearchResult::from)
         .collect::<Vec<_>>();
-    if rows.is_empty() {
-        info!("No results found for {term}.");
-        return Ok(());
-    }
-
-    let mut table = Table::new(&rows);
+    let mut table = Table::new(tabled);
     table.with(Style::psql());
     print!("\n\n{table}\n\n");
 
     Ok(())
+}
+
+pub enum SearchScope {
+    Local,
+    Source(String),
+}
+
+pub async fn search_templates(
+    cache: Arc<dyn TemplateDb>,
+    term: &str,
+    scope: SearchScope,
+) -> Result<Vec<SearchResult>> {
+    match scope {
+        SearchScope::Local => Ok(cache.search_templates(term).await?),
+        SearchScope::Source(name) => Ok(cache.search_sources(&name, term).await?),
+    }
 }

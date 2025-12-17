@@ -1,14 +1,14 @@
 use std::path::PathBuf;
 
-use color_eyre::{eyre::eyre, Result};
-use tabled::Tabled;
+use color_eyre::{Result, eyre::eyre};
 use sqlx::QueryBuilder;
+use tabled::Tabled;
 
+use super::LocalCache;
 use crate::template as tmpl;
 use crate::util::crypto::sha256_hash_string;
-use crate::util::time::timestamp_to_iso8601;
 use crate::util::file::read_file_to_string;
-use super::LocalCache;
+use crate::util::time::timestamp_to_iso8601;
 
 #[async_trait::async_trait]
 pub trait TemplateMethods: Send + Sync {
@@ -22,9 +22,10 @@ pub trait TemplateMethods: Send + Sync {
         &self,
         opts: Option<ListTemplateOptions>,
     ) -> Result<Vec<TemplateResult>>;
-    async fn search_templates(&self, term: &str) -> Result<Vec<SearchResult>>;
     async fn template_table_exists(&self) -> Result<bool>;
     async fn update_template(&self, id: i64, row: TemplateRow) -> Result<i64>;
+    async fn search_templates(&self, term: &str) -> Result<Vec<SearchResult>>;
+    async fn search_sources(&self, source_name: &str, term: &str) -> Result<Vec<SearchResult>>;
 }
 
 #[async_trait::async_trait]
@@ -182,16 +183,18 @@ impl TemplateMethods for LocalCache {
         let term = term.trim();
         let results = sqlx::query_as::<_, SearchResult>(
             r#"
-            SELECT
-              src.template_id,
-              t.name, t.lang, t.template_dir, t.repo, t.branch, t.subdir,
-              t.created_at, t.updated_at, t.sha256_hash,
-              src.file_path, src.content
+            SELECT 'template' as kind,
+                    src.template_id as id,
+                    t.name,
+                    t.lang,
+                    t.repo,
+                    t.branch,
+                    t.subdir
             FROM template_content_fts AS ft_search
-              LEFT JOIN template_content AS src ON ft_search.rowid=src.id
-              LEFT JOIN template as t ON src.template_id=t.id
-            WHERE
-              template_content_fts MATCH ?
+                LEFT JOIN template_content AS src ON ft_search.rowid=src.id
+                LEFT JOIN template as t ON src.template_id = t.id
+            WHERE template_content_fts MATCH ?
+            GROUP BY t.id
             "#,
         )
         .bind(term)
@@ -243,8 +246,36 @@ impl TemplateMethods for LocalCache {
 
         Ok(id)
     }
-}
 
+    // Search the content of all templates in source_name.
+    async fn search_sources(&self, source_name: &str, term: &str) -> Result<Vec<SearchResult>> {
+        let term = term.trim();
+        let results = sqlx::query_as::<_, SearchResult>(
+            r#"
+                SELECT 'source' as kind,
+                       st.id,
+                       st.name,
+                       st.lang,
+                       st.repo,
+                       st.branch,
+                       st.subdir
+                FROM source_template_content_fts AS ft_search
+                    LEFT JOIN source_template_content AS stc ON ft_search.rowid = stc.id
+                    LEFT JOIN source_template as st ON stc.source_template_id = st.id
+                    LEFT JOIN source as s ON st.source_id = s.id
+                WHERE s.name = ?
+                  AND source_template_content_fts MATCH ?
+                GROUP BY st.id
+                "#,
+        )
+        .bind(source_name)
+        .bind(term)
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(results)
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct TemplateRow {
@@ -313,7 +344,7 @@ pub struct ListTemplateOptions {
 }
 
 #[derive(Debug, Tabled)]
-pub struct DisplayableTemplateListResult {
+pub struct TabledTemplateListResult {
     pub id: i64,
     pub name: String,
     pub lang: String,
@@ -322,8 +353,8 @@ pub struct DisplayableTemplateListResult {
     pub updated_at: String,
 }
 
-impl DisplayableTemplateListResult {
-    pub fn to_std_row(row: TemplateResult) -> Self {
+impl TabledTemplateListResult {
+    pub fn from(row: TemplateResult) -> Self {
         Self {
             id: row.id,
             name: row.name,
@@ -355,16 +386,38 @@ pub fn hash_template_row(row: &TemplateRow) -> String {
 
 #[derive(Debug, Clone, sqlx::FromRow)]
 pub struct SearchResult {
-    pub template_id: i64,
+    pub kind: String,
+    pub id: i64,
     pub name: String,
     pub lang: String,
-    pub template_dir: String,
     pub repo: String,
     pub branch: Option<String>,
     pub subdir: Option<String>,
-    pub created_at: Option<i32>,
-    pub updated_at: Option<i32>,
-    pub sha256_hash: Option<String>,
-    pub file_path: String,
-    pub content: String,
+}
+
+#[derive(Debug, Tabled)]
+pub struct TabledSearchResult {
+    #[tabled(skip)]
+    pub kind: String,
+    #[tabled(skip)]
+    pub id: i64,
+    pub name: String,
+    pub lang: String,
+    pub repo: String,
+    pub branch: String,
+    pub subdir: String,
+}
+
+impl TabledSearchResult {
+    pub fn from(sr: SearchResult) -> Self {
+        Self {
+            kind: sr.kind,
+            id: sr.id,
+            name: sr.name,
+            lang: sr.lang,
+            repo: sr.repo,
+            branch: sr.branch.unwrap_or_else(|| "-".to_owned()),
+            subdir: sr.subdir.unwrap_or_else(|| "-".to_owned()),
+        }
+    }
 }

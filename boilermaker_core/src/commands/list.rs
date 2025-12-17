@@ -1,9 +1,9 @@
 use clap::Parser;
 use color_eyre::Result;
-use tabled::{settings::Style, Table};
+use tabled::{Table, settings::Style};
 use tracing::info;
 
-use crate::db::DisplayableTemplateListResult;
+use crate::db::TabledTemplateListResult;
 use crate::state::AppState;
 
 #[derive(Parser)]
@@ -21,7 +21,7 @@ pub async fn list(app_state: &AppState, _cmd: &List) -> Result<()> {
 
     let rows = result
         .into_iter()
-        .map(DisplayableTemplateListResult::to_std_row)
+        .map(TabledTemplateListResult::from)
         .collect::<Vec<_>>();
 
     if rows.is_empty() {

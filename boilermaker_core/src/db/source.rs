@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use color_eyre::{eyre::eyre, Result};
+use color_eyre::{Result, eyre::eyre};
 use tabled::Tabled;
 use unicode_truncate::{Alignment, UnicodeTruncateStr};
 
@@ -19,6 +19,7 @@ pub trait SourceMethods: Send + Sync {
         partial_source_template_rows: Vec<(PathBuf, PartialSourceTemplateRow)>,
     ) -> Result<AddSourceResult>;
     async fn list_sources(&self) -> Result<Vec<SourceRow>>;
+    //async fn search_sources(&self, term: &str) -> Result<Vec<SourceRow>>;
 }
 
 #[async_trait::async_trait]
@@ -232,14 +233,14 @@ pub struct AddSourceResult {
 }
 
 #[derive(Debug, Tabled)]
-pub struct DisplayableSourceRow {
+pub struct TabledSourceRow {
     pub name: String,
     pub backend: String,
     pub coordinate: String,
     pub description: String,
 }
 
-impl DisplayableSourceRow {
+impl TabledSourceRow {
     pub fn from(row: SourceRow) -> Self {
         let coordinate = row.coordinate.unicode_pad(80, Alignment::Left, true);
         Self {

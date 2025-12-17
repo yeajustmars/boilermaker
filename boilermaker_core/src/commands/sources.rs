@@ -2,17 +2,17 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use color_eyre::{eyre::eyre, Result};
+use color_eyre::{Result, eyre::eyre};
 use serde::Deserialize;
-use tabled::{settings::Style, Table, Tabled};
+use tabled::{Table, Tabled, settings::Style};
 use tracing::info;
 
+use crate::db::TabledSourceRow;
 use crate::db::source::{PartialSourceTemplateRow, SourceRow};
-use crate::db::DisplayableSourceRow;
 use crate::state::AppState;
 use crate::template::{
-    clean_dir, clone_repo, get_lang, get_template_config, make_name_from_url,
-    make_tmp_dir_from_url, CloneContext,
+    CloneContext, clean_dir, clone_repo, get_lang, get_template_config, make_name_from_url,
+    make_tmp_dir_from_url,
 };
 use crate::util::string;
 
@@ -158,7 +158,7 @@ pub async fn list(app_state: &AppState, _cmd: &List) -> Result<()> {
 
     let table_rows = sources
         .into_iter()
-        .map(DisplayableSourceRow::from)
+        .map(TabledSourceRow::from)
         .collect::<Vec<_>>();
     let mut table = Table::new(&table_rows);
     table.with(Style::psql());
