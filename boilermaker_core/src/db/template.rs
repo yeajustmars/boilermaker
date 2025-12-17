@@ -25,7 +25,11 @@ pub trait TemplateMethods: Send + Sync {
     async fn template_table_exists(&self) -> Result<bool>;
     async fn update_template(&self, id: i64, row: TemplateRow) -> Result<i64>;
     async fn search_templates(&self, term: &str) -> Result<Vec<SearchResult>>;
-    async fn search_sources(&self, source_name: &str, term: &str) -> Result<Vec<SearchResult>>;
+    async fn search_sources(
+        &self,
+        source_name: Option<String>,
+        term: &str,
+    ) -> Result<Vec<SearchResult>>;
 }
 
 #[async_trait::async_trait]
@@ -248,9 +252,13 @@ impl TemplateMethods for LocalCache {
     }
 
     // Search the content of all templates in source_name.
-    async fn search_sources(&self, source_name: &str, term: &str) -> Result<Vec<SearchResult>> {
+    async fn search_sources(
+        &self,
+        source_name: Option<String>,
+        term: &str,
+    ) -> Result<Vec<SearchResult>> {
         let term = term.trim();
-        let results = sqlx::query_as::<_, SearchResult>(
+        let mut qb = QueryBuilder::new(
             r#"
                 SELECT 'source' as kind,
                        st.id,
@@ -263,17 +271,19 @@ impl TemplateMethods for LocalCache {
                     LEFT JOIN source_template_content AS stc ON ft_search.rowid = stc.id
                     LEFT JOIN source_template as st ON stc.source_template_id = st.id
                     LEFT JOIN source as s ON st.source_id = s.id
-                WHERE s.name = ?
-                  AND source_template_content_fts MATCH ?
-                GROUP BY st.id
-                "#,
-        )
-        .bind(source_name)
-        .bind(term)
-        .fetch_all(&self.pool)
-        .await?;
+                WHERE source_template_content_fts MATCH
+            "#,
+        );
+        qb.push_bind(term);
 
-        Ok(results)
+        if let Some(name) = source_name {
+            qb.push(" AND s.name = ");
+            qb.push_bind(name);
+        }
+        qb.push(" GROUP BY st.id");
+
+        let q = qb.build_query_as::<SearchResult>();
+        Ok(q.fetch_all(&self.pool).await?)
     }
 }
 

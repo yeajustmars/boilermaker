@@ -4,7 +4,7 @@ use clap::Parser;
 use color_eyre::{Result, eyre::eyre};
 use tabled::Table;
 use tabled::settings::Style;
-use tracing::{debug, info};
+use tracing::info;
 
 use crate::db::{SearchResult, TabledSearchResult, TemplateDb};
 use crate::state::AppState;
@@ -24,33 +24,22 @@ pub async fn search(app_state: &AppState, cmd: &Search) -> Result<()> {
     let cache = app_state.local_db.clone();
 
     if term.is_empty() {
-        return Err(eyre!("Empty search"));
-    }
-    debug!("Searching : {term}");
-
-    // TODO: for now you MUST pick between templates installed locally (-l), or
-    //       templates from a remote source (-s): search w/o either flag will
-    //       error out.
-    let scope = if cmd.local {
-        SearchScope::Local
-    } else if let Some(source_name) = cmd.src.clone() {
-        SearchScope::Source(source_name)
-    } else {
         return Err(eyre!(
-            "Use -l or -s to search for local templates, or sources"
+            "No search? Use \"list\" to see all installed templates."
         ));
-    };
-    let search_results = search_templates(cache.clone(), &term, scope).await?;
-    debug!("Search results: {:?}", search_results);
+    }
+
+    let scope = SearchScope::from(cmd);
+    let search_results = search_templates(cache, &term, scope).await?;
     if search_results.is_empty() {
         info!("No results found for {term}.");
         return Ok(());
     }
 
-    let tabled = search_results
+    let tabled: Vec<TabledSearchResult> = search_results
         .into_iter()
         .map(TabledSearchResult::from)
-        .collect::<Vec<_>>();
+        .collect();
     let mut table = Table::new(tabled);
     table.with(Style::psql());
     print!("\n\n{table}\n\n");
@@ -61,6 +50,19 @@ pub async fn search(app_state: &AppState, cmd: &Search) -> Result<()> {
 pub enum SearchScope {
     Local,
     Source(String),
+    All,
+}
+
+impl SearchScope {
+    pub fn from(cmd: &Search) -> Self {
+        if cmd.local {
+            SearchScope::Local
+        } else if let Some(source_name) = cmd.src.clone() {
+            SearchScope::Source(source_name)
+        } else {
+            SearchScope::All
+        }
+    }
 }
 
 pub async fn search_templates(
@@ -70,6 +72,15 @@ pub async fn search_templates(
 ) -> Result<Vec<SearchResult>> {
     match scope {
         SearchScope::Local => Ok(cache.search_templates(term).await?),
-        SearchScope::Source(name) => Ok(cache.search_sources(&name, term).await?),
+        SearchScope::Source(name) => Ok(cache.search_sources(Some(name), term).await?),
+        SearchScope::All => {
+            let mut all_results = Vec::new();
+            let local = cache.search_templates(term).await?;
+            all_results.extend(local);
+
+            let sources = cache.search_sources(None, term).await?;
+            all_results.extend(sources);
+            Ok(all_results)
+        }
     }
 }
