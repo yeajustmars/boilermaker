@@ -384,9 +384,25 @@ pub fn hash_template_row(row: &TemplateRow) -> String {
     sha256_hash_string(&input)
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, sqlx::Type)]
+#[sqlx(type_name = "TEXT", rename_all = "lowercase")]
+pub enum SearchResultKind {
+    Template,
+    Source,
+}
+
+impl std::fmt::Display for SearchResultKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SearchResultKind::Template => write!(f, "template"),
+            SearchResultKind::Source => write!(f, "source"),
+        }
+    }
+}
+
 #[derive(Debug, Clone, sqlx::FromRow)]
 pub struct SearchResult {
-    pub kind: String,
+    pub kind: SearchResultKind,
     pub id: i64,
     pub name: String,
     pub lang: String,
@@ -398,7 +414,7 @@ pub struct SearchResult {
 #[derive(Debug, Tabled)]
 pub struct TabledSearchResult {
     #[tabled(skip)]
-    pub kind: String,
+    pub kind: SearchResultKind,
     #[tabled(skip)]
     pub id: i64,
     pub name: String,
