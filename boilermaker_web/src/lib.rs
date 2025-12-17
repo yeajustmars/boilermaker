@@ -36,6 +36,7 @@ impl WebAppState {
         } else {
             DEFAULT_WEBSITE_DATABASE_PATH_STRING.as_str()
         };
+
         let db = Arc::new(LocalCache::new(db_path).await?);
 
         {

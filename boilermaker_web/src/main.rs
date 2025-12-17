@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use boilermaker_core::logging;
+use boilermaker_core::{logging, util::env::is_dev_env};
 use boilermaker_web::{WebApp, WebAppState};
 
 #[tokio::main]

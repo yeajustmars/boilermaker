@@ -601,6 +601,7 @@ dependencies = [
  "color-eyre",
  "dioxus",
  "include_dir",
+ "indoc",
  "tokio",
  "tower-http 0.6.8",
  "tracing",
