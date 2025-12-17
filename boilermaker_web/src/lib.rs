@@ -6,7 +6,7 @@ use tower_http::services::ServeDir;
 
 use boilermaker_core::{
     config::{DEFAULT_LOCAL_CACHE_PATH_STRING, DEFAULT_WEBSITE_DATABASE_PATH_STRING},
-    db::{LocalCache, TemplateDb},
+    db::{LocalCache, TemplateDb, TemplateMethods},
     state::TemplateDbType,
     util::env::is_dev_env,
 };
@@ -38,7 +38,6 @@ impl WebAppState {
         };
 
         let db = Arc::new(LocalCache::new(db_path).await?);
-
         {
             let db = db.clone();
             if !db.template_table_exists().await? {
