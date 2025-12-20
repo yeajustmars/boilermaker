@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use clap::Parser;
-use color_eyre::{Result, eyre::eyre};
-use tabled::Table;
+use color_eyre::{eyre::eyre, Result};
 use tabled::settings::Style;
+use tabled::Table;
 use tracing::info;
 
 use crate::db::{SearchResult, TabledSearchResult, TemplateDb};
@@ -70,9 +70,9 @@ pub async fn search_templates(
     term: &str,
     scope: SearchScope,
 ) -> Result<Vec<SearchResult>> {
-    match scope {
-        SearchScope::Local => Ok(cache.search_templates(term).await?),
-        SearchScope::Source(name) => Ok(cache.search_sources(Some(name), term).await?),
+    let results = match scope {
+        SearchScope::Local => cache.search_templates(term).await?,
+        SearchScope::Source(name) => cache.search_sources(Some(name), term).await?,
         SearchScope::All => {
             let mut all_results = Vec::new();
             let local = cache.search_templates(term).await?;
@@ -80,7 +80,8 @@ pub async fn search_templates(
 
             let sources = cache.search_sources(None, term).await?;
             all_results.extend(sources);
-            Ok(all_results)
+            all_results
         }
-    }
+    };
+    Ok(results)
 }
