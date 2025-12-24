@@ -5,6 +5,7 @@ use dioxus::prelude::*;
 use crate::TemplatesContext;
 use boilermaker_core::commands::install::{install, Install};
 use boilermaker_core::constants::{BRANCH_PATTERN, SUBDIR_PATTERN};
+use boilermaker_core::util::string::string_to_option;
 use boilermaker_desktop::APP_STATE;
 use boilermaker_views::{BTN_GREEN_STYLE, INPUT_STYLE, LABEL_STYLE, PRELOADER, TEXTAREA_STYLE};
 
@@ -68,11 +69,16 @@ pub fn TemplateAdd() -> Element {
                         form {
                             class: "p-4",
                             onsubmit: move |e| async move {
-                                e.prevent_default();
                                 processing.set(true);
                                 let app_state = APP_STATE.get().expect("APP_STATE not initialized");
-                                let add_args = e.to_install();
-                                match install(app_state, &add_args).await {
+                                let data = Install {
+                                    template: sigval(&template),
+                                    branch: string_to_option(&sigval(&branch)),
+                                    subdir: string_to_option(&sigval(&subdir)),
+                                    lang: string_to_option(&sigval(&lang)),
+                                    name: string_to_option(&sigval(&name)),
+                                };
+                                match install(app_state, &data).await {
                                     Ok(_) => {
                                         result_message
                                             .set(
@@ -88,6 +94,7 @@ pub fn TemplateAdd() -> Element {
                                     }
                                 }
                                 processing.set(false);
+                                e.prevent_default();
                             },
                             div { class: "mb-4",
                                 label { class: LABEL_STYLE,
@@ -323,43 +330,4 @@ pub fn validate_description(
     status: &mut StatusSignalType,
 ) {
     set_status(status, "description", true, "is valid");
-}
-
-trait AsOption {
-    fn as_option(&self) -> Option<String>;
-}
-
-impl AsOption for FormValue {
-    fn as_option(&self) -> Option<String> {
-        let s = self.as_value();
-        if s.is_empty() {
-            None
-        } else {
-            Some(s)
-        }
-    }
-}
-
-trait ToInstall {
-    fn to_install(&self) -> Install;
-}
-
-impl ToInstall for Event<FormData> {
-    fn to_install(&self) -> Install {
-        let values = &self.data.values();
-        let template = values.get("template").unwrap().as_value();
-        let branch = values.get("branch").unwrap().as_option();
-        let subdir = values.get("subdir").unwrap().as_option();
-        let lang = values.get("lang").unwrap().as_option();
-        let name = values.get("name").unwrap().as_option();
-        //let description = values.get("description").unwrap().as_option();
-
-        Install {
-            template,
-            name,
-            lang,
-            branch,
-            subdir,
-        }
-    }
 }

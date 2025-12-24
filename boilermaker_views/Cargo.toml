@@ -10,5 +10,4 @@ dioxus = { workspace = true, features = ["router"] }
 indoc = { workspace = true }
 
 # Internal
-boilermaker_api = { workspace = true }
 boilermaker_core = { workspace = true }

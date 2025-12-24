@@ -17,7 +17,6 @@ tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 
 # Internal
-boilermaker_api = { workspace = true }
 boilermaker_core = { workspace = true }
 boilermaker_views = { workspace = true }
 

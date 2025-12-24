@@ -59,7 +59,6 @@ pub fn get_system_config_path(config_path: Option<&Path>) -> Result<Option<&Path
         let path = Path::new(SYS_CONFIG_FILE.as_str());
         Ok(Some(path))
     } else {
-        info!(" Using default config.");
         Ok(None)
     }
 }
