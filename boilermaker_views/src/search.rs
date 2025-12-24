@@ -4,8 +4,6 @@ use crate::constants::SEARCH_INPUT_STYLE;
 
 #[component]
 pub fn DesktopSearch() -> Element {
-    let mut response = use_signal(String::new);
-
     rsx! {
         input {
             id: "search",

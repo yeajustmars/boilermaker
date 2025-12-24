@@ -53,6 +53,7 @@ impl WebAppState {
     }
 }
 
+#[derive(Debug)]
 pub struct WebApp {
     server: Serve<tokio::net::TcpListener, Router, Router>,
     pub address: String,
@@ -79,6 +80,7 @@ impl WebApp {
         Ok(WebApp { server, address })
     }
 
+    #[tracing::instrument]
     pub async fn run(self) -> Result<(), std::io::Error> {
         println!("listening on {}", &self.address);
         self.server.await
