@@ -51,3 +51,30 @@ pub async fn move_file(src: &PathBuf, dest: &PathBuf) -> Result<()> {
     }
     Ok(())
 }
+
+// TODO: replace all calls to .boilermaker dir with this function
+#[tracing::instrument]
+pub fn get_boilermaker_dir() -> Result<PathBuf> {
+    let home_dir = dirs::home_dir().ok_or_else(|| eyre!("💥 Could not find home directory"))?;
+    let boilermaker_dir = home_dir.join(".boilermaker");
+    if !boilermaker_dir.exists() {
+        return Err(eyre!(
+            "💥 Could not find .boilermaker directory at {}",
+            boilermaker_dir.display()
+        ));
+    }
+    Ok(boilermaker_dir)
+}
+
+#[tracing::instrument]
+pub fn get_docs_dir() -> Result<PathBuf> {
+    let boilermaker_dir = get_boilermaker_dir()?;
+    let docs_dir = boilermaker_dir.join("docs");
+    if !docs_dir.exists() {
+        return Err(eyre!(
+            "💥 Could not find docs directory at {}",
+            docs_dir.display()
+        ));
+    }
+    Ok(docs_dir)
+}

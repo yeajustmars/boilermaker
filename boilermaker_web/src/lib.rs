@@ -1,4 +1,4 @@
-use std::{fmt, sync::Arc};
+use std::{fmt, path::PathBuf, sync::Arc};
 
 use axum::{routing::get, serve::Serve, Router};
 use color_eyre::eyre::Result;
@@ -8,7 +8,7 @@ use boilermaker_core::{
     config::{DEFAULT_LOCAL_CACHE_PATH_STRING, DEFAULT_WEBSITE_DATABASE_PATH_STRING},
     db::{LocalCache, TemplateDb, TemplateMethods},
     state::TemplateDbType,
-    util::env::is_dev_env,
+    util::{env::is_dev_env, file},
 };
 
 pub mod routes;
@@ -17,6 +17,7 @@ pub struct WebAppState {
     pub db: TemplateDbType,
     pub is_dev_env: bool,
     pub log_level: u8,
+    pub docs_dir: PathBuf,
 }
 
 impl fmt::Debug for WebAppState {
@@ -49,6 +50,7 @@ impl WebAppState {
             db,
             log_level,
             is_dev_env,
+            docs_dir: file::get_docs_dir()?,
         })
     }
 }

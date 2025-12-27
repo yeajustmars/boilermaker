@@ -11,6 +11,8 @@
     }
   };
 
+  const highlightCodeSnippets = () => hljs.highlightAll();
+
   document.addEventListener("DOMContentLoaded", function() {
     const mainMenu = document.querySelector("#main-nav-menu");
     const mainDropdown = document.querySelector("#main-nav-dropdown");
@@ -22,6 +24,8 @@
     mainDropdown.addEventListener("mouseleave", () => {
       hideElement(mainDropdown);
     });
+
+    highlightCodeSnippets();
   });
 
 })();
