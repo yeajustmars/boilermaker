@@ -12,6 +12,7 @@ members = [
 [workspace.dependencies]
 async-trait = "0.1.89"
 axum = "0.8.7"
+axum-template = { version = "3.0", features = ["minijinja", "minijinja-autoreload"] }
 chrono = { version = "0.4.42", features = ["serde"] }
 clap = { version = "4.5.48", features = ["derive"] }
 color-eyre = "0.6.5"
