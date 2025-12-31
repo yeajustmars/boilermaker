@@ -1,0 +1,9 @@
+[application]
+name = "Boilermaker UI"
+icon = "assets/img/logo-flame.png"
+
+[bundle.macos]
+# macOS specific options
+
+[bundle.linux]
+# Linux specific options

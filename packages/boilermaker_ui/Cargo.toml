@@ -1,0 +1,11 @@
+[package]
+name = "boilermaker_ui"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+boilermaker_api = { workspace = true }
+dioxus = { workspace = true }
+
+[features]
+server = ["boilermaker_api/server"]

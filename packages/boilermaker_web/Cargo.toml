@@ -1,0 +1,13 @@
+[package]
+name = "boilermaker_web"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+boilermaker_ui = { workspace = true }
+dioxus = { workspace = true, features = ["router", "fullstack"] }
+
+[features]
+default = []
+web = ["dioxus/web"]
+server = ["dioxus/server", "boilermaker_ui/server"]

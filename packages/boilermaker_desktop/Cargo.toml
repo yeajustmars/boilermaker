@@ -1,0 +1,19 @@
+[package]
+name = "boilermaker_desktop"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+boilermaker_core = { workspace = true }
+boilermaker_ui = { workspace = true }
+color-eyre = { workspace = true }
+dioxus = { workspace = true, features = ["router", "fullstack"] }
+git2 = { workspace = true }
+once_cell = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+
+[features]
+default = []
+desktop = ["dioxus/desktop"]
+server = ["dioxus/server", "boilermaker_ui/server"]

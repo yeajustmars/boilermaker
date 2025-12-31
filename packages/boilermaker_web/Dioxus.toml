@@ -1,0 +1,11 @@
+[application]
+name = "Boilermaker Web"
+icon = "assets/logo-flame.png"
+tailwind_input = "tailwind.css"
+tailwind_output = "assets/tailwind.css"
+
+[bundle.macos]
+# macOS specific options
+
+[bundle.linux]
+# Linux specific options
