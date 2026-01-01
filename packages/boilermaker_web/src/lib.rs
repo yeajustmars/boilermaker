@@ -1,10 +1,11 @@
+use std::time::{SystemTime, UNIX_EPOCH};
 use std::{fmt, sync::Arc};
 
 use axum::{routing::get, serve::Serve, Router};
 use axum_embed::ServeEmbed;
 use axum_template::engine::Engine;
 use color_eyre::eyre::Result;
-use minijinja::{path_loader, Environment};
+use minijinja::{context, path_loader, value::merge_maps, Environment};
 use minijinja_autoreload::AutoReloader;
 use rust_embed::RustEmbed;
 use tracing::info;
@@ -15,12 +16,17 @@ use boilermaker_core::{
     state::TemplateDbType,
     util::env::is_dev_env,
 };
+use boilermaker_ui::constants::{
+    DROPDOWN_LINK_STYLE, DROPDOWN_MENU_STYLE, FONT_AWESOME_URL, FONT_FIRA_CODE_URL,
+    FONT_ROBOTO_URL, INDENTED_DROPDOWN_LINK_STYLE, LAYOUT_STYLE, NAVBAR_STYLE,
+};
 
 pub mod routes;
 
 pub struct WebAppState {
     pub db: TemplateDbType,
     pub template: Engine<AutoReloader>,
+    pub base_ctx: minijinja::value::Value,
     pub is_dev_env: bool,
     pub log_level: u8,
 }
@@ -61,9 +67,23 @@ impl WebAppState {
         });
         let template = Engine::from(reloader);
 
+        let base_ctx = context! {
+            is_dev_env => is_dev_env,
+            layout_style => LAYOUT_STYLE,
+            nav_style => NAVBAR_STYLE,
+            nav_dropdown_menu_style => DROPDOWN_MENU_STYLE,
+            nav_dropdown_style => DROPDOWN_LINK_STYLE,
+            nav_indented_dropdown_style => INDENTED_DROPDOWN_LINK_STYLE,
+            font_awesome_url => FONT_AWESOME_URL,
+            font_roboto_url => FONT_ROBOTO_URL,
+            font_fira_code_url => FONT_FIRA_CODE_URL,
+
+        };
+
         Ok(WebAppState {
             db,
             template,
+            base_ctx,
             log_level,
             is_dev_env,
         })
@@ -94,7 +114,6 @@ impl WebApp {
             .route("/get-involved", get(routes::get_involved))
             .route("/settings", get(routes::settings))
             .route("/templates", get(routes::templates))
-            //.nest_service("/assets", ServeDir::new("../../boilermaker_ui/assets"))
             .nest_service("/assets", serve_assets)
             .with_state(app_state);
 
@@ -126,4 +145,21 @@ impl fmt::Debug for WebApp {
             self.address, self.is_dev_env
         )
     }
+}
+
+fn get_unix_timestamp_nanos() -> u128 {
+    let duration_since_epoch = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("Time went backwards");
+    duration_since_epoch.as_nanos()
+}
+
+pub fn make_context(
+    app: Arc<WebAppState>,
+    ctx: minijinja::value::Value,
+) -> minijinja::value::Value {
+    let time_values = context! {
+        timestamp => get_unix_timestamp_nanos(),
+    };
+    merge_maps([app.base_ctx.clone(), time_values, ctx])
 }
