@@ -259,7 +259,7 @@ version = "0.8.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8b52af3cb4058c895d37317bb27508dccc8e5f2d39454016b297bf4a400597b8"
 dependencies = [
- "axum-core",
+ "axum-core 0.5.6",
  "axum-macros",
  "base64",
  "bytes",
@@ -293,6 +293,26 @@ dependencies = [
 
 [[package]]
 name = "axum-core"
+version = "0.4.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "09f2bd6146b97ae3359fa0cc6d6b376d9539582c7b4220f041a33ec24c226199"
+dependencies = [
+ "async-trait",
+ "bytes",
+ "futures-util",
+ "http",
+ "http-body",
+ "http-body-util",
+ "mime",
+ "pin-project-lite",
+ "rustversion",
+ "sync_wrapper",
+ "tower-layer",
+ "tower-service",
+]
+
+[[package]]
+name = "axum-core"
 version = "0.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "08c78f31d7b1291f7ee735c1c6780ccde7785daae9a9206026862dab7d8792d1"
@@ -311,13 +331,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "axum-embed"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "077959a7f8cf438676af90b483304528eb7e16eadadb7f44e9ada4f9dceb9e62"
+dependencies = [
+ "axum-core 0.4.5",
+ "chrono",
+ "http",
+ "mime_guess",
+ "rust-embed",
+ "tower-service",
+]
+
+[[package]]
 name = "axum-extra"
 version = "0.10.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9963ff19f40c6102c76756ef0a46004c0d58957d87259fc9208ff8441c12ab96"
 dependencies = [
  "axum",
- "axum-core",
+ "axum-core 0.5.6",
  "bytes",
  "futures-util",
  "headers",
@@ -518,6 +552,7 @@ name = "boilermaker_web"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "axum-embed",
  "axum-template",
  "boilermaker_api",
  "boilermaker_core",
@@ -526,6 +561,7 @@ dependencies = [
  "dioxus",
  "minijinja",
  "minijinja-autoreload",
+ "rust-embed",
  "serde",
  "serde_json",
  "tokio",
@@ -1455,7 +1491,7 @@ dependencies = [
  "async-stream",
  "async-tungstenite",
  "axum",
- "axum-core",
+ "axum-core 0.5.6",
  "axum-extra",
  "base64",
  "bytes",
@@ -1516,7 +1552,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d0a9be2ef4d701520eefef284d218fb35b159dccd6bccc02b5bad42945e2599d"
 dependencies = [
  "anyhow",
- "axum-core",
+ "axum-core 0.5.6",
  "base64",
  "ciborium",
  "dioxus-core",
@@ -5055,6 +5091,40 @@ dependencies = [
  "spki",
  "subtle",
  "zeroize",
+]
+
+[[package]]
+name = "rust-embed"
+version = "8.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "947d7f3fad52b283d261c4c99a084937e2fe492248cb9a68a8435a861b8798ca"
+dependencies = [
+ "rust-embed-impl",
+ "rust-embed-utils",
+ "walkdir",
+]
+
+[[package]]
+name = "rust-embed-impl"
+version = "8.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5fa2c8c9e8711e10f9c4fd2d64317ef13feaab820a4c51541f1a8c8e2e851ab2"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "rust-embed-utils",
+ "syn 2.0.111",
+ "walkdir",
+]
+
+[[package]]
+name = "rust-embed-utils"
+version = "8.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "60b161f275cb337fe0a44d924a5f4df0ed69c2c39519858f931ce61c779d3475"
+dependencies = [
+ "sha2",
+ "walkdir",
 ]
 
 [[package]]

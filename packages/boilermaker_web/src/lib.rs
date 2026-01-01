@@ -1,11 +1,12 @@
 use std::{fmt, sync::Arc};
 
 use axum::{routing::get, serve::Serve, Router};
+use axum_embed::ServeEmbed;
 use axum_template::engine::Engine;
 use color_eyre::eyre::Result;
 use minijinja::{path_loader, Environment};
 use minijinja_autoreload::AutoReloader;
-use tower_http::services::ServeDir;
+use rust_embed::RustEmbed;
 use tracing::info;
 
 use boilermaker_core::{
@@ -69,6 +70,10 @@ impl WebAppState {
     }
 }
 
+#[derive(RustEmbed, Clone)]
+#[folder = "../../packages/boilermaker_ui/assets/"]
+struct Assets;
+
 pub struct WebApp {
     server: Serve<tokio::net::TcpListener, Router, Router>,
     pub address: String,
@@ -78,9 +83,10 @@ pub struct WebApp {
 impl WebApp {
     #[tracing::instrument]
     pub async fn build(address: &str, app_state: Arc<WebAppState>) -> Result<Self> {
+        let is_dev_env = app_state.is_dev_env;
         let listener = tokio::net::TcpListener::bind(address).await?;
         let address = listener.local_addr()?.to_string();
-        let is_dev_env = app_state.is_dev_env;
+        let serve_assets = ServeEmbed::<Assets>::new();
 
         let router = Router::new()
             .route("/", get(routes::home))
@@ -88,7 +94,8 @@ impl WebApp {
             .route("/get-involved", get(routes::get_involved))
             .route("/settings", get(routes::settings))
             .route("/templates", get(routes::templates))
-            .nest_service("/assets", ServeDir::new("assets"))
+            //.nest_service("/assets", ServeDir::new("../../boilermaker_ui/assets"))
+            .nest_service("/assets", serve_assets)
             .with_state(app_state);
 
         let server = axum::serve(listener, router);

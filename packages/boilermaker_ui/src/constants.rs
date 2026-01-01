@@ -3,6 +3,7 @@ use dioxus::prelude::*;
 pub const FAVICON: Asset = asset!("/assets/img/logo-flame.png");
 pub const MAIN_CSS: Asset = asset!("/assets/css/main.css");
 pub const PRELOADER: Asset = asset!("/assets/img/preloader.gif");
+pub const TAILWIND_CSS: Asset = asset!("/assets/css/tailwind.css");
 
 pub const DROPDOWN_MENU_STYLE: &str = "absolute left-0 top-12 w-48 bg-white dark:bg-neutral-900 rounded shadow-lg border border-l-0 border-t-0 border-neutral-300 dark:border-neutral-700 z-10 text-sm ";
 
