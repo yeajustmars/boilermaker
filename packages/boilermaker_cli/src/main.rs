@@ -93,7 +93,7 @@ async fn main() -> Result<()> {
             Commands::Update(cmd) => commands::update(&app_state, &cmd).await?,
         }
     } else {
-        println!("🔨 Boilermaker - Hopefully making project templates more sane.");
+        println!("🔨 Boilermaker - Making boilerplate more sane!");
         info!("No command provided. Use --help for usage.");
     }
 
