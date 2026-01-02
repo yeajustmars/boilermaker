@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use clap::Parser;
 use color_eyre::{Result, eyre::eyre};
 use tracing::{error, info};
@@ -22,16 +24,26 @@ pub struct Install {
     pub branch: Option<String>,
     #[arg(short = 'd', long)]
     pub subdir: Option<String>,
+    #[arg(short = 'f', long, default_value_t = false)]
+    pub local: bool,
 }
 
-#[tracing::instrument]
-pub async fn install(app_state: &AppState, cmd: &Install) -> Result<()> {
-    let name = if let Some(name) = &cmd.name {
-        name.to_owned()
+async fn get_local_work_dir(cmd: &Install) -> Result<PathBuf> {
+    let wd = if let Some(subdir) = &cmd.subdir {
+        PathBuf::from(&cmd.template).join(subdir)
     } else {
-        make_name_from_url(&cmd.template)
+        PathBuf::from(&cmd.template)
     };
+    if !wd.exists() {
+        return Err(eyre!(
+            "💥 Local template path does not exist: {}",
+            wd.display()
+        ));
+    }
+    Ok(wd)
+}
 
+async fn get_remote_work_dir(cmd: &Install) -> Result<PathBuf> {
     let repo_ctx = CloneContext::from(cmd);
     let clone_dir = repo_ctx.dest.as_ref().unwrap();
 
@@ -44,10 +56,27 @@ pub async fn install(app_state: &AppState, cmd: &Install) -> Result<()> {
         return Err(eyre!("💥 Failed to clone template: {}", err));
     }
 
-    let work_dir = if let Some(subdir) = &cmd.subdir {
+    let dir = if let Some(subdir) = &cmd.subdir {
         clone_dir.join(subdir)
     } else {
         clone_dir.to_path_buf()
+    };
+    Ok(dir)
+}
+
+// TODO: add default_branch, default_subdir to config
+#[tracing::instrument]
+pub async fn install(app_state: &AppState, cmd: &Install) -> Result<()> {
+    let name = if let Some(name) = &cmd.name {
+        name.to_owned()
+    } else {
+        make_name_from_url(&cmd.template)
+    };
+
+    let work_dir = if cmd.local {
+        get_local_work_dir(cmd).await?
+    } else {
+        get_remote_work_dir(cmd).await?
     };
 
     let cnf = get_template_config(work_dir.as_path())?;
@@ -105,7 +134,9 @@ pub async fn install(app_state: &AppState, cmd: &Install) -> Result<()> {
     cache.index_template(new_id).await?;
     info!("Template indexed successfully.");
 
-    remove_git_dir(&template_dir)?;
+    if !cmd.local {
+        remove_git_dir(&template_dir)?;
+    }
 
     Ok(())
 }
