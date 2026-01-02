@@ -4,6 +4,7 @@ html, body {
     font-weight: 200;
     font-style: normal;
     font-variation-settings: "wdth" 100;
+    size: 1rem;
 }
 
 pre, code {

@@ -3,10 +3,49 @@
 {% block title %}Boilermaker | {{title}}{% endblock %}
 
 {% block content %}
-<h1 class="mt-4 text-4xl">Welcome to Boilermaker</h1>
-<div class="">
-  <p>Boilermaker makes boilerplate more sane.</p>
 
-  <p>The language-agnostic project template system for making boilerplate more sane.</p>
+<div class="flex items-center justify-center">
+  <h1 class="mt-4 text-4xl">Welcome to Boilermaker!</h1>
 </div>
+
+<div class="flex items-center justify-center">
+  <p class="p-10 text-2xl text-neutral-400">Making boilerplate more sane!</p>
+</div>
+
+<div class="h-200 p-4 flex sm:flex-col md:flex-row gap-8 items-center justify-center text-neutral-700 dark:text-neutral-300">
+  <div class="h-full w-1/3 p-6 border border-purple-200 dark:border-neutral-600 rounded-sm shadow-sm">
+    <h2 class="text-2xl text-purple-200 dark:text-purple-400">About</h2>
+    <p class="p-4 ">Boilermaker is a language-agnostic project template system for getting code projects up-and-running in a command or two.</p>
+    <p class="p-4">It comes with a CLI and a desktop UI, and both are 100% compatible user interfaces, so dealer's choice.</p>
+    <p class="p-4">It's built in Rust so it's pretty fast, too.</p>
+    <h2 class="text-2xl text-purple-200 dark:text-purple-400">Latest Templates</h2>
+  </div>
+  <div class="h-full w-1/3 p-6 border border-purple-200 dark:border-neutral-600 rounded-sm shadow-sm">
+    <h2 class="text-2xl text-purple-200 dark:text-purple-400">Getting Started</h2>
+    <p class="p-1 mb-4 text-neutral-200">First things first, <a href="/docs/getting-started" class="{{link_style}}">install Boilermaker</a>.</p>
+    <p class="p-1">Boilermake is designed to be easy to use and easy to make your own templates.</p>
+    <h3 class="mt-4 text-xl text-purple-200 dark:text-purple-400">Hello World in Rust</h3>
+    <pre class="">
+      <code class="language-shell">
+boil install https://github.com/yeajustmars/boilermaker \
+  --subdir examples/hello-world
+  --name hello-world-rs \
+
+boil new hello-world-rs -d /tmp
+
+cd /tmp/hello-world-rs
+
+cargo run
+      </code>
+    </pre>
+  </div>
+  <div class="h-full w-1/3 p-6 border border-purple-200 dark:border-neutral-600 rounded-sm shadow-sm">
+    <h2 class="text-2xl text-purple-200 dark:text-purple-400">Get Involved!</h2>
+    <p class="p-2">The Boilermaker Project is always looking for contributors and moderators.</p>
+    <p class="p-2">Let us know if you're interested in helping out.</p>
+    <p class="p-2">You can find us on <a href="{{project_github_url}}">Github</a></p>
+  </div>
+</div>
+</div>
+
 {% endblock %}

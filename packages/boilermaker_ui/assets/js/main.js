@@ -25,6 +25,8 @@
     mainDropdown.addEventListener("mouseleave", () => {
       hideElement(mainDropdown);
     });
+
+    hljs.highlightAll();
   });
 
 })();

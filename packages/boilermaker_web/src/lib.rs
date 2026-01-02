@@ -5,9 +5,14 @@ use axum::{routing::get, serve::Serve, Router};
 use axum_embed::ServeEmbed;
 use axum_template::engine::Engine;
 use color_eyre::eyre::Result;
-use minijinja::{context, path_loader, value::merge_maps, Environment};
+use minijinja::{
+    context, path_loader,
+    value::{merge_maps, Value as JinjaContext},
+    Environment,
+};
 use minijinja_autoreload::AutoReloader;
 use rust_embed::RustEmbed;
+use serde::Serialize;
 use tracing::info;
 
 use boilermaker_core::{
@@ -26,7 +31,6 @@ pub mod routes;
 pub struct WebAppState {
     pub db: TemplateDbType,
     pub template: Engine<AutoReloader>,
-    pub base_ctx: minijinja::value::Value,
     pub is_dev_env: bool,
     pub log_level: u8,
 }
@@ -67,23 +71,9 @@ impl WebAppState {
         });
         let template = Engine::from(reloader);
 
-        let base_ctx = context! {
-            is_dev_env => is_dev_env,
-            layout_style => LAYOUT_STYLE,
-            nav_style => NAVBAR_STYLE,
-            nav_dropdown_menu_style => DROPDOWN_MENU_STYLE,
-            nav_dropdown_style => DROPDOWN_LINK_STYLE,
-            nav_indented_dropdown_style => INDENTED_DROPDOWN_LINK_STYLE,
-            font_awesome_url => FONT_AWESOME_URL,
-            font_roboto_url => FONT_ROBOTO_URL,
-            font_fira_code_url => FONT_FIRA_CODE_URL,
-
-        };
-
         Ok(WebAppState {
             db,
             template,
-            base_ctx,
             log_level,
             is_dev_env,
         })
@@ -147,6 +137,44 @@ impl fmt::Debug for WebApp {
     }
 }
 
+#[derive(Serialize, Debug, Clone)]
+pub struct BaseContext {
+    layout_style: &'static str,
+    nav_style: &'static str,
+    nav_dropdown_menu_style: &'static str,
+    nav_dropdown_style: &'static str,
+    nav_indented_dropdown_style: &'static str,
+    font_awesome_url: &'static str,
+    font_roboto_url: &'static str,
+    font_fira_code_url: &'static str,
+}
+
+pub const BASE_CONTEXT: BaseContext = BaseContext {
+    layout_style: LAYOUT_STYLE,
+    nav_style: NAVBAR_STYLE,
+    nav_dropdown_menu_style: DROPDOWN_MENU_STYLE,
+    nav_dropdown_style: DROPDOWN_LINK_STYLE,
+    nav_indented_dropdown_style: INDENTED_DROPDOWN_LINK_STYLE,
+    font_awesome_url: FONT_AWESOME_URL,
+    font_roboto_url: FONT_ROBOTO_URL,
+    font_fira_code_url: FONT_FIRA_CODE_URL,
+};
+
+impl From<BaseContext> for JinjaContext {
+    fn from(ctx: BaseContext) -> Self {
+        context! {
+            layout_style => ctx.layout_style,
+            nav_style =>  ctx.nav_style,
+            nav_dropdown_menu_style => ctx.nav_dropdown_menu_style,
+            nav_dropdown_style => ctx.nav_dropdown_style,
+            nav_indented_dropdown_style => ctx.nav_indented_dropdown_style,
+            font_awesome_url => ctx.font_awesome_url,
+            font_roboto_url => ctx.font_roboto_url,
+            font_fira_code_url => ctx.font_fira_code_url,
+        }
+    }
+}
+
 fn get_unix_timestamp_nanos() -> u128 {
     let duration_since_epoch = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -154,12 +182,11 @@ fn get_unix_timestamp_nanos() -> u128 {
     duration_since_epoch.as_nanos()
 }
 
-pub fn make_context(
-    app: Arc<WebAppState>,
-    ctx: minijinja::value::Value,
-) -> minijinja::value::Value {
-    let time_values = context! {
+pub fn make_context(ctx: JinjaContext) -> JinjaContext {
+    let base_ctx: minijinja::value::Value = context! {
         timestamp => get_unix_timestamp_nanos(),
+        ..BASE_CONTEXT
     };
-    merge_maps([app.base_ctx.clone(), time_values, ctx])
+
+    merge_maps([base_ctx, ctx])
 }
