@@ -23,7 +23,7 @@ use boilermaker_core::{
 };
 use boilermaker_ui::constants::{
     DROPDOWN_LINK_STYLE, DROPDOWN_MENU_STYLE, FONT_AWESOME_URL, FONT_FIRA_CODE_URL,
-    FONT_ROBOTO_URL, INDENTED_DROPDOWN_LINK_STYLE, LAYOUT_STYLE, NAVBAR_STYLE,
+    FONT_ROBOTO_URL, INDENTED_DROPDOWN_LINK_STYLE, LAYOUT_STYLE, LINK_STYLE, NAVBAR_STYLE,
 };
 
 pub mod routes;
@@ -84,6 +84,10 @@ impl WebAppState {
 #[folder = "../../packages/boilermaker_ui/assets/"]
 struct Assets;
 
+#[derive(RustEmbed, Clone)]
+#[folder = "../../packages/boilermaker_ui/docs/"]
+struct Docs;
+
 pub struct WebApp {
     server: Serve<tokio::net::TcpListener, Router, Router>,
     pub address: String,
@@ -101,6 +105,7 @@ impl WebApp {
         let router = Router::new()
             .route("/", get(routes::home))
             .route("/docs", get(routes::docs))
+            .route("/docs/{path}", get(routes::doc))
             .route("/get-involved", get(routes::get_involved))
             .route("/settings", get(routes::settings))
             .route("/templates", get(routes::templates))
@@ -144,6 +149,7 @@ pub struct BaseContext {
     nav_dropdown_menu_style: &'static str,
     nav_dropdown_style: &'static str,
     nav_indented_dropdown_style: &'static str,
+    link_style: &'static str,
     font_awesome_url: &'static str,
     font_roboto_url: &'static str,
     font_fira_code_url: &'static str,
@@ -155,6 +161,7 @@ pub const BASE_CONTEXT: BaseContext = BaseContext {
     nav_dropdown_menu_style: DROPDOWN_MENU_STYLE,
     nav_dropdown_style: DROPDOWN_LINK_STYLE,
     nav_indented_dropdown_style: INDENTED_DROPDOWN_LINK_STYLE,
+    link_style: LINK_STYLE,
     font_awesome_url: FONT_AWESOME_URL,
     font_roboto_url: FONT_ROBOTO_URL,
     font_fira_code_url: FONT_FIRA_CODE_URL,
@@ -168,6 +175,7 @@ impl From<BaseContext> for JinjaContext {
             nav_dropdown_menu_style => ctx.nav_dropdown_menu_style,
             nav_dropdown_style => ctx.nav_dropdown_style,
             nav_indented_dropdown_style => ctx.nav_indented_dropdown_style,
+            link_style => ctx.link_style,
             font_awesome_url => ctx.font_awesome_url,
             font_roboto_url => ctx.font_roboto_url,
             font_fira_code_url => ctx.font_fira_code_url,
@@ -178,7 +186,7 @@ impl From<BaseContext> for JinjaContext {
 fn get_unix_timestamp_nanos() -> u128 {
     let duration_since_epoch = SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .expect("Time went backwards");
+        .expect("Cannot get Epoch from system time");
     duration_since_epoch.as_nanos()
 }
 

@@ -545,6 +545,7 @@ version = "0.1.0"
 dependencies = [
  "boilermaker_api",
  "dioxus",
+ "pulldown-cmark",
 ]
 
 [[package]]
@@ -561,6 +562,8 @@ dependencies = [
  "dioxus",
  "minijinja",
  "minijinja-autoreload",
+ "pulldown-cmark",
+ "regex",
  "rust-embed",
  "serde",
  "serde_json",

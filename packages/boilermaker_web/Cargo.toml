@@ -16,6 +16,8 @@ color-eyre = { workspace = true }
 dioxus = { workspace = true }
 minijinja = { workspace = true }
 minijinja-autoreload = { workspace = true }
+pulldown-cmark = { workspace = true }
+regex = { workspace = true }
 rust-embed = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }

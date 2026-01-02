@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+
+{% block title %}Boilermaker Docs | {{title}}{% endblock %}
+
+{% block content %}
+
+<div class="doc p-4">
+    <div class="mt-4 text-xl text-purple-200 dark:text-purple-400">Boilermaker {{title}}</div>
+    <div class="pt-8">
+      {{doc_page|safe}}
+    </div>
+</div>
+
+{% endblock %}
