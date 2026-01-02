@@ -1,0 +1,46 @@
+
+[project]
+name = "variable_profiles"
+version = "0.1.0"
+description = "Demostrate Variable Profiles in Boilermaker."
+license = "MIT"
+authors = ["yeajustmars"]
+website = "https://github.com/yeajustmars/boilermaker/examples/variable_profiles"
+keywords = ["boilermaker", "variable profiles", "mutli-lang"]
+
+repository = "https://github.com/yeajustmars/boilermaker"
+default_branch = "feat_44_vars"
+default_subdir = "examples/variable_profiles"
+default_name = "boil-example-variable-profiles"
+default_lang = "python"
+
+[variables]
+config_interpolation = "boilermaker:{project.name}:{project.version}"
+
+[variables.v1]
+config = {
+  a = "Value A1",
+  b = "Value B1",
+  c = 1,
+  d = 1.0,
+  e = true,
+  f = false,
+  nested = {
+    path = { fullpath = ["config",  "nested", "path"] },
+  },
+  config_interpolation = "{variables.config_interpolation}"
+}
+
+[variables.v2]
+config = {
+  a = "Value A2",
+  b = "Value B2",
+  c = 2,
+  d = 2.0,
+  e = true,
+  f = false,
+  nested = {
+    path = { fullpath = ["config",  "nested", "path"] },
+  },
+  config_interpolation = "{variables.config_interpolation}"
+}

@@ -1,14 +1,17 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::{any::Any, collections::HashMap, path::PathBuf};
 
 use clap::Parser;
-use color_eyre::{eyre::eyre, Result};
-use tabled::{settings::Style, Table, Tabled};
-use tracing::{debug, error, info};
+use color_eyre::{Result, eyre::eyre};
+use minijinja::value::{Value as JinjaValue, merge_maps};
+use tabled::{Table, Tabled, settings::Style};
+use tracing::{error, info};
 
 use crate::db::{TemplateFindParams, TemplateResult};
 use crate::state::AppState;
 use crate::template as tpl;
-use crate::util::file::{copy_dir, list_dir, move_file};
+//use crate::util::file::{copy_dir, list_dir, move_file};
+
+type ContextHashMap = HashMap<String, Box<dyn Any>>;
 
 #[derive(Debug, Parser)]
 pub struct New {
@@ -50,19 +53,23 @@ pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
     let t = existing_templates.first().unwrap();
     let base_dir = PathBuf::from(&t.template_dir);
     let tpl_config = tpl::get_template_config(&base_dir)?;
-    let mut context = tpl_config
-        .variables
-        .as_ref()
-        .map(|vars| vars.as_map().clone())
-        .unwrap_or_default();
 
     // Validate extra variables from CLI or app.
+    let mut user_vars: ContextHashMap = HashMap::new();
     if !cmd.vars.is_empty() {
-        let user_vars = vec_to_hashmap(&cmd.vars)?;
-        extend_template_context(&mut context, &t.template_dir, user_vars)?;
+        let raw_user_vars = vec_to_hashmap(&cmd.vars)?;
+        extend_template_context(&mut user_vars, &t.template_dir, raw_user_vars)?;
     }
-    debug!("Template context: {:?}", context);
 
+    if let Some(tpl_vars) = tpl_config.variables {
+        let a = JinjaValue::from_serialize(tpl_vars);
+        let b = JinjaValue::from_serialize(user_vars);
+        let x = merge_maps([a, b]);
+    }
+
+    // TODO: PICKUP HERE
+
+    /*
     // Copy template to work-dir before rendering.
     let work_dir = tpl::create_work_dir_clean(&t.name)?;
     let template_base_dir = PathBuf::from(&t.template_dir);
@@ -87,10 +94,12 @@ pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
 
     info!("Project created at: {}", out_dir.display());
     info!("All set. Happy hacking! 🚀");
+     */
 
     Ok(())
 }
 
+#[tracing::instrument]
 async fn get_existing_templates(app_state: &AppState, cmd: &New) -> Result<Vec<TemplateResult>> {
     let find_params = TemplateFindParams {
         ids: None,
@@ -117,6 +126,7 @@ struct MultipleResultsRow {
     lang: String,
 }
 
+#[tracing::instrument]
 fn print_multiple_template_results_help(template_rows: &Vec<TemplateResult>) {
     let help_line = "Multiple templates found. (You need to provide --lang)";
     let mut help_rows = Vec::new();
@@ -133,6 +143,7 @@ fn print_multiple_template_results_help(template_rows: &Vec<TemplateResult>) {
 }
 
 // Turn a vec like ["foo=bar", "baz=quux"] into a HashMap
+#[tracing::instrument]
 fn vec_to_hashmap(vec: &[String]) -> Result<HashMap<String, String>> {
     vec.iter()
         .map(|mapping| {
@@ -144,8 +155,9 @@ fn vec_to_hashmap(vec: &[String]) -> Result<HashMap<String, String>> {
         .collect()
 }
 
+#[tracing::instrument]
 fn extend_template_context(
-    template_context: &mut HashMap<String, String>,
+    template_context: &mut ContextHashMap,
     template_dir: &str,
     user_vars: HashMap<String, String>,
 ) -> Result<()> {
@@ -163,7 +175,10 @@ fn extend_template_context(
             allowed_vars,
         ));
     }
-    template_context.extend(user_vars);
+
+    for (k, v) in user_vars {
+        template_context.insert(k, Box::new(v));
+    }
 
     Ok(())
 }
