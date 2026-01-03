@@ -123,14 +123,14 @@ pub fn get_template_config(template_path: &Path) -> Result<TemplateConfig> {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TemplateConfig {
     pub project: TemplateConfigProject,
     pub variables: Option<JinjaValue>,
 }
 
 // TODO: add all remaining fields
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TemplateConfigProject {
     // pub name: String,
     // pub repository: String,

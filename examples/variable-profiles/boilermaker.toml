@@ -16,6 +16,8 @@ default_lang = "python"
 
 [variables]
 config_interpolation = "boilermaker:{project.name}:{project.version}"
+hello = "World of Boilermaker Variable Profiles!"
+misc_msg = "This is a misc message from the default variable profile."
 
 [variables.v1]
 config = {

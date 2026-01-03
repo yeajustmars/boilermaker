@@ -1,17 +1,18 @@
-use std::{any::Any, collections::HashMap, path::PathBuf};
+use std::{collections::HashMap, path::PathBuf};
 
 use clap::Parser;
 use color_eyre::{Result, eyre::eyre};
-use minijinja::value::{Value as JinjaValue, merge_maps};
+use minijinja::{
+    context,
+    value::{Value as JinjaValue, merge_maps},
+};
 use tabled::{Table, Tabled, settings::Style};
 use tracing::{error, info};
 
 use crate::db::{TemplateFindParams, TemplateResult};
 use crate::state::AppState;
 use crate::template as tpl;
-//use crate::util::file::{copy_dir, list_dir, move_file};
-
-type ContextHashMap = HashMap<String, Box<dyn Any>>;
+use crate::util::file::{copy_dir, list_dir, move_file};
 
 #[derive(Debug, Parser)]
 pub struct New {
@@ -29,6 +30,8 @@ pub struct New {
     pub overwrite: bool,
     #[arg(short = 'v', long = "var", value_name = "KEY=VALUE")]
     pub vars: Vec<String>,
+    #[arg(short = 'D', long, default_value_t = false)]
+    pub debug: bool,
 }
 
 #[tracing::instrument]
@@ -37,6 +40,7 @@ pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
 
     info!("Creating new project: {project_name}");
 
+    // Validate there's only one template for arguments.
     let existing_templates = get_existing_templates(app_state, cmd).await?;
     match existing_templates.len() {
         0 => {
@@ -49,31 +53,49 @@ pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
         _ => {}
     }
 
+    if cmd.debug {
+        info!("existing_templates: {existing_templates:#?}");
+    }
+
     // Read template config. to get the default context & variables.
     let t = existing_templates.first().unwrap();
     let base_dir = PathBuf::from(&t.template_dir);
     let tpl_config = tpl::get_template_config(&base_dir)?;
 
-    // Validate extra variables from CLI or app.
-    let mut user_vars: ContextHashMap = HashMap::new();
-    if !cmd.vars.is_empty() {
-        let raw_user_vars = vec_to_hashmap(&cmd.vars)?;
-        extend_template_context(&mut user_vars, &t.template_dir, raw_user_vars)?;
+    if cmd.debug {
+        info!("t: {t:#?}");
+        info!("base_dir: {base_dir:#?}");
+        info!("tpl_config: {tpl_config:#?}");
     }
 
-    if let Some(tpl_vars) = tpl_config.variables {
-        let a = JinjaValue::from_serialize(tpl_vars);
-        let b = JinjaValue::from_serialize(user_vars);
-        let x = merge_maps([a, b]);
+    // Build template context
+    let template_context = if tpl_config.variables.is_none() {
+        context! {}
+    } else {
+        let mut template_context = tpl_config.variables.unwrap();
+        let user_context = cmdline_vars_to_hashmap(&cmd.vars)?;
+        if let Some(user_context) = user_context {
+            template_context =
+                extend_template_context(vec![template_context, user_context], &t.template_dir)?;
+        }
+        template_context
+    };
+
+    if cmd.debug {
+        info!("template_context: {template_context:#?}");
     }
 
-    // TODO: PICKUP HERE
-
-    /*
     // Copy template to work-dir before rendering.
     let work_dir = tpl::create_work_dir_clean(&t.name)?;
     let template_base_dir = PathBuf::from(&t.template_dir);
     let template_dir = template_base_dir.join(&t.lang);
+
+    if cmd.debug {
+        info!("work_dir: {work_dir:#?}");
+        info!("template_base_dir: {template_base_dir:#?}");
+        info!("template_dir: {template_dir:#?}");
+    }
+
     copy_dir(&template_dir, &work_dir).await?;
 
     let template_paths: Vec<PathBuf> = list_dir(&work_dir)
@@ -82,11 +104,20 @@ pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
         .filter(|p| p.is_file())
         .map(|p| p.to_path_buf())
         .collect();
-    if let Err(e) = tpl::render_template_files(template_paths, context).await {
+
+    if cmd.debug {
+        info!("template_paths: {template_paths:#?}");
+    }
+
+    if let Err(e) = tpl::render_template_files(template_paths, template_context).await {
         return Err(eyre!("💥 Failed to render template files: {e}"));
     }
 
     let out_dir = tpl::create_project_dir(project_name, cmd.dir.as_deref(), cmd.overwrite).await?;
+
+    if cmd.debug {
+        info!("out_dir: {out_dir:#?}");
+    }
 
     if let Err(e) = move_file(&work_dir, &out_dir).await {
         return Err(eyre!("💥 Failed to move project to output directory: {e}"));
@@ -94,7 +125,6 @@ pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
 
     info!("Project created at: {}", out_dir.display());
     info!("All set. Happy hacking! 🚀");
-     */
 
     Ok(())
 }
@@ -142,31 +172,47 @@ fn print_multiple_template_results_help(template_rows: &Vec<TemplateResult>) {
     error!("{}\n\n{table}\n", help_line);
 }
 
-// Turn a vec like ["foo=bar", "baz=quux"] into a HashMap
+/// Turn a vec like ["foo=bar", "baz=quux"] into a `HashMap<String, String>`.
+/// Note: aggregate types are not (yet) supported.
 #[tracing::instrument]
-fn vec_to_hashmap(vec: &[String]) -> Result<HashMap<String, String>> {
-    vec.iter()
+fn cmdline_vars_to_hashmap(vars_vec: &[String]) -> Result<Option<JinjaValue>> {
+    let vars_map: Result<HashMap<String, String>> = vars_vec
+        .iter()
         .map(|mapping| {
             mapping
                 .split_once("=")
                 .map(|(x, y)| (x.to_owned(), y.to_owned()))
                 .ok_or(eyre!("💥 Invalid variable format: {mapping}"))
         })
-        .collect()
+        .collect();
+
+    match vars_map {
+        Err(e) => Err(eyre!("Failed to parse command line vars: {e}")),
+        Ok(vars_map) => {
+            if vars_map.is_empty() {
+                Ok(None)
+            } else {
+                let context = JinjaValue::from_serialize(vars_map);
+                Ok(Some(context))
+            }
+        }
+    }
 }
 
 #[tracing::instrument]
-fn extend_template_context(
-    template_context: &mut ContextHashMap,
-    template_dir: &str,
-    user_vars: HashMap<String, String>,
-) -> Result<()> {
+fn extend_template_context(contexts: Vec<JinjaValue>, template_dir: &str) -> Result<JinjaValue> {
+    Ok(merge_maps(contexts))
+    /*
+    //println!("template_context: {template_context:#?}");
+    //println!("user_context: {user_context:#?}");
     let allowed_vars = tpl::static_analysis::find_variables_in_path(template_dir)?;
-    let bad_vars: Vec<_> = user_vars
+    // println!("allowed_vars: {allowed_vars:#?}");
+    let bad_vars: Vec<_> = user_context
         .keys()
         .filter(|var| !allowed_vars.contains(*var))
         .map(|s| s.as_str())
         .collect();
+    //println!("bad_vars: {bad_vars:#?}");
 
     if !bad_vars.is_empty() {
         return Err(eyre!(
@@ -176,9 +222,10 @@ fn extend_template_context(
         ));
     }
 
-    for (k, v) in user_vars {
+    for (k, v) in user_context {
         template_context.insert(k, Box::new(v));
     }
 
     Ok(())
+     */
 }

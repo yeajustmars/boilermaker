@@ -1,10 +1,10 @@
-use std::{collections::HashMap, env, fs, path::PathBuf};
+use std::{env, fs, path::PathBuf};
 
 use color_eyre::{Result, eyre::eyre};
 use dirs;
 use fs_extra::dir::{CopyOptions, copy};
 use git2::{FetchOptions, Repository, build::RepoBuilder};
-use minijinja;
+use minijinja::value::Value as JinjaValue;
 
 use crate::config::TemplateConfig;
 pub use crate::config::get_template_config;
@@ -219,12 +219,8 @@ pub async fn create_project_dir(
 //TODO: add setting to warn from sys_config on directory in paths vec
 //NOTE: for now, just skip
 #[tracing::instrument]
-pub async fn render_template_files(
-    paths: Vec<PathBuf>,
-    ctx: HashMap<String, String>,
-) -> Result<()> {
+pub async fn render_template_files(paths: Vec<PathBuf>, ctx: JinjaValue) -> Result<()> {
     let mut jinja = minijinja::Environment::new();
-    let ctx = minijinja::context! { ..ctx.to_owned() };
 
     for path in paths {
         if path.is_file() {
