@@ -247,3 +247,14 @@ pub async fn list_template_files(dir: &PathBuf) -> Result<Vec<PathBuf>> {
         .collect::<Vec<_>>();
     Ok(files)
 }
+
+#[tracing::instrument]
+pub async fn get_template_paths(template_dir: &PathBuf) -> Result<Vec<PathBuf>> {
+    let paths: Vec<PathBuf> = list_dir(template_dir)
+        .await?
+        .iter()
+        .filter(|p| p.is_file())
+        .map(|p| p.to_path_buf())
+        .collect();
+    Ok(paths)
+}

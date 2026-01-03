@@ -1,4 +1,3 @@
-
 def print_vars():
     vars_from_config = {
         'config': {

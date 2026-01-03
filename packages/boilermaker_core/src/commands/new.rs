@@ -1,4 +1,7 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::{
+    collections::{HashMap, HashSet},
+    path::PathBuf,
+};
 
 use clap::Parser;
 use color_eyre::{Result, eyre::eyre};
@@ -12,7 +15,8 @@ use tracing::{error, info};
 use crate::db::{TemplateFindParams, TemplateResult};
 use crate::state::AppState;
 use crate::template as tpl;
-use crate::util::file::{copy_dir, list_dir, move_file};
+use crate::template::static_analysis as analyzer;
+use crate::util::file::{copy_dir, move_file};
 
 #[derive(Debug, Parser)]
 pub struct New {
@@ -40,7 +44,6 @@ pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
 
     info!("Creating new project: {project_name}");
 
-    // Validate there's only one template for arguments.
     let existing_templates = get_existing_templates(app_state, cmd).await?;
     match existing_templates.len() {
         0 => {
@@ -57,59 +60,47 @@ pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
         info!("existing_templates: {existing_templates:#?}");
     }
 
-    // Read template config. to get the default context & variables.
     let t = existing_templates.first().unwrap();
     let base_dir = PathBuf::from(&t.template_dir);
+    let work_dir = tpl::create_work_dir_clean(&t.name)?;
+    let template_base_dir = PathBuf::from(&t.template_dir);
+    let template_dir = template_base_dir.join(&t.lang);
     let tpl_config = tpl::get_template_config(&base_dir)?;
 
     if cmd.debug {
         info!("t: {t:#?}");
         info!("base_dir: {base_dir:#?}");
         info!("tpl_config: {tpl_config:#?}");
-    }
-
-    // Build template context
-    let template_context = if tpl_config.variables.is_none() {
-        context! {}
-    } else {
-        let mut template_context = tpl_config.variables.unwrap();
-        let user_context = cmdline_vars_to_hashmap(&cmd.vars)?;
-        if let Some(user_context) = user_context {
-            template_context =
-                extend_template_context(vec![template_context, user_context], &t.template_dir)?;
-        }
-        template_context
-    };
-
-    if cmd.debug {
-        info!("template_context: {template_context:#?}");
-    }
-
-    // Copy template to work-dir before rendering.
-    let work_dir = tpl::create_work_dir_clean(&t.name)?;
-    let template_base_dir = PathBuf::from(&t.template_dir);
-    let template_dir = template_base_dir.join(&t.lang);
-
-    if cmd.debug {
         info!("work_dir: {work_dir:#?}");
         info!("template_base_dir: {template_base_dir:#?}");
         info!("template_dir: {template_dir:#?}");
     }
 
-    copy_dir(&template_dir, &work_dir).await?;
+    let mut template_context = if tpl_config.variables.is_none() {
+        context! {}
+    } else {
+        tpl_config.variables.unwrap()
+    };
 
-    let template_paths: Vec<PathBuf> = list_dir(&work_dir)
-        .await?
-        .iter()
-        .filter(|p| p.is_file())
-        .map(|p| p.to_path_buf())
-        .collect();
-
-    if cmd.debug {
-        info!("template_paths: {template_paths:#?}");
+    let user_context = cmdline_vars_to_hashmap(&cmd.vars)?;
+    if let Some(user_context) = user_context {
+        let template_paths = tpl::get_template_paths(&template_dir).await?;
+        template_context =
+            extend_template_context(vec![template_context, user_context], &template_paths)?;
     }
 
-    if let Err(e) = tpl::render_template_files(template_paths, template_context).await {
+    if cmd.debug {
+        info!("template_context: {template_context:#?}");
+    }
+
+    copy_dir(&template_dir, &work_dir).await?;
+    let new_template_paths = tpl::get_template_paths(&template_dir).await?;
+
+    if cmd.debug {
+        info!("new_template_paths: {new_template_paths:#?}");
+    }
+
+    if let Err(e) = tpl::render_template_files(new_template_paths, template_context).await {
         return Err(eyre!("💥 Failed to render template files: {e}"));
     }
 
@@ -200,32 +191,58 @@ fn cmdline_vars_to_hashmap(vars_vec: &[String]) -> Result<Option<JinjaValue>> {
 }
 
 #[tracing::instrument]
-fn extend_template_context(contexts: Vec<JinjaValue>, template_dir: &str) -> Result<JinjaValue> {
-    Ok(merge_maps(contexts))
+fn extend_template_context(
+    contexts: Vec<JinjaValue>,
+    template_paths: &Vec<PathBuf>,
+) -> Result<JinjaValue> {
     /*
-    //println!("template_context: {template_context:#?}");
-    //println!("user_context: {user_context:#?}");
-    let allowed_vars = tpl::static_analysis::find_variables_in_path(template_dir)?;
-    // println!("allowed_vars: {allowed_vars:#?}");
-    let bad_vars: Vec<_> = user_context
-        .keys()
-        .filter(|var| !allowed_vars.contains(*var))
-        .map(|s| s.as_str())
-        .collect();
-    //println!("bad_vars: {bad_vars:#?}");
+    println!("&contexts[0] = {:#?}", &contexts[0]);
+    let aaa = contexts.first().unwrap();
+    println!("aaa = {:#?}", aaa);
+    let bbb: HashMap<String, JinjaValue> = aaa.downcast_object_ref();
+    println!("bbb = {:#?}", bbb);
+
+    let config_vars = contexts
+        .first()
+        .unwrap()
+        .downcast_object_ref::<HashMap<String, JinjaValue>>();
+    .unwrap()
+    .keys()
+    .map(|s| s.to_string())
+    .collect::<HashSet<String>>()
+     */
+    //println!("config_vars = {:#?}", config_vars);
+
+    /*
+    let file_vars = analyzer::get_minijinja_vars(template_paths)?;
+
+    let allowed_vars = config_vars
+        .union(&file_vars)
+        .cloned()
+        .collect::<HashSet<String>>();
+
+    let user_contexts = &contexts[1..];
+
+    let mut bad_vars: HashSet<String> = HashSet::new();
+    for ctx in user_contexts {
+        let map = ctx
+            .downcast_object_ref::<HashMap<String, JinjaValue>>()
+            .unwrap();
+        for key in map.keys() {
+            if !allowed_vars.contains(key) {
+                bad_vars.insert(key.to_owned());
+            }
+        }
+    }
 
     if !bad_vars.is_empty() {
         return Err(eyre!(
-            "💥 Some variables aren't available in template: {}.\nKnown variables: {:?}",
-            bad_vars.join(", "),
-            allowed_vars,
+            "💥 Some variables aren't available in template: {:#?}.\nKnown variables: {:#?}",
+            bad_vars,
+            allowed_vars
         ));
     }
+         */
 
-    for (k, v) in user_context {
-        template_context.insert(k, Box::new(v));
-    }
-
-    Ok(())
-     */
+    Ok(merge_maps(contexts))
 }
