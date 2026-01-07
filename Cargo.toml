@@ -11,6 +11,7 @@ members = [
 
 [workspace.dependencies]
 async-trait = "0.1.89"
+auth-git2 = "0.5.8"
 axum = "0.8.7"
 axum-embed = "0.1.0"
 axum-template = { version = "3.0", features = ["minijinja", "minijinja-autoreload"] }

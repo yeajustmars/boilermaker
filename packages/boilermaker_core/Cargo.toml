@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 # External
 async-trait = { workspace = true }
+auth-git2 = { workspace = true }
 chrono = { workspace = true }
 clap = { workspace = true }
 color-eyre = { workspace = true }

@@ -1,10 +1,12 @@
 use std::{env, fs, path::PathBuf};
 
+use auth_git2::GitAuthenticator;
 use color_eyre::{Result, eyre::eyre};
 use dirs;
 use fs_extra::dir::{CopyOptions, copy};
-use git2::{FetchOptions, Repository, build::RepoBuilder};
+use git2::{Config, FetchOptions, RemoteCallbacks, Repository, build::RepoBuilder};
 use minijinja::value::Value as JinjaValue;
+use tracing::info;
 
 use crate::config::TemplateConfig;
 pub use crate::config::get_template_config;
@@ -27,12 +29,18 @@ impl CloneContext {
     }
 }
 
+// TODO: add optional depth parameter in CloneContext
 #[tracing::instrument]
 pub async fn clone_repo(ctx: &CloneContext) -> Result<Repository> {
-    let mut fetch_opts = FetchOptions::new();
-    fetch_opts.depth(1);
-
+    let auth = GitAuthenticator::default();
+    let git_config = Config::open_default()?;
     let mut repo_builder = RepoBuilder::new();
+    let mut fetch_opts = FetchOptions::new();
+    let mut remote_callbacks = RemoteCallbacks::new();
+
+    remote_callbacks.credentials(auth.credentials(&git_config));
+    fetch_opts.remote_callbacks(remote_callbacks);
+    fetch_opts.depth(1);
     repo_builder.fetch_options(fetch_opts);
 
     if let Some(branch) = &ctx.branch {
@@ -44,9 +52,13 @@ pub async fn clone_repo(ctx: &CloneContext) -> Result<Repository> {
         None => env::temp_dir(),
     };
 
-    let repo = repo_builder.clone(&ctx.url, &dir)?;
+    let repo = repo_builder.clone(&ctx.url, &dir);
+    if let Err(e) = repo {
+        info!("Cannot clone repo as public, trying with credentials...");
 
-    Ok(repo)
+        return Err(eyre!("💥 Failed to clone repository: {}", e));
+    }
+    Ok(repo?)
 }
 
 #[tracing::instrument]

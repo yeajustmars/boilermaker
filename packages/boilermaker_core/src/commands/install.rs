@@ -61,6 +61,7 @@ async fn get_remote_work_dir(cmd: &Install) -> Result<PathBuf> {
     } else {
         clone_dir.to_path_buf()
     };
+
     Ok(dir)
 }
 

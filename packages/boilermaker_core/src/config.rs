@@ -132,14 +132,20 @@ pub struct TemplateConfig {
 // TODO: add all remaining fields
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TemplateConfigProject {
-    // pub name: String,
-    // pub repository: String,
-    // pub subdir: Option<String>,
-    // pub version: Option<String>,
+    // name, version required
+    pub name: String,
+    pub version: String,
+
+    // Git info
+    pub repository: String,
+    pub default_branch: Option<String>,
+    pub default_subdir: Option<String>,
     pub default_lang: Option<String>,
-    // pub description: Option<String>,
-    // pub authors: Option<Vec<String>>,
-    // pub license: Option<String>,
-    // pub keywords: Option<Vec<String>>,
-    // pub website: Option<String>,
+
+    // Metadata
+    pub description: Option<String>,
+    pub authors: Option<Vec<String>>,
+    pub license: Option<String>,
+    pub keywords: Option<Vec<String>>,
+    pub website: Option<String>,
 }
