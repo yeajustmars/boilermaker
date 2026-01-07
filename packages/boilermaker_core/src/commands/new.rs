@@ -1,7 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet},
-    path::PathBuf,
-};
+use std::{collections::HashMap, path::PathBuf};
 
 use clap::Parser;
 use color_eyre::{Result, eyre::eyre};
@@ -15,7 +12,7 @@ use tracing::{error, info};
 use crate::db::{TemplateFindParams, TemplateResult};
 use crate::state::AppState;
 use crate::template as tpl;
-use crate::template::static_analysis as analyzer;
+//use crate::template::static_analysis as analyzer;
 use crate::util::file::{copy_dir, move_file};
 
 #[derive(Debug, Parser)]
@@ -44,23 +41,32 @@ pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
 
     info!("Creating new project: {project_name}");
 
-    let existing_templates = get_existing_templates(app_state, cmd).await?;
-    match existing_templates.len() {
-        0 => {
-            return Err(eyre!("💥 Cannot find template: {}.", cmd.name));
-        }
-        2.. => {
-            print_multiple_template_results_help(&existing_templates);
-            return Ok(());
-        }
-        _ => {}
-    }
+    let t = match cmd.name.parse::<i64>() {
+        Ok(id) => get_template_by_id(app_state, id).await?,
+        Err(_) => {
+            let existing_templates = get_existing_templates(app_state, cmd).await?;
 
-    if cmd.debug {
-        info!("existing_templates: {existing_templates:#?}");
-    }
+            if cmd.debug {
+                info!("existing_templates: {existing_templates:#?}");
+            }
 
-    let t = existing_templates.first().unwrap();
+            match existing_templates.len() {
+                0 => Err(eyre!("💥 Cannot find template: {}.", cmd.name))?,
+                1 => existing_templates
+                    .first()
+                    .unwrap_or(Err(eyre!("💥 Cannot retrieve template: {}.", cmd.name))?)
+                    .to_owned(),
+                2.. => {
+                    print_multiple_template_results_help(&existing_templates);
+                    Err(eyre!(
+                        "💥 Found multiple results matching template: {}.",
+                        cmd.name
+                    ))?
+                }
+            }
+        }
+    };
+
     let base_dir = PathBuf::from(&t.template_dir);
     let work_dir = tpl::create_work_dir_clean(&t.name)?;
     let template_base_dir = PathBuf::from(&t.template_dir);
@@ -121,6 +127,16 @@ pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
 }
 
 #[tracing::instrument]
+async fn get_template_by_id(app_state: &AppState, id: i64) -> Result<TemplateResult> {
+    app_state
+        .local_db
+        .clone()
+        .get_template(id)
+        .await?
+        .ok_or(eyre!("💥 Cannot find template with ID: {}.", id))
+}
+
+#[tracing::instrument]
 async fn get_existing_templates(app_state: &AppState, cmd: &New) -> Result<Vec<TemplateResult>> {
     let find_params = TemplateFindParams {
         ids: None,
@@ -133,7 +149,6 @@ async fn get_existing_templates(app_state: &AppState, cmd: &New) -> Result<Vec<T
     };
 
     let cache = app_state.local_db.clone();
-
     let existing_templates = { cache.find_templates(find_params).await? };
 
     Ok(existing_templates)

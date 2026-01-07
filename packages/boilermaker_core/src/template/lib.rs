@@ -6,7 +6,7 @@ use dirs;
 use fs_extra::dir::{CopyOptions, copy};
 use git2::{Config, FetchOptions, RemoteCallbacks, Repository, build::RepoBuilder};
 use minijinja::value::Value as JinjaValue;
-use tracing::info;
+use tracing::error;
 
 use crate::config::TemplateConfig;
 pub use crate::config::get_template_config;
@@ -30,6 +30,7 @@ impl CloneContext {
 }
 
 // TODO: add optional depth parameter in CloneContext
+// TODO: check if repo exists locally, and if so, just update it
 #[tracing::instrument]
 pub async fn clone_repo(ctx: &CloneContext) -> Result<Repository> {
     let auth = GitAuthenticator::default();
@@ -54,8 +55,13 @@ pub async fn clone_repo(ctx: &CloneContext) -> Result<Repository> {
 
     let repo = repo_builder.clone(&ctx.url, &dir);
     if let Err(e) = repo {
-        info!("Cannot clone repo as public, trying with credentials...");
-
+        if e.message().contains("404") {
+            error!("💥 Repository not found (404): {}", ctx.url);
+            return Err(eyre!(
+                "💥 Repository not found (404): {}. Check the URL and your access rights.",
+                ctx.url
+            ));
+        }
         return Err(eyre!("💥 Failed to clone repository: {}", e));
     }
     Ok(repo?)
