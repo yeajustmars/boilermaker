@@ -6,10 +6,12 @@ use dirs;
 use fs_extra::dir::{CopyOptions, copy};
 use git2::{Config, FetchOptions, RemoteCallbacks, Repository, build::RepoBuilder};
 use minijinja::value::Value as JinjaValue;
-use tracing::error;
+use tracing::info;
+use walkdir::WalkDir;
 
 use crate::config::TemplateConfig;
 pub use crate::config::get_template_config;
+use crate::constants::TEMPLATE_FILEPATH_VAR_PATTERN as FILEPATH_VARS;
 use crate::util::file::list_dir;
 
 #[derive(Debug)]
@@ -56,9 +58,8 @@ pub async fn clone_repo(ctx: &CloneContext) -> Result<Repository> {
     let repo = repo_builder.clone(&ctx.url, &dir);
     if let Err(e) = repo {
         if e.message().contains("404") {
-            error!("💥 Repository not found (404): {}", ctx.url);
             return Err(eyre!(
-                "💥 Repository not found (404): {}. Check the URL and your access rights.",
+                "💥 Repository not found (404): {}: Check the URL and your access rights.",
                 ctx.url
             ));
         }
@@ -237,9 +238,14 @@ pub async fn create_project_dir(
 //TODO: add setting to warn from sys_config on directory in paths vec
 //NOTE: for now, just skip
 #[tracing::instrument]
-pub async fn render_template_files(paths: Vec<PathBuf>, ctx: JinjaValue) -> Result<()> {
+pub async fn render_template_files(
+    template_dir: &PathBuf,
+    paths: Vec<PathBuf>,
+    ctx: JinjaValue,
+) -> Result<()> {
     let mut jinja = minijinja::Environment::new();
 
+    info!("Rendering template content...");
     for path in paths {
         if path.is_file() {
             let name = path.file_name().unwrap().to_str().unwrap().to_string();
@@ -252,6 +258,9 @@ pub async fn render_template_files(paths: Vec<PathBuf>, ctx: JinjaValue) -> Resu
             fs::write(&path, rendered)?;
         }
     }
+
+    info!("Checking for vars in file paths...");
+    interpolate_template_filepaths(template_dir, &ctx).await?;
 
     Ok(())
 }
@@ -275,4 +284,33 @@ pub async fn get_template_paths(template_dir: &PathBuf) -> Result<Vec<PathBuf>> 
         .map(|p| p.to_path_buf())
         .collect();
     Ok(paths)
+}
+
+#[tracing::instrument]
+pub async fn interpolate_template_filepaths(
+    template_dir: &PathBuf,
+    ctx: &JinjaValue,
+) -> Result<()> {
+    for entry in WalkDir::new(template_dir).contents_first(true) {
+        let entry = entry.unwrap();
+        let file_name = entry.file_name().to_str().unwrap();
+        //println!("\n>>> depth: {}", entry.depth());
+        //println!(
+        //    ">>> file_name: {} {:?}",
+        //    std::any::type_name_of_val(entry.file_name()),
+        //    entry.file_name()
+        //);
+        //println!(">>> path: {:?}", entry.path());
+
+        let mut caps_iter = FILEPATH_VARS.captures_iter(file_name).peekable();
+        if caps_iter.peek().is_none() {
+            continue;
+        }
+
+        for caps in caps_iter {
+            println!(">>> caps: {caps:#?}");
+        }
+    }
+
+    Ok(())
 }

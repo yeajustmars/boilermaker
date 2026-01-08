@@ -133,7 +133,6 @@ pub async fn install(app_state: &AppState, cmd: &Install) -> Result<()> {
     }
 
     cache.index_template(new_id).await?;
-    info!("Template indexed successfully.");
 
     if !cmd.local {
         remove_git_dir(&template_dir)?;

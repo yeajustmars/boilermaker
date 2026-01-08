@@ -31,31 +31,24 @@ pub struct New {
     pub overwrite: bool,
     #[arg(short = 'v', long = "var", value_name = "KEY=VALUE")]
     pub vars: Vec<String>,
-    #[arg(short = 'D', long, default_value_t = false)]
-    pub debug: bool,
 }
 
 #[tracing::instrument]
-pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
-    let project_name = cmd.rename.as_deref().unwrap_or(&cmd.name);
-
-    info!("Creating new project: {project_name}");
-
-    let t = match cmd.name.parse::<i64>() {
-        Ok(id) => get_template_by_id(app_state, id).await?,
+async fn setup_template(app_state: &AppState, cmd: &New) -> Result<(TemplateResult, bool)> {
+    match cmd.name.parse::<i64>() {
+        Ok(id) => Ok((get_template_by_id(app_state, id).await?, true)),
         Err(_) => {
             let existing_templates = get_existing_templates(app_state, cmd).await?;
 
-            if cmd.debug {
-                info!("existing_templates: {existing_templates:#?}");
-            }
-
             match existing_templates.len() {
                 0 => Err(eyre!("💥 Cannot find template: {}.", cmd.name))?,
-                1 => existing_templates
-                    .first()
-                    .unwrap_or(Err(eyre!("💥 Cannot retrieve template: {}.", cmd.name))?)
-                    .to_owned(),
+                1 => Ok((
+                    existing_templates
+                        .first()
+                        .unwrap_or(Err(eyre!("💥 Cannot retrieve template: {}.", cmd.name))?)
+                        .to_owned(),
+                    false,
+                )),
                 2.. => {
                     print_multiple_template_results_help(&existing_templates);
                     Err(eyre!(
@@ -65,57 +58,52 @@ pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
                 }
             }
         }
+    }
+}
+
+#[tracing::instrument]
+fn make_project_name(cmd: &New, t: &TemplateResult, by_id: bool) -> Result<String> {
+    let project_name = if by_id {
+        t.name.as_str()
+    } else {
+        cmd.rename.as_deref().unwrap_or(&cmd.name)
     };
 
+    info!("Creating new project: {project_name}");
+
+    Ok(project_name.to_string())
+}
+
+// TODO: refactor for readability (multiple functions?)
+#[tracing::instrument]
+pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
+    let (t, by_id) = setup_template(app_state, cmd).await?;
+    let project_name = make_project_name(cmd, &t, by_id)?;
     let base_dir = PathBuf::from(&t.template_dir);
     let work_dir = tpl::create_work_dir_clean(&t.name)?;
     let template_base_dir = PathBuf::from(&t.template_dir);
     let template_dir = template_base_dir.join(&t.lang);
     let tpl_config = tpl::get_template_config(&base_dir)?;
 
-    if cmd.debug {
-        info!("t: {t:#?}");
-        info!("base_dir: {base_dir:#?}");
-        info!("tpl_config: {tpl_config:#?}");
-        info!("work_dir: {work_dir:#?}");
-        info!("template_base_dir: {template_base_dir:#?}");
-        info!("template_dir: {template_dir:#?}");
-    }
-
-    let mut template_context = if tpl_config.variables.is_none() {
+    let mut ctx = if tpl_config.variables.is_none() {
         context! {}
     } else {
         tpl_config.variables.unwrap()
     };
-
-    let user_context = cmdline_vars_to_hashmap(&cmd.vars)?;
-    if let Some(user_context) = user_context {
+    let user_ctx = cmdline_vars_to_hashmap(&cmd.vars)?;
+    if let Some(user_ctx) = user_ctx {
         let template_paths = tpl::get_template_paths(&template_dir).await?;
-        template_context =
-            extend_template_context(vec![template_context, user_context], &template_paths)?;
-    }
-
-    if cmd.debug {
-        info!("template_context: {template_context:#?}");
+        ctx = extend_template_context(vec![ctx, user_ctx], &template_paths)?;
     }
 
     copy_dir(&template_dir, &work_dir).await?;
     let new_template_paths = tpl::get_template_paths(&template_dir).await?;
 
-    if cmd.debug {
-        info!("new_template_paths: {new_template_paths:#?}");
-    }
-
-    if let Err(e) = tpl::render_template_files(new_template_paths, template_context).await {
+    if let Err(e) = tpl::render_template_files(&work_dir, new_template_paths, ctx).await {
         return Err(eyre!("💥 Failed to render template files: {e}"));
     }
 
-    let out_dir = tpl::create_project_dir(project_name, cmd.dir.as_deref(), cmd.overwrite).await?;
-
-    if cmd.debug {
-        info!("out_dir: {out_dir:#?}");
-    }
-
+    let out_dir = tpl::create_project_dir(&project_name, cmd.dir.as_deref(), cmd.overwrite).await?;
     if let Err(e) = move_file(&work_dir, &out_dir).await {
         return Err(eyre!("💥 Failed to move project to output directory: {e}"));
     }
