@@ -238,15 +238,12 @@ pub async fn create_project_dir(
 //TODO: add setting to warn from sys_config on directory in paths vec
 //NOTE: for now, just skip
 #[tracing::instrument]
-pub async fn render_template_files(
-    template_dir: &PathBuf,
-    paths: Vec<PathBuf>,
-    ctx: JinjaValue,
-) -> Result<()> {
+pub async fn render_template_files(dir: &PathBuf, ctx: JinjaValue) -> Result<()> {
+    info!("Rendering template content...");
+
     let mut jinja = minijinja::Environment::new();
 
-    info!("Rendering template content...");
-    for path in paths {
+    for path in get_template_paths(dir).await? {
         if path.is_file() {
             let name = path.file_name().unwrap().to_str().unwrap().to_string();
             let content = fs::read_to_string(&path)?;
@@ -260,7 +257,7 @@ pub async fn render_template_files(
     }
 
     info!("Checking for vars in file paths...");
-    interpolate_template_filepaths(template_dir, &ctx).await?;
+    interpolate_template_filepaths(dir, &ctx).await?;
 
     Ok(())
 }
@@ -303,6 +300,8 @@ pub async fn interpolate_template_filepaths(
             continue;
         }
 
+        // TODO: double-check all vars are interpolated into filename
+        let mut new_path: PathBuf = path.clone();
         for cap in caps_iter {
             let var_path_str = if let Some(underscore) = cap.name("underscore") {
                 underscore.as_str()
@@ -317,7 +316,7 @@ pub async fn interpolate_template_filepaths(
             let s = format!("{{{{{}}}}}", var_path_str);
             let template = match env.get_template(&s) {
                 Ok(t) => t,
-                Err(_) => {
+                _ => {
                     env.add_template_owned(s.clone(), s.clone())?;
                     env.get_template(&s)?
                 }
@@ -325,11 +324,35 @@ pub async fn interpolate_template_filepaths(
 
             let var_value = template.render(ctx)?;
             let new_file_name = file_name.replace(target, &var_value);
-            let new_path = path.with_file_name(new_file_name);
-
-            move_file(&path, &new_path).await?;
+            new_path = new_path.with_file_name(new_file_name);
         }
+
+        move_file(&path, &new_path).await?;
     }
 
     Ok(())
+}
+
+/// Render a single variable using minijinja.
+///
+/// Note: this function create a new Jinja Environment each time it's called.
+/// If you're doing anything serious, use minimjinja directly, and set up an
+/// environment once and add templates to it.
+///
+/// # Example
+///
+/// ```rust
+/// use minijinja::{context, Environment as JinjaEnv};
+///
+/// use boilermaker::tpl::render_var;
+///
+/// let ctx = context! { a => context! { b => "Hello, World!" } };
+/// let rendered = render_var("a.b", &ctx).unwrap();
+/// assert_eq!(rendered, "Hello, World!");
+/// ```
+// TODO: make a global JinjaEnv to avoid recreating it each time
+#[tracing::instrument]
+pub fn render_var(path: &str, ctx: &JinjaValue) -> Result<String> {
+    let template_str = format!("{{{{ {} }}}}", path);
+    Ok(JinjaEnv::new().render_str(&template_str, ctx)?)
 }

@@ -62,6 +62,7 @@ pub fn get_system_config_path(config_path: Option<&Path>) -> Result<Option<&Path
     }
 }
 
+// TODO: add default_project_dir and override in global config
 #[derive(Debug, Deserialize)]
 pub struct SysConfig {
     pub log_level: Option<String>,

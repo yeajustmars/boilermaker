@@ -12,7 +12,7 @@ use tracing::{error, info};
 use crate::db::{TemplateFindParams, TemplateResult};
 use crate::state::AppState;
 use crate::template as tpl;
-//use crate::template::static_analysis as analyzer;
+use crate::template::static_analysis as ana;
 use crate::util::file::{copy_dir, move_file};
 
 #[derive(Debug, Parser)]
@@ -63,28 +63,32 @@ async fn setup_template(app_state: &AppState, cmd: &New) -> Result<(TemplateResu
 
 #[tracing::instrument]
 fn make_project_name(cmd: &New, t: &TemplateResult, by_id: bool) -> Result<String> {
-    let project_name = if by_id {
-        t.name.as_str()
+    let project_name = if let Some(rename) = &cmd.rename {
+        rename.to_string()
+    } else if by_id {
+        t.name.clone()
     } else {
-        cmd.rename.as_deref().unwrap_or(&cmd.name)
+        cmd.name.to_string()
     };
 
-    info!("Creating new project: {project_name}");
-
-    Ok(project_name.to_string())
+    Ok(project_name)
 }
 
+// Copies template from template_dir to temporary work_dir, renders it with context,
+// and if nothing fails, moves it to final project_dir.
 // TODO: refactor for readability (multiple functions?)
+// TODO: add --strict-vars flag to fail on unknown vars
 #[tracing::instrument]
 pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
     let (t, by_id) = setup_template(app_state, cmd).await?;
+    let tpl_base_dir = PathBuf::from(&t.template_dir);
+    let tpl_dir = tpl_base_dir.join(&t.lang);
+    let tpl_config = tpl::get_template_config(&tpl_base_dir)?;
+
     let project_name = make_project_name(cmd, &t, by_id)?;
-    let base_dir = PathBuf::from(&t.template_dir);
-    let work_dir = tpl::create_work_dir_clean(&t.name)?;
-    let template_base_dir = PathBuf::from(&t.template_dir);
-    let template_dir = template_base_dir.join(&t.lang);
-    let template_paths = tpl::get_template_paths(&template_dir).await?;
-    let tpl_config = tpl::get_template_config(&base_dir)?;
+
+    let tmp_work_dir = tpl::create_work_dir_clean(&project_name)?;
+    copy_dir(&tpl_dir, &tmp_work_dir).await?;
 
     let mut ctx = if tpl_config.variables.is_none() {
         context! {}
@@ -102,22 +106,19 @@ pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
         ctx = merge_maps(vec![ctx, profile_ctx]);
     }
     if let Some(user_ctx) = cmdline_vars_to_hashmap(&cmd.vars)? {
-        ctx = extend_template_context(vec![ctx, user_ctx], &template_paths)?;
+        let from_paths = tpl::get_template_paths(&tpl_dir).await?;
+        ctx = extend_template_context(vec![ctx, user_ctx], &from_paths)?;
     }
 
-    copy_dir(&template_dir, &work_dir).await?;
-    let new_template_paths = tpl::get_template_paths(&template_dir).await?;
-
-    if let Err(e) = tpl::render_template_files(&work_dir, new_template_paths, ctx).await {
+    if let Err(e) = tpl::render_template_files(&tmp_work_dir, ctx).await {
         return Err(eyre!("💥 Failed to render template files: {e}"));
     }
 
-    let out_dir = tpl::create_project_dir(&project_name, cmd.dir.as_deref(), cmd.overwrite).await?;
-    if let Err(e) = move_file(&work_dir, &out_dir).await {
-        return Err(eyre!("💥 Failed to move project to output directory: {e}"));
-    }
+    let project_dir =
+        tpl::create_project_dir(&project_name, cmd.dir.as_deref(), cmd.overwrite).await?;
+    move_file(&tmp_work_dir, &project_dir).await?;
 
-    info!("Project created at: {}", out_dir.display());
+    info!("Project created at: {}", project_dir.display());
     info!("All set. Happy hacking! 🚀");
 
     Ok(())
@@ -209,12 +210,6 @@ fn extend_template_context(
     template_paths: &Vec<PathBuf>,
 ) -> Result<JinjaValue> {
     /*
-    println!("&contexts[0] = {:#?}", &contexts[0]);
-    let aaa = contexts.first().unwrap();
-    println!("aaa = {:#?}", aaa);
-    let bbb: HashMap<String, JinjaValue> = aaa.downcast_object_ref();
-    println!("bbb = {:#?}", bbb);
-
     let config_vars = contexts
         .first()
         .unwrap()
@@ -226,9 +221,10 @@ fn extend_template_context(
      */
     //println!("config_vars = {:#?}", config_vars);
 
-    /*
-    let file_vars = analyzer::get_minijinja_vars(template_paths)?;
+    let file_vars = ana::get_minijinja_vars(template_paths)?;
+    println!(">>> file_vars: {file_vars:#?}");
 
+    /*
     let allowed_vars = config_vars
         .union(&file_vars)
         .cloned()
