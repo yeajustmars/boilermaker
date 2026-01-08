@@ -328,7 +328,6 @@ pub async fn interpolate_template_filepaths(
             let new_path = path.with_file_name(new_file_name);
 
             move_file(&path, &new_path).await?;
-            info!("  Renamed: {} -> {}", path.display(), new_path.display());
         }
     }
 
