@@ -5,14 +5,14 @@ use color_eyre::{Result, eyre::eyre};
 use dirs;
 use fs_extra::dir::{CopyOptions, copy};
 use git2::{Config, FetchOptions, RemoteCallbacks, Repository, build::RepoBuilder};
-use minijinja::{Environment as JinjaEnv, render, value::Value as JinjaValue};
+use minijinja::{Environment as JinjaEnv, value::Value as JinjaValue};
 use tracing::info;
 use walkdir::WalkDir;
 
 use crate::config::TemplateConfig;
 pub use crate::config::get_template_config;
 use crate::constants::TEMPLATE_FILEPATH_VAR_PATTERN as FILEPATH_VARS;
-use crate::util::file::list_dir;
+use crate::util::file::{list_dir, move_file};
 
 #[derive(Debug)]
 pub struct CloneContext {
@@ -296,26 +296,14 @@ pub async fn interpolate_template_filepaths(
     for entry in WalkDir::new(template_dir).contents_first(true) {
         let entry = entry.unwrap();
         let path = entry.path().to_path_buf();
-        let file_name = path.file_name().unwrap().to_str().unwrap();
-        let mut caps_iter = FILEPATH_VARS.captures_iter(file_name).peekable();
+        let file_name = path.file_name().unwrap().to_str().unwrap().to_owned();
+        let mut caps_iter = FILEPATH_VARS.captures_iter(&file_name).peekable();
 
         if caps_iter.peek().is_none() {
             continue;
         }
 
-        println!("\n\n\\\\ ----------------------------------------------------");
-        println!(">>> depth: {}", entry.depth());
-        println!(
-            ">>> file_name: {} {:?}",
-            std::any::type_name_of_val(&file_name),
-            file_name
-        );
-        println!(">>> type: FILE={}", path.is_file());
-        println!(">>> type: DIR={}", path.is_dir());
-        println!(">>> path: {} {:?}", std::any::type_name_of_val(&path), path);
-
         for cap in caps_iter {
-            println!(">>> cap: {cap:#?}");
             let var_path_str = if let Some(underscore) = cap.name("underscore") {
                 underscore.as_str()
             } else if let Some(dash) = cap.name("dash") {
@@ -323,13 +311,9 @@ pub async fn interpolate_template_filepaths(
             } else {
                 continue;
             };
+            let target = var_path_str;
             let var_path_str = var_path_str.trim_matches(['-', '_']);
-            println!(">>> var_path_str: {}", var_path_str);
 
-            //let path_elements: Vec<&str> = var_path_str.split('.').collect();
-            //println!(">>> path_elements: {path_elements:#?}");
-
-            //let s = "{{stack.basename}}";
             let s = format!("{{{{{}}}}}", var_path_str);
             let template = match env.get_template(&s) {
                 Ok(t) => t,
@@ -340,18 +324,12 @@ pub async fn interpolate_template_filepaths(
             };
 
             let var_value = template.render(ctx)?;
-            println!(">>> var_value: {}", var_value);
+            let new_file_name = file_name.replace(target, &var_value);
+            let new_path = path.with_file_name(new_file_name);
 
-            //env.add_template(s, s)?;
-            //let template = env.get_template(s)?;
-            //let var_value = template.render(ctx)?;
-
-            //let template_str = format!("{{{{{}}}}}", var_path_str).to_string();
-
-            //println!(">>> template_str: {}", template_str);
-            //println!("ctx: {ctx:#?}");
+            move_file(&path, &new_path).await?;
+            info!("  Renamed: {} -> {}", path.display(), new_path.display());
         }
-        println!("// ----------------------------------------------------\n\n");
     }
 
     Ok(())
