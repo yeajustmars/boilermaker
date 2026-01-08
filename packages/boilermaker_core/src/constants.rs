@@ -3,7 +3,7 @@ use regex::Regex;
 
 pub const BRANCH_REGEX: &str = r"^(refs/heads/)?[A-Za-z0-9._/-]+$";
 pub const SUBDIR_REGEX: &str = r"^/?[A-Za-z0-9/\-_].*$";
-pub const TEMPLATE_FILEPATH_VAR_REGEX: &str = r"(?<underscored>___.*?___)|(?<dashed>---.*?---)";
+pub const TEMPLATE_FILEPATH_VAR_REGEX: &str = r"(?<underscore>___.*?___)|(?<dash>---.*?---)";
 
 lazy_static! {
     pub static ref BRANCH_PATTERN: Regex = Regex::new(BRANCH_REGEX).unwrap();

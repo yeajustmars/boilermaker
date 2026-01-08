@@ -25,12 +25,12 @@ pub struct New {
     pub rename: Option<String>,
     #[arg(short, long)]
     pub dir: Option<String>,
-    #[arg(short = 'P', long = "output-path")]
-    pub output_path: Option<String>,
-    #[arg(short = 'O', long, default_value_t = false)]
-    pub overwrite: bool,
+    #[arg(short = 'p', long = "use-profile", value_name = "PROFILE")]
+    pub use_profile: Option<String>,
     #[arg(short = 'v', long = "var", value_name = "KEY=VALUE")]
     pub vars: Vec<String>,
+    #[arg(short = 'O', long, default_value_t = false)]
+    pub overwrite: bool,
 }
 
 #[tracing::instrument]
@@ -83,6 +83,7 @@ pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
     let work_dir = tpl::create_work_dir_clean(&t.name)?;
     let template_base_dir = PathBuf::from(&t.template_dir);
     let template_dir = template_base_dir.join(&t.lang);
+    let template_paths = tpl::get_template_paths(&template_dir).await?;
     let tpl_config = tpl::get_template_config(&base_dir)?;
 
     let mut ctx = if tpl_config.variables.is_none() {
@@ -90,9 +91,17 @@ pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
     } else {
         tpl_config.variables.unwrap()
     };
-    let user_ctx = cmdline_vars_to_hashmap(&cmd.vars)?;
-    if let Some(user_ctx) = user_ctx {
-        let template_paths = tpl::get_template_paths(&template_dir).await?;
+    if let Some(profile_name) = &cmd.use_profile {
+        let Ok(profile_ctx) = ctx.get_attr("profiles") else {
+            return Err(eyre!("Cannot find profiles key in template context"));
+        };
+        let Ok(profile_ctx) = profile_ctx.get_attr(profile_name) else {
+            return Err(eyre!("Cannot find profile: {}", profile_name));
+        };
+        // TODO: discuss deep merge (not initially obvious in minijinja)
+        ctx = merge_maps(vec![ctx, profile_ctx]);
+    }
+    if let Some(user_ctx) = cmdline_vars_to_hashmap(&cmd.vars)? {
         ctx = extend_template_context(vec![ctx, user_ctx], &template_paths)?;
     }
 
@@ -193,6 +202,7 @@ fn cmdline_vars_to_hashmap(vars_vec: &[String]) -> Result<Option<JinjaValue>> {
     }
 }
 
+// TODO: finish validating vars
 #[tracing::instrument]
 fn extend_template_context(
     contexts: Vec<JinjaValue>,

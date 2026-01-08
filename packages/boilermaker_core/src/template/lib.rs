@@ -5,7 +5,7 @@ use color_eyre::{Result, eyre::eyre};
 use dirs;
 use fs_extra::dir::{CopyOptions, copy};
 use git2::{Config, FetchOptions, RemoteCallbacks, Repository, build::RepoBuilder};
-use minijinja::value::Value as JinjaValue;
+use minijinja::{Environment as JinjaEnv, render, value::Value as JinjaValue};
 use tracing::info;
 use walkdir::WalkDir;
 
@@ -291,25 +291,67 @@ pub async fn interpolate_template_filepaths(
     template_dir: &PathBuf,
     ctx: &JinjaValue,
 ) -> Result<()> {
+    let mut env = JinjaEnv::new();
+
     for entry in WalkDir::new(template_dir).contents_first(true) {
         let entry = entry.unwrap();
-        let file_name = entry.file_name().to_str().unwrap();
-        //println!("\n>>> depth: {}", entry.depth());
-        //println!(
-        //    ">>> file_name: {} {:?}",
-        //    std::any::type_name_of_val(entry.file_name()),
-        //    entry.file_name()
-        //);
-        //println!(">>> path: {:?}", entry.path());
-
+        let path = entry.path().to_path_buf();
+        let file_name = path.file_name().unwrap().to_str().unwrap();
         let mut caps_iter = FILEPATH_VARS.captures_iter(file_name).peekable();
+
         if caps_iter.peek().is_none() {
             continue;
         }
 
-        for caps in caps_iter {
-            println!(">>> caps: {caps:#?}");
+        println!("\n\n\\\\ ----------------------------------------------------");
+        println!(">>> depth: {}", entry.depth());
+        println!(
+            ">>> file_name: {} {:?}",
+            std::any::type_name_of_val(&file_name),
+            file_name
+        );
+        println!(">>> type: FILE={}", path.is_file());
+        println!(">>> type: DIR={}", path.is_dir());
+        println!(">>> path: {} {:?}", std::any::type_name_of_val(&path), path);
+
+        for cap in caps_iter {
+            println!(">>> cap: {cap:#?}");
+            let var_path_str = if let Some(underscore) = cap.name("underscore") {
+                underscore.as_str()
+            } else if let Some(dash) = cap.name("dash") {
+                dash.as_str()
+            } else {
+                continue;
+            };
+            let var_path_str = var_path_str.trim_matches(['-', '_']);
+            println!(">>> var_path_str: {}", var_path_str);
+
+            //let path_elements: Vec<&str> = var_path_str.split('.').collect();
+            //println!(">>> path_elements: {path_elements:#?}");
+
+            //let s = "{{stack.basename}}";
+            let s = format!("{{{{{}}}}}", var_path_str);
+            let template = match env.get_template(&s) {
+                Ok(t) => t,
+                Err(_) => {
+                    env.add_template_owned(s.clone(), s.clone())?;
+                    env.get_template(&s)?
+                }
+            };
+
+            let var_value = template.render(ctx)?;
+            println!(">>> var_value: {}", var_value);
+
+            //env.add_template(s, s)?;
+            //let template = env.get_template(s)?;
+            //let var_value = template.render(ctx)?;
+
+            //let template_str = format!("{{{{{}}}}}", var_path_str).to_string();
+
+            //println!(">>> template_str: {}", template_str);
+            //println!("ctx: {ctx:#?}");
         }
+        println!("// ----------------------------------------------------\n\n");
     }
 
     Ok(())
