@@ -1,4 +1,7 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::{
+    collections::{HashMap, HashSet},
+    path::PathBuf,
+};
 
 use clap::Parser;
 use color_eyre::{Result, eyre::eyre};
@@ -6,13 +9,14 @@ use minijinja::{
     context,
     value::{Value as JinjaValue, merge_maps},
 };
+use serde::Deserialize;
 use tabled::{Table, Tabled, settings::Style};
-use tracing::{error, info};
+use tracing::{error, info, warn};
 
 use crate::db::{TemplateFindParams, TemplateResult};
 use crate::state::AppState;
 use crate::template as tpl;
-use crate::template::static_analysis as ana;
+//use crate::template::static_analysis as ana;
 use crate::util::file::{copy_dir, move_file};
 
 #[derive(Debug, Parser)]
@@ -31,6 +35,8 @@ pub struct New {
     pub vars: Vec<String>,
     #[arg(short = 'O', long, default_value_t = false)]
     pub overwrite: bool,
+    #[arg(short = 'S', long = "strict-vars", default_value_t = false)]
+    pub strict_vars: bool,
 }
 
 #[tracing::instrument]
@@ -107,7 +113,7 @@ pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
     }
     if let Some(user_ctx) = cmdline_vars_to_hashmap(&cmd.vars)? {
         let from_paths = tpl::get_template_paths(&tpl_dir).await?;
-        ctx = extend_template_context(vec![ctx, user_ctx], &from_paths)?;
+        ctx = extend_template_context(vec![ctx, user_ctx], &from_paths, cmd)?;
     }
 
     if let Err(e) = tpl::render_template_files(&tmp_work_dir, ctx).await {
@@ -203,55 +209,69 @@ fn cmdline_vars_to_hashmap(vars_vec: &[String]) -> Result<Option<JinjaValue>> {
     }
 }
 
-// TODO: finish validating vars
+/// Alias for HashSet<String>
+type StringSet = HashSet<String>;
+
+/// Allows user-provided vars.
+/// Note: Only top-level vars are allowed to be passed (for now).
+// TODO: add better error handling instead of propagating deserialization errors
+// TODO: Disuss when/where to use static analysis to enforce var checks.
 #[tracing::instrument]
 fn extend_template_context(
     contexts: Vec<JinjaValue>,
     template_paths: &Vec<PathBuf>,
+    cmd: &New,
 ) -> Result<JinjaValue> {
-    /*
-    let config_vars = contexts
-        .first()
-        .unwrap()
-        .downcast_object_ref::<HashMap<String, JinjaValue>>();
-    .unwrap()
-    .keys()
-    .map(|s| s.to_string())
-    .collect::<HashSet<String>>()
-     */
-    //println!("config_vars = {:#?}", config_vars);
+    let strict_mode = cmd.strict_vars;
 
-    let file_vars = ana::get_minijinja_vars(template_paths)?;
-    println!(">>> file_vars: {file_vars:#?}");
+    let config_map = deserialize_jinja_value_map(&contexts[0])?;
+    let config_vars = config_map.keys().cloned().collect::<StringSet>();
 
-    /*
-    let allowed_vars = config_vars
-        .union(&file_vars)
+    let mut user_vars: StringSet = HashSet::new();
+    for ctx in &contexts[1..] {
+        let m = deserialize_jinja_value_map(ctx)?;
+        let vars = m.keys().cloned().collect::<StringSet>();
+        user_vars.extend(vars);
+    }
+
+    let is_config_superset = config_vars.is_superset(&user_vars);
+
+    let unknown_vars = user_vars
+        .difference(&config_vars)
         .cloned()
-        .collect::<HashSet<String>>();
+        .collect::<StringSet>();
 
-    let user_contexts = &contexts[1..];
+    if strict_mode {
+        info!("🔒Strict vars mode enabled.");
 
-    let mut bad_vars: HashSet<String> = HashSet::new();
-    for ctx in user_contexts {
-        let map = ctx
-            .downcast_object_ref::<HashMap<String, JinjaValue>>()
-            .unwrap();
-        for key in map.keys() {
-            if !allowed_vars.contains(key) {
-                bad_vars.insert(key.to_owned());
-            }
+        if !is_config_superset {
+            return Err(eyre!(
+                "💥The following vars must be declared in template's boilermaker.toml: {:?}",
+                unknown_vars
+            ));
         }
-    }
 
-    if !bad_vars.is_empty() {
-        return Err(eyre!(
-            "💥 Some variables aren't available in template: {:#?}.\nKnown variables: {:#?}",
-            bad_vars,
-            allowed_vars
-        ));
-    }
+        // TODO: Figure out comparator for StringSet vs nested context to diff vars
+        // NOTE: Convert all config_vars (in map) to flattened dot-delimited paths?
+        /*
+        let file_refs = ana::get_minijinja_vars(template_paths)?;
+        println!(
+            ">>> file_refs: {} {file_refs:#?}",
+            std::any::type_name_of_val(&file_refs)
+        );
          */
+    } else if !is_config_superset {
+        warn!(
+            "Unknown user vars provided: {:?} (Set --strict-vars to enforce.)",
+            unknown_vars
+        );
+    }
 
     Ok(merge_maps(contexts))
+}
+
+// TODO: add better erro handling instead of propagating deserialization errors
+#[tracing::instrument]
+fn deserialize_jinja_value_map(v: &JinjaValue) -> Result<HashMap<String, JinjaValue>> {
+    Ok(HashMap::<String, JinjaValue>::deserialize(v)?)
 }

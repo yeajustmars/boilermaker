@@ -353,6 +353,5 @@ pub async fn interpolate_template_filepaths(
 // TODO: make a global JinjaEnv to avoid recreating it each time
 #[tracing::instrument]
 pub fn render_var(path: &str, ctx: &JinjaValue) -> Result<String> {
-    let template_str = format!("{{{{ {} }}}}", path);
-    Ok(JinjaEnv::new().render_str(&template_str, ctx)?)
+    Ok(JinjaEnv::new().render_str(&format!("{{{{ {} }}}}", path), ctx)?)
 }

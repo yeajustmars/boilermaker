@@ -60,16 +60,16 @@ fn find_vars_in_file(re: &Regex, path: &Path) -> Result<Vec<String>> {
 #[tracing::instrument]
 pub fn get_minijinja_vars(paths: &Vec<PathBuf>) -> Result<HashSet<String>> {
     let mut vars: HashSet<String> = HashSet::new();
+    let mut jinja = minijinja::Environment::new();
 
     for path in paths {
-        let template_name = path.file_name().unwrap().to_str().unwrap();
-        let template_source = read_to_string(path)?;
+        let tpl_name = path.file_name().unwrap().to_str().unwrap();
+        let tpl_source = read_to_string(path)?;
 
-        let mut jinja = minijinja::Environment::new();
-        jinja.add_template(template_name, &template_source)?;
+        jinja.add_template_owned(tpl_name, tpl_source)?;
+        let t = jinja.get_template(tpl_name)?;
 
-        let template = jinja.get_template(template_name)?;
-        vars.extend(template.undeclared_variables(true));
+        vars.extend(t.undeclared_variables(true));
     }
 
     Ok(vars)
