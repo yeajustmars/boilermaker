@@ -15,6 +15,7 @@ pub trait TemplateMethods: Send + Sync {
     async fn check_unique(&self, row: &TemplateRow) -> Result<Option<TemplateResult>>;
     async fn create_template(&self, row: TemplateRow) -> Result<i64>;
     async fn delete_template(&self, id: i64) -> Result<i64>;
+    async fn delete_templates_all(&self) -> Result<()>;
     async fn find_templates(&self, query: TemplateFindParams) -> Result<Vec<TemplateResult>>;
     async fn get_template(&self, id: i64) -> Result<Option<TemplateResult>>;
     async fn index_template(&self, id: i64) -> Result<()>;
@@ -80,12 +81,21 @@ impl TemplateMethods for LocalCache {
 
     #[tracing::instrument]
     async fn delete_template(&self, id: i64) -> Result<i64> {
-        let _result = sqlx::query("DELETE FROM template WHERE id = ?;")
+        let _ = sqlx::query("DELETE FROM template WHERE id = ?;")
             .bind(id)
             .execute(&self.pool)
             .await?;
 
         Ok(id)
+    }
+
+    #[tracing::instrument]
+    async fn delete_templates_all(&self) -> Result<()> {
+        let _ = sqlx::query("DELETE FROM template;")
+            .execute(&self.pool)
+            .await?;
+
+        Ok(())
     }
 
     //TODO: add regexs, fuzzy matching, predicates, etc

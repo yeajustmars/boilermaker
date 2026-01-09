@@ -44,7 +44,7 @@ enum Commands {
     List(commands::List),
     #[command(about = "Create a new project from a template")]
     New(commands::New),
-    #[command(about = "Remove a template from the local cache")]
+    #[command(name = "rm", about = "Remove templates or local cache itself")]
     Remove(commands::Remove),
     #[command(about = "Search for templates")]
     Search(commands::Search),

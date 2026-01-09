@@ -18,6 +18,7 @@ lazy_static = { workspace = true }
 minijinja = { workspace = true }
 nu-ansi-term = { workspace = true }
 pulldown-cmark = { workspace = true }
+rand = { workspace = true }
 regex = { workspace = true }
 reqwest = { workspace = true, features = ["json", "gzip", "stream"] }
 serde = { workspace = true }

@@ -1,5 +1,4 @@
 -- ------------------------------------------------ template
-
 CREATE TABLE IF NOT EXISTS template (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
