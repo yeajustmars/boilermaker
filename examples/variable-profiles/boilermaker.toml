@@ -1,4 +1,3 @@
-
 [project]
 name = "variable_profiles"
 version = "0.1.0"
@@ -19,21 +18,21 @@ config_interpolation = "boilermaker:{project.name}:{project.version}"
 hello = "World of Boilermaker Variable Profiles!"
 misc_msg = "This is a misc message from the default variable profile."
 
-[variables.v1]
+[variables.profiles.python]
 config = {
   a = "Value A1",
   b = "Value B1",
   c = 1,
   d = 1.0,
-  e = true,
-  f = false,
+  e = 'True',
+  f = 'False',
   nested = {
     path = { fullpath = ["config",  "nested", "path"] },
   },
-  config_interpolation = "{variables.config_interpolation}"
+  config_interpolation = "{{config_interpolation}}"
 }
 
-[variables.v2]
+[variables.profiles.node]
 config = {
   a = "Value A2",
   b = "Value B2",
@@ -44,5 +43,5 @@ config = {
   nested = {
     path = { fullpath = ["config",  "nested", "path"] },
   },
-  config_interpolation = "{variables.config_interpolation}"
+  config_interpolation = "{{config_interpolation}}"
 }
