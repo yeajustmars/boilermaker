@@ -18,9 +18,9 @@ pub struct Remove {
     #[arg(short = 'a', long = "all", help = "Remove all templates")]
     pub all: bool,
     #[arg(
-        short = 'D',
-        long = "destroy-db",
-        help = "Destroys local Sqlite DB file (WARN: all data lost)"
+        short = 'A',
+        long = "apocalyptic",
+        help = "Removes all installed templates then destroys local Sqlite DB file"
     )]
     pub destroy_db: bool,
 }
@@ -59,11 +59,13 @@ async fn remove_one(app_state: &AppState, cmd: &Remove) -> Result<()> {
 }
 
 #[tracing::instrument]
-async fn remove_all(app_state: &AppState, cmd: &Remove) -> Result<()> {
-    tracing::warn!("About to remove **ALL** templates from local cache and filesystem!");
-    if !confirm()? {
-        info!("Aborting removal of all templates.");
-        return Ok(());
+async fn remove_all(app_state: &AppState, cmd: &Remove, confirm_action: bool) -> Result<()> {
+    if confirm_action {
+        tracing::warn!("About to remove **ALL** templates from local cache and filesystem!");
+        if !confirm()? {
+            info!("Aborting removal of all templates.");
+            return Ok(());
+        }
     }
 
     let templates = {
@@ -103,7 +105,7 @@ async fn remove_all(app_state: &AppState, cmd: &Remove) -> Result<()> {
 
 // TODO: check for custom DB path vs DEFAULT_LOCAL_CACHE_PATH
 #[tracing::instrument]
-async fn destroy_local_db(app_state: &AppState) -> Result<()> {
+async fn destroy_local_db(app_state: &AppState, cmd: &Remove) -> Result<()> {
     if !DEFAULT_LOCAL_CACHE_PATH.exists() {
         info!(
             "Local DB file does not exist at {:?}, nothing to destroy.",
@@ -117,6 +119,8 @@ async fn destroy_local_db(app_state: &AppState) -> Result<()> {
         info!("Aborting deletion of local DB.");
         return Ok(());
     }
+
+    remove_all(app_state, cmd, false).await?;
 
     match fs::remove_file(DEFAULT_LOCAL_CACHE_PATH.as_path()) {
         Ok(_) => {
@@ -140,9 +144,9 @@ async fn destroy_local_db(app_state: &AppState) -> Result<()> {
 #[tracing::instrument]
 pub async fn remove(app_state: &AppState, cmd: &Remove) -> Result<()> {
     if cmd.destroy_db {
-        destroy_local_db(app_state).await
+        destroy_local_db(app_state, cmd).await
     } else if cmd.all {
-        remove_all(app_state, cmd).await
+        remove_all(app_state, cmd, true).await
     } else {
         remove_one(app_state, cmd).await
     }
@@ -153,7 +157,7 @@ fn confirm() -> Result<bool> {
     let rand_3_digit_int = rand_i32_between(100, 999);
     prompt_confirm(
         &format!(
-            "To confirm, please type \"{}\" and hit ENTER: ",
+            "To confirm, please type '{}' and hit ENTER: ",
             rand_3_digit_int
         ),
         &rand_3_digit_int.to_string(),

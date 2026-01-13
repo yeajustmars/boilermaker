@@ -30,7 +30,7 @@ LOGO_TEXT
   local tpl_langs=('node' 'python')
   local num_langs=${#tpl_langs[@]}
 
-  local __branch_hack__="${BOIL_QUICK_INSTALL_BRANCH}"
+  local __branch_hack__="${BOIL_INSTALL_FORCE_BRANCH}"
   if [[ ! -z "$__branch_hack__" ]]; then
     echo -e "${INFO} Using branch hack: ${GREEN}${BOLD}$__branch_hack__${NC}"
     __branch_hack__="--branch $__branch_hack__"
@@ -46,7 +46,6 @@ LOGO_TEXT
     echo -e "${INFO} ${ITAL}$cmd${NC}"
     $cmd
     status=$?
-    echo -e ">>>>>>>>>>>>>>>>>>>>>>>> status = $status"
 
     if [ $status -eq 0 ]; then
       ((num_ok++))

@@ -6,7 +6,7 @@ use tracing::info;
 use crate::db::TabledTemplateListResult;
 use crate::state::AppState;
 
-#[derive(Parser)]
+#[derive(Parser, Debug)]
 pub struct List {
     #[arg(short = 'u', long)]
     pub public: bool,
@@ -14,6 +14,7 @@ pub struct List {
     pub private: bool,
 }
 
+#[tracing::instrument]
 pub async fn list(app_state: &AppState, _cmd: &List) -> Result<()> {
     let cache = app_state.local_db.clone();
 

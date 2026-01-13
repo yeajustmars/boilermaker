@@ -48,6 +48,8 @@ enum Commands {
     Remove(commands::Remove),
     #[command(about = "Search for templates")]
     Search(commands::Search),
+    #[command(about = "Show template details")]
+    Show(commands::Show),
     #[command(subcommand, about = "Manage Sources")]
     Sources(commands::Sources),
     #[command(about = "Update an installed template")]
@@ -93,6 +95,7 @@ async fn main() -> Result<()> {
         Commands::New(cmd) => commands::new(&app_state, &cmd).await,
         Commands::Remove(cmd) => commands::remove(&app_state, &cmd).await,
         Commands::Search(cmd) => commands::search(&app_state, &cmd).await,
+        Commands::Show(cmd) => commands::show(&app_state, &cmd).await,
         Commands::Sources(subcmd) => match subcmd {
             commands::Sources::Add(cmd) => commands::sources::add(&app_state, &cmd).await,
             commands::Sources::List(cmd) => commands::sources::list(&app_state, &cmd).await,

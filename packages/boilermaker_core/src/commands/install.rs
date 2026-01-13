@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use clap::Parser;
 use color_eyre::{Result, eyre::eyre};
-use tracing::{error, info};
+use tracing::info;
 
 use crate::db::TemplateRow;
 use crate::state::AppState;
@@ -104,11 +104,12 @@ pub async fn install(app_state: &AppState, cmd: &Install) -> Result<()> {
 
     if let Some(t) = existing_db_entry {
         if template_dir.exists() {
-            error!(
+            return Err(eyre!(
                 "💥 Template with the same name/lang/repo already exists: {}, {}, {}",
-                t.name, t.lang, t.repo
-            );
-            return Ok(());
+                t.name,
+                t.lang,
+                t.repo
+            ));
         } else {
             info!(
                 "Template entry exists in DB but directory is missing. Reininstalling: {}.",
