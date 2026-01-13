@@ -74,28 +74,29 @@ async fn main() -> Result<()> {
         local_db: Arc::new(LocalCache::new(cache_path).await?),
     };
 
-    let cache = app_state.local_db.clone();
-    if !cache.template_table_exists().await? {
-        cache.create_schema().await?;
+    {
+        let cache = app_state.local_db.clone();
+        if !cache.template_table_exists().await? {
+            cache.create_schema().await?;
+        }
     }
 
-    if let Some(command) = cli.command {
-        match command {
-            Commands::Install(cmd) => commands::install(&app_state, &cmd).await?,
-            Commands::List(cmd) => commands::list(&app_state, &cmd).await?,
-            Commands::New(cmd) => commands::new(&app_state, &cmd).await?,
-            Commands::Remove(cmd) => commands::remove(&app_state, &cmd).await?,
-            Commands::Search(cmd) => commands::search(&app_state, &cmd).await?,
-            Commands::Sources(subcmd) => match subcmd {
-                commands::Sources::Add(cmd) => commands::sources::add(&app_state, &cmd).await?,
-                commands::Sources::List(cmd) => commands::sources::list(&app_state, &cmd).await?,
-            },
-            Commands::Update(cmd) => commands::update(&app_state, &cmd).await?,
-        }
-    } else {
+    let Some(command) = cli.command else {
         println!("🔨 Boilermaker - Making boilerplate more sane!");
         info!("No command provided. Use --help for usage.");
-    }
+        return Ok(());
+    };
 
-    Ok(())
+    match command {
+        Commands::Install(cmd) => commands::install(&app_state, &cmd).await,
+        Commands::List(cmd) => commands::list(&app_state, &cmd).await,
+        Commands::New(cmd) => commands::new(&app_state, &cmd).await,
+        Commands::Remove(cmd) => commands::remove(&app_state, &cmd).await,
+        Commands::Search(cmd) => commands::search(&app_state, &cmd).await,
+        Commands::Sources(subcmd) => match subcmd {
+            commands::Sources::Add(cmd) => commands::sources::add(&app_state, &cmd).await,
+            commands::Sources::List(cmd) => commands::sources::list(&app_state, &cmd).await,
+        },
+        Commands::Update(cmd) => commands::update(&app_state, &cmd).await,
+    }
 }

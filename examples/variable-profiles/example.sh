@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-
 boilermaker_variable_profiles_installer() {
   local LOGO=$(cat <<'LOGO_TEXT'
  ___      _ _                    _
@@ -46,8 +45,9 @@ LOGO_TEXT
     local cmd="boil install --lang $lang $tpl_url --subdir $tpl_subdir $__branch_hack__ --name $name"
     echo -e "${INFO} ${ITAL}$cmd${NC}"
     $cmd
-
     status=$?
+    echo -e ">>>>>>>>>>>>>>>>>>>>>>>> status = $status"
+
     if [ $status -eq 0 ]; then
       ((num_ok++))
     else
