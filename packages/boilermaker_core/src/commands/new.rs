@@ -50,16 +50,7 @@ async fn setup_template(app_state: &AppState, cmd: &New) -> Result<(TemplateResu
 
             match existing_templates.len() {
                 0 => Err(eyre!("💥 Cannot find template: {}.", cmd.id_or_name))?,
-                1 => Ok((
-                    existing_templates
-                        .first()
-                        .unwrap_or(Err(eyre!(
-                            "💥 Cannot retrieve template: {}.",
-                            cmd.id_or_name
-                        ))?)
-                        .to_owned(),
-                    false,
-                )),
+                1 => Ok((existing_templates[0].to_owned(), false)),
                 2.. => {
                     print_multiple_template_results_help(&existing_templates);
                     Err(eyre!(

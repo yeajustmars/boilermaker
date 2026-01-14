@@ -1,5 +1,7 @@
+import pprint
+
 def print_vars():
-    vars_from_config = {
+    vars_from_python_profile = {
         'config': {
           'a': "{{config.a}}",
           'b': "{{config.b}}",
@@ -20,8 +22,8 @@ def print_vars():
         },
     }
 
-    for k,v in vars_from_config.items():
-        print("{}: {}".format(k,v))
+    print("vars_from_python_profile:")
+    pprint.pprint(vars_from_python_profile)
 
 if __name__ == "__main__":
     print_vars()

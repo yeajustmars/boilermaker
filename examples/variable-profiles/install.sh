@@ -2,10 +2,10 @@
 
 boilermaker_variable_profiles_installer() {
   local LOGO=$(cat <<'LOGO_TEXT'
- ___      _ _                    _
-| _ ) ___(_) |___ _ _ _ __  __ _| |_____ _ _
-| _ \/ _ \ | / -_) '_| '  \/ _` | / / -_) '_|
-|___/\___/_|_\___|_| |_|_|_\__,_|_\_\___|_|
+   ___       _ __                   __
+  / _ )___  (_) /__ ______ _  ___ _/ /_____ ____
+ / _  / _ \/ / / -_) __/  ' \/ _ `/  '_/ -_) __/
+/____/\___/_/_/\__/_/ /_/_/_/\_,_/_/\_\\__/_/
 LOGO_TEXT
 )
 
@@ -16,9 +16,10 @@ LOGO_TEXT
   local NC='\033[0m'
   local PURPLE='\033[0;35m'
   local RED='\033[0;31m'
-  local ERROR="${RED}[💥(BH::QUICK_INSTALL) ERROR]${NC}"
-  local INFO="${BLUE}[📦 (BH::QUICK_INSTALL) INFO]${NC}"
-  local OK="${GREEN}[📦 (BH::QUICK_INSTALL) OK]${NC}"
+
+  local ERROR="${RED}[💥(BOILER::QUICK_INSTALL) ERROR]${NC}"
+  local INFO="${PURPLE}[📦 (BOILER::QUICK_INSTALL) INFO]${NC}"
+  local OK="${GREEN}[📦 (BOILER::QUICK_INSTALL) OK]${NC}"
 
   echo -e "${PURPLE}${LOGO}${NC}\n"
 
@@ -32,8 +33,10 @@ LOGO_TEXT
 
   local __branch_hack__="${BOIL_INSTALL_FORCE_BRANCH}"
   if [[ ! -z "$__branch_hack__" ]]; then
-    echo -e "${INFO} Using branch hack: ${GREEN}${BOLD}$__branch_hack__${NC}"
+    echo -e "${INFO} ${BLUE}Using branch hack: ${NC}${GREEN}${BOLD}${__branch_hack__}${NC}"
     __branch_hack__="--branch $__branch_hack__"
+  else
+    __branch_hack__=""
   fi
 
   local num_ok=0

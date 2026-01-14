@@ -50,6 +50,7 @@ tracing = { version = "0.1.41", features = ["log"] }
 tracing-error = "0.2.1"
 tracing-subscriber = { version = "0.3.20", features = [
     "json",
+    "fmt",
     "registry",
     "env-filter",
 ] }

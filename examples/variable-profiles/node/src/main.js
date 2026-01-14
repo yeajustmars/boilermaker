@@ -1,5 +1,5 @@
-const printVars = () => {
-  let vars_from_config = {
+(function() {
+  let vars_from_node_profile = {
     config: {
       a: "{{config.a}}",
       b: "{{config.b}}",
@@ -10,19 +10,16 @@ const printVars = () => {
       nested: {
         path: {
             fullpath: [
-                "{{config.nested.path.fullpath[0]}}",
-                "{{config.nested.path.fullpath[1]}}",
-                "{{config.nested.path.fullpath[2]}}"
+                "config.nested.path.fullpath[0]",
+                "config.nested.path.fullpath[1]",
+                "config.nested.path.fullpath[2]"
             ]
         },
       },
-      config_interpolation: "{{config_interpolation}}"
+      config_interpolation: "boilermaker:{project.name}:{project.version}",
     },
-  }
+  };
 
-  for (const [k, v] of vars_from_config) {
-    console.log(`${k}: ${v}`);
-  }
-}:
+  console.log("vars_from_node_profile: ", JSON.stringify(vars_from_node_profile, null, 3));
+})();
 
-printVars();
