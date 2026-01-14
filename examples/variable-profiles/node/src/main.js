@@ -22,4 +22,3 @@
 
   console.log("vars_from_node_profile: ", JSON.stringify(vars_from_node_profile, null, 3));
 })();
-
