@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS template (
   branch TEXT,
   subdir TEXT,
   sha256_hash TEXT NOT NULL UNIQUE,
-  UNIQUE (name, repo, branch, subdir)
+  UNIQUE (name, lang, repo, branch, subdir)
 );
 
 CREATE VIRTUAL TABLE IF NOT EXISTS template_fts USING fts5(
