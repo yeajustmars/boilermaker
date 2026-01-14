@@ -23,11 +23,11 @@ LOGO_TEXT
 
   echo -e "${PURPLE}${LOGO}${NC}\n"
 
-  echo -e "${INFO} ................................................... Installing templates"
+  echo -e "${INFO} ${BOLD}................................................... Installing templates${NC}"
 
   local tpl_url="https://github.com/yeajustmars/boilermaker"
   local tpl_subdir="examples/variable-profiles"
-  local tpl_basename="var-profiles"
+  local tpl_basename="boil-example-var-profiles"
   local tpl_langs=('node' 'python')
   local num_langs=${#tpl_langs[@]}
 
@@ -39,7 +39,6 @@ LOGO_TEXT
     __branch_hack__=""
   fi
 
-  local num_ok=0
   for lang in "${tpl_langs[@]}"; do
     local name="${tpl_basename}-${lang}"
 
@@ -48,24 +47,15 @@ LOGO_TEXT
     local cmd="boil install --lang $lang $tpl_url --subdir $tpl_subdir $__branch_hack__ --name $name"
     echo -e "${INFO} ${ITAL}$cmd${NC}"
     $cmd
-    status=$?
 
-    if [ $status -eq 0 ]; then
-      ((num_ok++))
-    else
+    if [ $? -ne 0 ]; then
       echo -e "${ERROR} Installation failed for lang: ${RED}${BOLD}${lang}${NC}"
       return 1
     fi
   done
 
-  if [ $num_ok -ne $num_langs ]; then
-    echo -e "${ERROR} Installation failed for some languages. Exiting."
-    return 1
-  fi
+  echo -e "${INFO} ${BOLD}................................................... Creating projects${NC}"
 
-  echo -e "${INFO} ................................................... Creating projects from templates"
-
-  local num_ok=0
   for lang in "${tpl_langs[@]}"; do
     local name="${tpl_basename}-${lang}"
     local dir="/tmp/${name}"
@@ -75,24 +65,30 @@ LOGO_TEXT
     $cmd
   done
 
+  echo -e "${INFO} ${BOLD}................................................... Running projects${NC}"
+  for lang in "${tpl_langs[@]}"; do
+    local name="${tpl_basename}-${lang}"
+    local dir="/tmp/${name}"
 
+    local cmd=""
+    case $lang in
+      "node")
+        cmd="node src/main.js"
+        ;;
+      "python")
+        cmd="python3 src/main.py"
+        ;;
+    esac
 
-  #node_name="${name}-node"
-  #boil install --lang node "$url" -d "$subdir" -n "$node_name"
-  #boil new --use-profile node "$node_name" -Od /tmp
-  #cd /tmp/var-profiles-node
-  #node src/main.js
+    echo -e "${INFO} ${ITAL}$cmd${NC}"
+    cd $dir
+    $cmd
 
-  #boil install https://github.com/yeajustmars/boilermaker/ \
-  #  -d examples/variable-profiles \
-  #  -l python \
-  #  -n var-profiles-python
-
-  #boil new var-profiles-python -Od /tmp --use-profile python
-
-  #cd /tmp/var-profiles-python
-
-  #python3 src/main.py
+    if [[ $? -ne 0 ]]; then
+      echo -e "${ERROR} Running project failed for lang: ${RED}${BOLD}${lang}${NC}"
+      return 1
+    fi
+  done
 
   echo -e "${OK} Done!\n"
 

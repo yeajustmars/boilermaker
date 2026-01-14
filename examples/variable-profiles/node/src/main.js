@@ -10,9 +10,9 @@
       nested: {
         path: {
             fullpath: [
-                "config.nested.path.fullpath[0]",
-                "config.nested.path.fullpath[1]",
-                "config.nested.path.fullpath[2]"
+                "{{ config.nested.path.fullpath[0] }}",
+                "{{ config.nested.path.fullpath[1] }}",
+                "{{ config.nested.path.fullpath[2] }}"
             ]
         },
       },
