@@ -252,21 +252,73 @@ pub async fn create_project_dir(
 //TODO: add setting to warn from sys_config on directory in paths vec
 //NOTE: for now, just skip
 #[tracing::instrument]
-pub async fn render_template_files(dir: &PathBuf, ctx: JinjaValue) -> Result<()> {
+pub async fn render_template_files(
+    dir: &PathBuf,
+    ctx: JinjaValue,
+    debug_render: bool,
+) -> Result<()> {
     info!("Rendering template content...");
 
+    if debug_render {
+        info!("debug_render flag is set.");
+        info!("Template context:\n{ctx:#?}");
+    }
+
     let mut jinja = minijinja::Environment::new();
+    if debug_render {
+        jinja.set_debug(true);
+    }
 
     for path in get_template_paths(dir).await? {
         if path.is_file() {
+            if debug_render {
+                info!("-------------- Next template... -------------- ");
+                info!("Rendering file: {}", path.display());
+            }
+
             let name = path.file_name().unwrap().to_str().unwrap().to_string();
             let content = fs::read_to_string(&path)?;
             jinja.add_template_owned(name.clone(), content)?;
 
+            if debug_render {
+                info!("[OK] Template added: {}", name);
+            }
+
             let template = jinja.get_template(&name)?;
-            let rendered = template.render(&ctx)?;
+
+            if debug_render {
+                info!("Rendering template: {}", name);
+            }
+
+            let rendered = match template.render(&ctx) {
+                Ok(r) => r,
+                Err(e) => {
+                    if debug_render {
+                        // TODO: clean up this long string
+                        return Err(eyre!(
+                            "💥 Failed to render template file {}:\nIt looks like there's an error in your template, not Boilermaker. No guarantees its not Boiler but I'd check your source, first.\n\n{:#?}",
+                            path.display(),
+                            e
+                        ));
+                    } else {
+                        return Err(eyre!(
+                            "💥 Failed to render template file {}: {}",
+                            path.display(),
+                            e
+                        ));
+                    }
+                }
+            };
+
+            if debug_render {
+                info!("[OK] Rendered content for {}: No issues.", name);
+            }
 
             fs::write(&path, rendered)?;
+
+            if debug_render {
+                info!("Wrote rendered content to file: {}", path.display());
+            }
         }
     }
 

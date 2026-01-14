@@ -37,6 +37,8 @@ pub struct New {
     pub overwrite: bool,
     #[arg(short = 'S', long = "strict-vars", default_value_t = false)]
     pub strict_vars: bool,
+    #[arg(short = 'D', long, default_value_t = false)]
+    pub debug: bool,
 }
 
 #[tracing::instrument]
@@ -117,7 +119,7 @@ pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
         ctx = extend_template_context(vec![ctx, user_ctx], &from_paths, cmd)?;
     }
 
-    if let Err(e) = tpl::render_template_files(&tmp_work_dir, ctx).await {
+    if let Err(e) = tpl::render_template_files(&tmp_work_dir, ctx, cmd.debug).await {
         return Err(eyre!("💥 Failed to render template files: {e}"));
     }
 
