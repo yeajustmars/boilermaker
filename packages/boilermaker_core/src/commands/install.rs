@@ -174,7 +174,9 @@ pub async fn install(app_state: &AppState, cmd: &Install) -> Result<()> {
 
     info!("Template added to cache with ID: {}", new_id);
 
-    remove_other_langs(&install)?;
+    if !cmd.local {
+        remove_other_langs(&install)?;
+    }
 
     match install_template(&install.work_dir, &template_dir).await {
         Ok(_) => info!(
