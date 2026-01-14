@@ -69,6 +69,20 @@ pub async fn clone_repo(ctx: &CloneContext) -> Result<Repository> {
 }
 
 #[tracing::instrument]
+pub async fn open_repo(ctx: &CloneContext) -> Result<Repository> {
+    let path = PathBuf::from(&ctx.url);
+    let repo = Repository::open(path);
+    if let Err(e) = repo {
+        return Err(eyre!(
+            "💥 Failed to open local repository at {}: {}",
+            ctx.url,
+            e
+        ));
+    }
+    Ok(repo?)
+}
+
+#[tracing::instrument]
 pub fn make_name_from_url(url: &str) -> String {
     url.split('/')
         .next_back()

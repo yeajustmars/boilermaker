@@ -8,6 +8,7 @@ edition = "2024"
 async-trait = { workspace = true }
 auth-git2 = { workspace = true }
 chrono = { workspace = true }
+colored = { workspace = true }
 clap = { workspace = true }
 color-eyre = { workspace = true }
 dirs = { workspace = true }

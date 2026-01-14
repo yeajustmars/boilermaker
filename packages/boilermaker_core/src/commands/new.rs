@@ -22,7 +22,7 @@ use crate::util::file::{copy_dir, move_file};
 #[derive(Debug, Parser)]
 pub struct New {
     #[arg(required = true)]
-    pub name: String,
+    pub id_or_name: String,
     #[arg(short, long)]
     pub lang: Option<String>,
     #[arg(short, long)]
@@ -41,17 +41,20 @@ pub struct New {
 
 #[tracing::instrument]
 async fn setup_template(app_state: &AppState, cmd: &New) -> Result<(TemplateResult, bool)> {
-    match cmd.name.parse::<i64>() {
+    match cmd.id_or_name.parse::<i64>() {
         Ok(id) => Ok((get_template_by_id(app_state, id).await?, true)),
         Err(_) => {
             let existing_templates = get_existing_templates(app_state, cmd).await?;
 
             match existing_templates.len() {
-                0 => Err(eyre!("💥 Cannot find template: {}.", cmd.name))?,
+                0 => Err(eyre!("💥 Cannot find template: {}.", cmd.id_or_name))?,
                 1 => Ok((
                     existing_templates
                         .first()
-                        .unwrap_or(Err(eyre!("💥 Cannot retrieve template: {}.", cmd.name))?)
+                        .unwrap_or(Err(eyre!(
+                            "💥 Cannot retrieve template: {}.",
+                            cmd.id_or_name
+                        ))?)
                         .to_owned(),
                     false,
                 )),
@@ -59,7 +62,7 @@ async fn setup_template(app_state: &AppState, cmd: &New) -> Result<(TemplateResu
                     print_multiple_template_results_help(&existing_templates);
                     Err(eyre!(
                         "💥 Found multiple results matching template: {}.",
-                        cmd.name
+                        cmd.id_or_name
                     ))?
                 }
             }
@@ -74,7 +77,7 @@ fn make_project_name(cmd: &New, t: &TemplateResult, by_id: bool) -> Result<Strin
     } else if by_id {
         t.name.clone()
     } else {
-        cmd.name.to_string()
+        cmd.id_or_name.to_string()
     };
 
     Ok(project_name)
@@ -91,9 +94,7 @@ pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
     let tpl_dir = tpl_base_dir.join(&t.lang);
     let tpl_config = tpl::get_template_config(&tpl_base_dir)?;
 
-    let project_name = make_project_name(cmd, &t, by_id)?;
-
-    let tmp_work_dir = tpl::create_work_dir_clean(&project_name)?;
+    let tmp_work_dir = tpl::create_work_dir_clean(t.sha256_hash.as_ref().unwrap())?;
     copy_dir(&tpl_dir, &tmp_work_dir).await?;
 
     let mut ctx = if tpl_config.variables.is_none() {
@@ -120,6 +121,8 @@ pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
         return Err(eyre!("💥 Failed to render template files: {e}"));
     }
 
+    let project_name = make_project_name(cmd, &t, by_id)?;
+
     let project_dir =
         tpl::create_project_dir(&project_name, cmd.dir.as_deref(), cmd.overwrite).await?;
     move_file(&tmp_work_dir, &project_dir).await?;
@@ -144,7 +147,7 @@ async fn get_template_by_id(app_state: &AppState, id: i64) -> Result<TemplateRes
 async fn get_existing_templates(app_state: &AppState, cmd: &New) -> Result<Vec<TemplateResult>> {
     let find_params = TemplateFindParams {
         ids: None,
-        name: Some(cmd.name.to_owned()),
+        name: Some(cmd.id_or_name.to_owned()),
         lang: cmd.lang.clone(),
         repo: None,
         branch: None,
