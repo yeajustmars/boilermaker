@@ -296,7 +296,7 @@ pub async fn render_template_files(
                     if debug_render {
                         // TODO: clean up this long string
                         return Err(eyre!(
-                            "💥 Failed to render template file {}:\nIt looks like there's an error in your template, not Boilermaker. No guarantees its not Boiler but I'd check your source, first.\n\n{:#?}",
+                            "💥 Failed to render template file {}:\nIt looks like there's an error in your template. No guarantees its not Boiler but I'd check your source, first.\n\n{:#?}",
                             path.display(),
                             e
                         ));
