@@ -296,7 +296,7 @@ pub async fn render_template_files(
                     if debug_render {
                         // TODO: clean up this long string
                         return Err(eyre!(
-                            "💥 Can't render. Looks like an issue with the template file{}:\n{:#?}",
+                            "💥 Failed to render template file {}:\nIt looks like there's an error in your template. No guarantees its not Boiler but I'd check your source, first.\n\n{:#?}",
                             path.display(),
                             e
                         ));
@@ -318,14 +318,8 @@ pub async fn render_template_files(
 
             if debug_render {
                 info!("Wrote rendered content to file: {}", path.display());
-                let contents = fs::read_to_string(&path)?;
-                info!("Rendered file contents:\n{}", contents);
             }
         }
-    }
-
-    if debug_render {
-        info!("[OK] Finished rendering all template files without templating errors.");
     }
 
     info!("Checking for vars in file paths...");
@@ -427,3 +421,5 @@ pub async fn interpolate_template_filepaths(
 pub fn render_var(path: &str, ctx: &JinjaValue) -> Result<String> {
     Ok(JinjaEnv::new().render_str(&format!("{{{{ {} }}}}", path), ctx)?)
 }
+
+
