@@ -43,6 +43,7 @@ where
     }
 }
 
+// TODO: allow debug! level
 #[tracing::instrument]
 pub fn init_tracing(debug_level: u8) -> Result<()> {
     //TODO: Add more specific formatting for each debug level (0-4)

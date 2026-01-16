@@ -8,9 +8,8 @@ use std::{
 use color_eyre::eyre::{Error, Result, eyre};
 use dirs::home_dir;
 use lazy_static::lazy_static;
-use serde::Deserialize;
-use serde::de::{self, MapAccess, Visitor};
-use std::fmt;
+use minijinja::value::Value as JinjaValue;
+use serde::{Deserialize, Serialize};
 use tracing::{info, warn};
 
 lazy_static! {
@@ -63,6 +62,7 @@ pub fn get_system_config_path(config_path: Option<&Path>) -> Result<Option<&Path
     }
 }
 
+// TODO: add default_project_dir and override in global config
 #[derive(Debug, Deserialize)]
 pub struct SysConfig {
     pub log_level: Option<String>,
@@ -118,77 +118,35 @@ pub fn get_template_config(template_path: &Path) -> Result<TemplateConfig> {
         Ok(config)
     } else {
         Err(color_eyre::eyre::eyre!(
-            "❗ Config file not found at `{}`.",
+            "💥 Config file not found at `{}`.",
             config_path.display()
         ))
     }
 }
 
-// TODO: decide on whether variables are allowed to be nested or not.
-// TODO: decide on whether variables should allow aggregate types (arrays, tables) or just simple key-value pairs.
-// NOTE: Probably yes to the latter.
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TemplateConfig {
     pub project: TemplateConfigProject,
-    // pub variables: Option<toml::Value>,
-    //pub variables: Option<HashMap<String, String>>,
-    pub variables: Option<TemplateConfigVariableMap>,
+    pub variables: Option<JinjaValue>,
 }
 
-#[derive(Debug, Deserialize)]
+// TODO: add all remaining fields
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TemplateConfigProject {
-    // pub name: String,
-    // pub repository: String,
-    // pub subdir: Option<String>,
-    // pub version: Option<String>,
+    // name, version required
+    pub name: String,
+    pub version: String,
+
+    // Git info
+    pub repository: String,
+    pub default_branch: Option<String>,
+    pub default_subdir: Option<String>,
     pub default_lang: Option<String>,
-    // pub description: Option<String>,
-    // pub authors: Option<Vec<String>>,
-    // pub license: Option<String>,
-    // pub keywords: Option<Vec<String>>,
-    // pub website: Option<String>,
-}
 
-#[derive(Debug)]
-pub struct TemplateConfigVariableMap(HashMap<String, String>);
-
-impl TemplateConfigVariableMap {
-    pub fn as_map(&self) -> &HashMap<String, String> {
-        &self.0
-    }
-}
-
-impl<'de> Deserialize<'de> for TemplateConfigVariableMap {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: de::Deserializer<'de>,
-    {
-        deserializer.deserialize_map(TemplateConfigVariableMapVisitor)
-    }
-}
-
-struct TemplateConfigVariableMapVisitor;
-
-impl<'de> Visitor<'de> for TemplateConfigVariableMapVisitor {
-    type Value = TemplateConfigVariableMap;
-
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("a TOML table that can be converted to a HashMap<String, String>")
-    }
-
-    fn visit_map<M>(self, mut map: M) -> Result<Self::Value, M::Error>
-    where
-        M: MapAccess<'de>,
-    {
-        let mut m = HashMap::new();
-        while let Some(key) = map.next_key::<String>()? {
-            let value: toml::Value = map.next_value()?;
-            let s = match value {
-                toml::Value::String(s) => s,
-                other_type => other_type.to_string(),
-            };
-            m.insert(key, s);
-        }
-        Ok(TemplateConfigVariableMap(m))
-    }
+    // Metadata
+    pub description: Option<String>,
+    pub authors: Option<Vec<String>>,
+    pub license: Option<String>,
+    pub keywords: Option<Vec<String>>,
+    pub website: Option<String>,
 }

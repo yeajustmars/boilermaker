@@ -8,13 +8,13 @@ use super::LocalCache;
 use crate::template as tmpl;
 use crate::util::crypto::sha256_hash_string;
 use crate::util::file::read_file_to_string;
-use crate::util::time::timestamp_to_iso8601;
 
 #[async_trait::async_trait]
 pub trait TemplateMethods: Send + Sync {
     async fn check_unique(&self, row: &TemplateRow) -> Result<Option<TemplateResult>>;
     async fn create_template(&self, row: TemplateRow) -> Result<i64>;
     async fn delete_template(&self, id: i64) -> Result<i64>;
+    async fn delete_templates_all(&self) -> Result<()>;
     async fn find_templates(&self, query: TemplateFindParams) -> Result<Vec<TemplateResult>>;
     async fn get_template(&self, id: i64) -> Result<Option<TemplateResult>>;
     async fn index_template(&self, id: i64) -> Result<()>;
@@ -80,12 +80,21 @@ impl TemplateMethods for LocalCache {
 
     #[tracing::instrument]
     async fn delete_template(&self, id: i64) -> Result<i64> {
-        let _result = sqlx::query("DELETE FROM template WHERE id = ?;")
+        let _ = sqlx::query("DELETE FROM template WHERE id = ?;")
             .bind(id)
             .execute(&self.pool)
             .await?;
 
         Ok(id)
+    }
+
+    #[tracing::instrument]
+    async fn delete_templates_all(&self) -> Result<()> {
+        let _ = sqlx::query("DELETE FROM template;")
+            .execute(&self.pool)
+            .await?;
+
+        Ok(())
     }
 
     //TODO: add regexs, fuzzy matching, predicates, etc
@@ -290,6 +299,10 @@ impl TemplateMethods for LocalCache {
     }
 }
 
+pub trait HashableTemplateValues: Send + Sync {
+    fn hash_values(&self) -> String;
+}
+
 #[derive(Debug, Clone)]
 pub struct TemplateRow {
     pub name: String,
@@ -304,9 +317,24 @@ pub struct TemplateRow {
 impl TemplateRow {
     #[tracing::instrument]
     pub fn set_hash_string(mut self) -> Self {
-        let hash = hash_template_row(&self);
+        let hash = self.hash_values();
         self.sha256_hash = Some(hash);
         self
+    }
+}
+
+impl HashableTemplateValues for TemplateRow {
+    fn hash_values(&self) -> String {
+        let input = format!(
+            "{}~~{}~~{}~~{}~~{}",
+            self.repo,
+            self.name,
+            self.lang,
+            // TODO: make branch required
+            self.branch.as_deref().unwrap_or(""),
+            self.subdir.as_deref().unwrap_or(""),
+        );
+        sha256_hash_string(&input)
     }
 }
 
@@ -354,47 +382,6 @@ pub struct ListTemplateOptions {
     pub order_by: Option<String>,
     pub limit: Option<u64>,
     pub offset: Option<u64>,
-}
-
-#[derive(Debug, Tabled)]
-pub struct TabledTemplateListResult {
-    pub id: i64,
-    pub name: String,
-    pub lang: String,
-    pub repo: String,
-    pub created_at: String,
-    pub updated_at: String,
-}
-
-impl TabledTemplateListResult {
-    pub fn from(row: TemplateResult) -> Self {
-        Self {
-            id: row.id,
-            name: row.name,
-            lang: row.lang,
-            repo: row.repo,
-            created_at: row
-                .created_at
-                .map(|v| timestamp_to_iso8601(v as i64))
-                .unwrap_or_else(|| "-".to_string()),
-            updated_at: row
-                .updated_at
-                .map(|v| timestamp_to_iso8601(v as i64))
-                .unwrap_or_else(|| "-".to_string()),
-        }
-    }
-}
-
-pub fn hash_template_row(row: &TemplateRow) -> String {
-    let input = format!(
-        "{}~~{}~~{}~~{}~~{}",
-        row.repo,
-        row.name,
-        row.lang,
-        row.branch.as_deref().unwrap_or(""),
-        row.subdir.as_deref().unwrap_or(""),
-    );
-    sha256_hash_string(&input)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, sqlx::Type)]

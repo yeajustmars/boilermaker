@@ -44,10 +44,12 @@ enum Commands {
     List(commands::List),
     #[command(about = "Create a new project from a template")]
     New(commands::New),
-    #[command(about = "Remove a template from the local cache")]
+    #[command(name = "rm", about = "Remove templates or local cache itself")]
     Remove(commands::Remove),
     #[command(about = "Search for templates")]
     Search(commands::Search),
+    #[command(about = "Show template details")]
+    Show(commands::Show),
     #[command(subcommand, about = "Manage Sources")]
     Sources(commands::Sources),
     #[command(about = "Update an installed template")]
@@ -74,28 +76,30 @@ async fn main() -> Result<()> {
         local_db: Arc::new(LocalCache::new(cache_path).await?),
     };
 
-    let cache = app_state.local_db.clone();
-    if !cache.template_table_exists().await? {
-        cache.create_schema().await?;
-    }
-
-    if let Some(command) = cli.command {
-        match command {
-            Commands::Install(cmd) => commands::install(&app_state, &cmd).await?,
-            Commands::List(cmd) => commands::list(&app_state, &cmd).await?,
-            Commands::New(cmd) => commands::new(&app_state, &cmd).await?,
-            Commands::Remove(cmd) => commands::remove(&app_state, &cmd).await?,
-            Commands::Search(cmd) => commands::search(&app_state, &cmd).await?,
-            Commands::Sources(subcmd) => match subcmd {
-                commands::Sources::Add(cmd) => commands::sources::add(&app_state, &cmd).await?,
-                commands::Sources::List(cmd) => commands::sources::list(&app_state, &cmd).await?,
-            },
-            Commands::Update(cmd) => commands::update(&app_state, &cmd).await?,
+    {
+        let cache = app_state.local_db.clone();
+        if !cache.template_table_exists().await? {
+            cache.create_schema().await?;
         }
-    } else {
-        println!("🔨 Boilermaker - Hopefully making project templates more sane.");
-        info!("No command provided. Use --help for usage.");
     }
 
-    Ok(())
+    let Some(command) = cli.command else {
+        println!("🔨 Boilermaker - Making boilerplate more sane!");
+        info!("No command provided. Use --help for usage.");
+        return Ok(());
+    };
+
+    match command {
+        Commands::Install(cmd) => commands::install(&app_state, &cmd).await,
+        Commands::List(cmd) => commands::list(&app_state, &cmd).await,
+        Commands::New(cmd) => commands::new(&app_state, &cmd).await,
+        Commands::Remove(cmd) => commands::remove(&app_state, &cmd).await,
+        Commands::Search(cmd) => commands::search(&app_state, &cmd).await,
+        Commands::Show(cmd) => commands::show(&app_state, &cmd).await,
+        Commands::Sources(subcmd) => match subcmd {
+            commands::Sources::Add(cmd) => commands::sources::add(&app_state, &cmd).await,
+            commands::Sources::List(cmd) => commands::sources::list(&app_state, &cmd).await,
+        },
+        Commands::Update(cmd) => commands::update(&app_state, &cmd).await,
+    }
 }

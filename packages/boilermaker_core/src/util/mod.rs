@@ -2,6 +2,8 @@ pub mod crypto;
 pub mod env;
 pub mod file;
 pub mod fmt;
+pub mod io;
 pub mod markdown;
+pub mod math;
 pub mod string;
 pub mod time;

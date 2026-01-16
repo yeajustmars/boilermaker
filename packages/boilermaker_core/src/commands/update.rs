@@ -27,6 +27,7 @@ pub async fn update(app_state: &AppState, cmd: &Update) -> Result<()> {
 
     info!("Updating template #{}: {}", templ.id, templ.name);
 
+    // TODO: fix template_dir to be new hash based path
     let template_dir = PathBuf::from(templ.template_dir.clone());
     let tmp_clone_dir = make_tmp_dir_from_url(&templ.repo);
 

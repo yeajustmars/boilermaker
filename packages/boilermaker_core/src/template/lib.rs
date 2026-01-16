@@ -1,14 +1,18 @@
-use std::{collections::HashMap, env, fs, path::PathBuf};
+use std::{env, fs, path::PathBuf};
 
+use auth_git2::GitAuthenticator;
 use color_eyre::{Result, eyre::eyre};
 use dirs;
 use fs_extra::dir::{CopyOptions, copy};
-use git2::{FetchOptions, Repository, build::RepoBuilder};
-use minijinja;
+use git2::{Config, FetchOptions, RemoteCallbacks, Repository, build::RepoBuilder};
+use minijinja::{Environment as JinjaEnv, value::Value as JinjaValue};
+use tracing::info;
+use walkdir::WalkDir;
 
 use crate::config::TemplateConfig;
 pub use crate::config::get_template_config;
-use crate::util::file::list_dir;
+use crate::constants::TEMPLATE_FILEPATH_VAR_PATTERN as FILEPATH_VARS;
+use crate::util::file::{list_dir, move_file};
 
 #[derive(Debug)]
 pub struct CloneContext {
@@ -27,12 +31,19 @@ impl CloneContext {
     }
 }
 
+// TODO: add optional depth parameter in CloneContext
+// TODO: check if repo exists locally, and if so, just update it
 #[tracing::instrument]
 pub async fn clone_repo(ctx: &CloneContext) -> Result<Repository> {
-    let mut fetch_opts = FetchOptions::new();
-    fetch_opts.depth(1);
-
+    let auth = GitAuthenticator::default();
+    let git_config = Config::open_default()?;
     let mut repo_builder = RepoBuilder::new();
+    let mut fetch_opts = FetchOptions::new();
+    let mut remote_callbacks = RemoteCallbacks::new();
+
+    remote_callbacks.credentials(auth.credentials(&git_config));
+    fetch_opts.remote_callbacks(remote_callbacks);
+    fetch_opts.depth(1);
     repo_builder.fetch_options(fetch_opts);
 
     if let Some(branch) = &ctx.branch {
@@ -44,9 +55,31 @@ pub async fn clone_repo(ctx: &CloneContext) -> Result<Repository> {
         None => env::temp_dir(),
     };
 
-    let repo = repo_builder.clone(&ctx.url, &dir)?;
+    let repo = repo_builder.clone(&ctx.url, &dir);
+    if let Err(e) = repo {
+        if e.message().contains("404") {
+            return Err(eyre!(
+                "💥 Repository not found (404): {}: Check the URL and your access rights.",
+                ctx.url
+            ));
+        }
+        return Err(eyre!("💥 Failed to clone repository: {}", e));
+    }
+    Ok(repo?)
+}
 
-    Ok(repo)
+#[tracing::instrument]
+pub async fn open_repo(ctx: &CloneContext) -> Result<Repository> {
+    let path = PathBuf::from(&ctx.url);
+    let repo = Repository::open(path);
+    if let Err(e) = repo {
+        return Err(eyre!(
+            "💥 Failed to open local repository at {}: {}",
+            ctx.url,
+            e
+        ));
+    }
+    Ok(repo?)
 }
 
 #[tracing::instrument]
@@ -220,24 +253,77 @@ pub async fn create_project_dir(
 //NOTE: for now, just skip
 #[tracing::instrument]
 pub async fn render_template_files(
-    paths: Vec<PathBuf>,
-    ctx: HashMap<String, String>,
+    dir: &PathBuf,
+    ctx: JinjaValue,
+    debug_render: bool,
 ) -> Result<()> {
-    let mut jinja = minijinja::Environment::new();
-    let ctx = minijinja::context! { ..ctx.to_owned() };
+    info!("Rendering template content...");
 
-    for path in paths {
+    if debug_render {
+        info!("debug_render flag is set.");
+        info!("Template context:\n{ctx:#?}");
+    }
+
+    let mut jinja = minijinja::Environment::new();
+    if debug_render {
+        jinja.set_debug(true);
+    }
+
+    for path in get_template_paths(dir).await? {
         if path.is_file() {
+            if debug_render {
+                info!("-------------- Next template... -------------- ");
+                info!("Rendering file: {}", path.display());
+            }
+
             let name = path.file_name().unwrap().to_str().unwrap().to_string();
             let content = fs::read_to_string(&path)?;
             jinja.add_template_owned(name.clone(), content)?;
 
+            if debug_render {
+                info!("[OK] Template added: {}", name);
+            }
+
             let template = jinja.get_template(&name)?;
-            let rendered = template.render(&ctx)?;
+
+            if debug_render {
+                info!("Rendering template: {}", name);
+            }
+
+            let rendered = match template.render(&ctx) {
+                Ok(r) => r,
+                Err(e) => {
+                    if debug_render {
+                        // TODO: clean up this long string
+                        return Err(eyre!(
+                            "💥 Failed to render template file {}:\nIt looks like there's an error in your template. No guarantees its not Boiler but I'd check your source, first.\n\n{:#?}",
+                            path.display(),
+                            e
+                        ));
+                    } else {
+                        return Err(eyre!(
+                            "💥 Failed to render template file {}: {}",
+                            path.display(),
+                            e
+                        ));
+                    }
+                }
+            };
+
+            if debug_render {
+                info!("[OK] Rendered content for {}: No issues.", name);
+            }
 
             fs::write(&path, rendered)?;
+
+            if debug_render {
+                info!("Wrote rendered content to file: {}", path.display());
+            }
         }
     }
+
+    info!("Checking for vars in file paths...");
+    interpolate_template_filepaths(dir, &ctx).await?;
 
     Ok(())
 }
@@ -251,3 +337,89 @@ pub async fn list_template_files(dir: &PathBuf) -> Result<Vec<PathBuf>> {
         .collect::<Vec<_>>();
     Ok(files)
 }
+
+#[tracing::instrument]
+pub async fn get_template_paths(template_dir: &PathBuf) -> Result<Vec<PathBuf>> {
+    let paths: Vec<PathBuf> = list_dir(template_dir)
+        .await?
+        .iter()
+        .filter(|p| p.is_file())
+        .map(|p| p.to_path_buf())
+        .collect();
+    Ok(paths)
+}
+
+#[tracing::instrument]
+pub async fn interpolate_template_filepaths(
+    template_dir: &PathBuf,
+    ctx: &JinjaValue,
+) -> Result<()> {
+    let mut env = JinjaEnv::new();
+
+    for entry in WalkDir::new(template_dir).contents_first(true) {
+        let entry = entry.unwrap();
+        let path = entry.path().to_path_buf();
+        let file_name = path.file_name().unwrap().to_str().unwrap().to_owned();
+        let mut caps_iter = FILEPATH_VARS.captures_iter(&file_name).peekable();
+
+        if caps_iter.peek().is_none() {
+            continue;
+        }
+
+        // TODO: double-check all vars are interpolated into filename
+        let mut new_path: PathBuf = path.clone();
+        for cap in caps_iter {
+            let var_path_str = if let Some(underscore) = cap.name("underscore") {
+                underscore.as_str()
+            } else if let Some(dash) = cap.name("dash") {
+                dash.as_str()
+            } else {
+                continue;
+            };
+            let target = var_path_str;
+            let var_path_str = var_path_str.trim_matches(['-', '_']);
+
+            let s = format!("{{{{{}}}}}", var_path_str);
+            let template = match env.get_template(&s) {
+                Ok(t) => t,
+                _ => {
+                    env.add_template_owned(s.clone(), s.clone())?;
+                    env.get_template(&s)?
+                }
+            };
+
+            let var_value = template.render(ctx)?;
+            let new_file_name = file_name.replace(target, &var_value);
+            new_path = new_path.with_file_name(new_file_name);
+        }
+
+        move_file(&path, &new_path).await?;
+    }
+
+    Ok(())
+}
+
+/// Render a single variable using minijinja.
+///
+/// Note: this function create a new Jinja Environment each time it's called.
+/// If you're doing anything serious, use minimjinja directly, and set up an
+/// environment once and add templates to it.
+///
+/// # Example
+///
+/// ```rust
+/// use minijinja::{context, Environment as JinjaEnv};
+///
+/// use boilermaker::tpl::render_var;
+///
+/// let ctx = context! { a => context! { b => "Hello, World!" } };
+/// let rendered = render_var("a.b", &ctx).unwrap();
+/// assert_eq!(rendered, "Hello, World!");
+/// ```
+// TODO: make a global JinjaEnv to avoid recreating it each time
+#[tracing::instrument]
+pub fn render_var(path: &str, ctx: &JinjaValue) -> Result<String> {
+    Ok(JinjaEnv::new().render_str(&format!("{{{{ {} }}}}", path), ctx)?)
+}
+
+

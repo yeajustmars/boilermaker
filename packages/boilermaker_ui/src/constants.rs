@@ -1,7 +1,23 @@
 use dioxus::prelude::*;
 
 pub const FAVICON: Asset = asset!("/assets/img/logo-flame.png");
+pub const MAIN_CSS: Asset = asset!("/assets/css/main.css");
 pub const PRELOADER: Asset = asset!("/assets/img/preloader.gif");
+pub const TAILWIND_CSS: Asset = asset!("/assets/css/tailwind.css");
+
+pub const FONT_AWESOME_URL: &str =
+    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css";
+
+pub const FONT_ROBOTO_URL: &str =
+    "https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap";
+
+pub const FONT_FIRA_CODE_URL: &str =
+    "https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap";
+
+pub const LAYOUT_STYLE: &str =
+    "min-h-screen bg-white text-neutral-800 dark:bg-neutral-900 dark:text-neutral-200";
+
+pub const NAVBAR_STYLE: &str = "flex flex-row space-x-4 p-2 items-center justify-between bg-gradient-to-b from-white to-neutral-100 dark:from-neutral-800 dark:to-neutral-900 border-b border-solid border-neutral-300 dark:border-neutral-950 text-neutral-600 dark:text-neutral-300";
 
 pub const DROPDOWN_MENU_STYLE: &str = "absolute left-0 top-12 w-48 bg-white dark:bg-neutral-900 rounded shadow-lg border border-l-0 border-t-0 border-neutral-300 dark:border-neutral-700 z-10 text-sm ";
 
@@ -11,9 +27,7 @@ pub const DROPDOWN_LINK_STYLE: &str =
 pub const INDENTED_DROPDOWN_LINK_STYLE: &str =
     "block px-8 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-700";
 
-pub const NAVBAR_STYLE: &str = "flex flex-row space-x-4 p-2 items-center justify-between bg-gradient-to-b from-white to-neutral-100 dark:from-neutral-800 dark:to-neutral-900 border-b border-solid border-neutral-300 dark:border-neutral-950 text-neutral-600 dark:text-neutral-300";
-
-pub const LINK_STYLE: &str = "text-blue-400 px-1";
+pub const LINK_STYLE: &str = "text-purple-300";
 
 pub const BTN_BLUE_STYLE: &str =
     "bg-neutral-300 hover:bg-blue-500 dark:bg-neutral-700 text-white py-1 px-2 rounded";
