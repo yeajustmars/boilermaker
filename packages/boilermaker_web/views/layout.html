@@ -11,7 +11,10 @@
     <link rel="stylesheet" href="{{font_fira_code_url}}">
     <link rel="stylesheet" href="{{font_awesome_url}}">
     <link rel="stylesheet" href="/assets/css/tailwind.css">
-    <link rel="stylesheet" href="/assets/css/gruvbox-dark-hard.min.css"></script>
+    <!-- highlight.js themes -->
+    <link href="/assets/css/gruvbox-dark-hard.min.css" media="(prefers-color-scheme: dark)" rel="stylesheet">
+    <link href="/assets/css/googlecode.css" media="(prefers-color-scheme: light), (prefers-color-scheme: no-preference)" rel="stylesheet">
+    <!-- end highlight.js themes -->
     {% if is_dev_env %}
     <link rel="stylesheet" href="/assets/css/tailwind.css?t={{timestamp}}">
     <link rel="stylesheet" href="/assets/css/main.css?t={{timestamp}}">
@@ -31,7 +34,6 @@
         {% block content %}{% endblock %}
     </main>
     <footer>
-      <p>TODO: Add footer content</p>
     </footer>
 </body>
 </html>

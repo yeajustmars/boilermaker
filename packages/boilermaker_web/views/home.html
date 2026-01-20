@@ -4,58 +4,68 @@
 
 {% block content %}
 
-<div class="flex items-center justify-center">
-  <h1 class="mt-4 text-4xl">Welcome to Boilermaker!</h1>
-</div>
-
-<div class="flex items-center justify-center">
-  <p class="p-10 text-2xl text-neutral-400">Making boilerplate more sane!</p>
-</div>
-
-<div class="h-200 p-4 flex sm:flex-col md:flex-row gap-8 items-center justify-center text-neutral-700 dark:text-neutral-300">
-  <div class="h-full w-1/4 p-6 border border-purple-200 dark:border-neutral-800 rounded-sm shadow-sm">
-    <h2 class="text-2xl text-purple-200 dark:text-purple-400">About</h2>
-    <p class="p-1 ">Boilermaker is a language-agnostic project template system for getting code projects up-and-running fast.</p>
-    <p class="p-1">It comes with a CLI and a desktop UI, and both are 100% compatible user interfaces, so dealer's choice.</p>
-    <p class="p-1">It's built in Rust so it's pretty fast, too.</p>
-    <p class="p-1">
-      Boilermaker is designed to be easy to create and use ready-to-run templates.
-      Any <a href="">official templates</a> are guaranteed (minus finding a bug) to be ready to execute, out of the box.
-      This means you can get started in seconds, not hours.
-    </p>
-    <h2 class="text-2xl text-purple-200 dark:text-purple-400">Latest Templates</h2>
+<div class="text-neutral-800 dark:text-neutral-200">
+  <div class="flex items-center justify-center">
+    <h1 class="mt-4 text-4xl">Welcome to Boilermaker!</h1>
   </div>
 
-  <div class="h-full w-1/2 p-6 border border-purple-200 dark:border-neutral-800 rounded-sm shadow-sm">
-    <h2 class="text-2xl text-purple-200 dark:text-purple-400">Getting Started</h2>
-    <p class="p-1 mb-4 text-neutral-200">First things first, <a href="/docs/getting-started" class="{{link_style}}">install Boilermaker</a>.</p>
-    <h3 class="mt-4 text-xl text-purple-200 dark:text-purple-400">Hello World in Rust</h3>
-    <pre class="text-sm">
-      <code class="language-shell"
->boil install https://github.com/yeajustmars/boilermaker \
-  --subdir examples/hello-world
-  --name hello-world-rs
+  <div class="flex items-center justify-center">
+    <p class="p-10 pt-6 text-2xl text-neutral-400">Making boilerplate more sane!</p>
+  </div>
+
+  <div class="p-4">
+    <div class="p-6 border border-purple-50 dark:border-neutral-800 rounded-sm shadow-sm">
+      <h2 class="text-2xl text-purple-600 dark:text-purple-400">About</h2>
+      <p class="p-1 font-medium">Boilermaker is a language-agnostic project template system for getting code projects up-and-running fast.</p>
+      <p class="p-1 pl-8 italic">
+        Yea, that's a mouthful. It just means you can write templates for one or many files, for any language you want!
+      </p>
+      <ul class="list-disc pl-6 mt-4text-neutral-700 dark:text-neutral-300">
+        <li class="p-1">It comes with a CLI and a desktop UI, and both are 100% compatible user interfaces, so... dealer's choice.</li>
+        <li class="p-1">It's designed to be easy to create your own ready-to-run templates.</li>
+        <li class="p-1">It's built in Rust so it's pretty fast, too.</li>
+      </ul>
+      <p class="p-1 font-medium">
+        Any <a href="/templates?source=boilermaker_official" class="{{link_style}}">official templates</a> are guaranteed to be runnable, out of the box.
+        This means you can get started in seconds, not hours!
+      </p>
+    </div>
+  </div>
+
+  <div class="h-160 w-full p-4 flex sm:flex-col md:flex-row gap-8 text-neutral-700 dark:text-neutral-300">
+    <div class="h-full sm:w-full md:w-1/2 p-6 border border-purple-50 dark:border-neutral-800 rounded-sm shadow-sm">
+      <h2 class="text-2xl text-purple-600 dark:text-purple-400">Getting Started</h2>
+      <p class="p-1 mb-4 dark:text-neutral-200 font-medium">First things first, <a href="/docs/getting-started" class="{{link_style}}">install Boilermaker</a>.</p>
+      <h3 class="mt-4 text-xl text-purple-600 dark:text-purple-400">Hello World in Rust</h3>
+      <pre class="text-sm">
+        <code class="language-shell"
+  >boil install https://github.com/yeajustmars/boilermaker \
+    --subdir examples/hello-world \
+    --lang rust \
+    --name hello-world-rs
 
 boil new hello-world-rs -d /tmp
 
 cd /tmp/hello-world-rs
 
 cargo run
-      </code>
-    </pre>
-  </div>
+        </code>
+      </pre>
+      <p class="p-1 mt-4">From here, check out the <a href="/docs" class="{{link_style}}">documentation</a> to learn more about Boilermaker and how to use it!</p>
+    </div>
 
-  <div class="h-full w-1/4 p-6 border border-purple-200 dark:border-neutral-800 rounded-sm shadow-sm">
-    <h2 class="text-2xl text-purple-200 dark:text-purple-400">Get Involved!</h2>
-    <p class="p-1">The Boilermaker Project is always looking for contributors and maintainers.</p>
-    <p class="p-1">Let us know if you're interested in helping out with any of that.</p>
-    <p class="p-1">You can find us on <a href="{{project_github_url}}">Github</a></p>
-    <p class="p-1">
-      Note: Boilermaker itself is written in Rust but official templates are written in a variety of languages.
-      If you don't know Rust, don't worry! You can still be a maintainer or contributor in other roles.
-    </p>
+    <div class="h-full sm:w-full md:w-1/2 p-6 border border-purple-50 dark:border-neutral-800 rounded-sm shadow-sm">
+      <h2 class="text-2xl text-purple-600 dark:text-purple-400">Get Involved!</h2>
+      <p class="p-1 font-medium">The Boilermaker Project is always looking for contributors and maintainers.</p>
+      <p class="p-1">Let us know if you're interested in helping out with any of that.</p>
+      <p class="p-1">You can find us on <a href="{{project_github_url}} class="{{link_style}}>Github</a></p>
+      <p class="p-1 italic mt-6">
+      <span class="font-medium">Note:</span> Boilermaker itself is written in Rust but official templates are written in a variety of languages.
+        If you don't know Rust, don't worry! You can still be a maintainer or contributor in other roles!
+      </p>
+    </div>
   </div>
-</div>
+  </div>
 </div>
 
 {% endblock %}
