@@ -1,46 +1,48 @@
 <nav id="navbar" class="{{nav_style}} h-12">
-  <div class="flex justify-start">
-    <div class="dropdown-container w-1/4 text-2xl">
-      <div class="dropdown-button inline-block align-middle">
-        <i class="fa-solid fa-bars"></i>
-      </div>
-      <div class="dropdown-menu {{nav_dropdown_menu_style}} hidden">
-        <ul>
-          <li>
-            <a href="/" class="{{nav_dropdown_style}}">
-              <i class="fa-solid fa-house"></i>
-              Home
-            </a>
-          </li>
-          <li>
-            <a href="/templates" class="{{nav_dropdown_style}}">
-              <i class="fa-solid fa-note-sticky"></i>
-              Templates
-            </a>
-          </li>
-          <li>
-            <a href="/docs" class="{{nav_dropdown_style}}">
-              <i class="fa-solid fa-file-code"></i>
-              Docs
-            </a>
-          </li>
-          <li>
-            <a href="/get-involved" class="{{nav_dropdown_style}}">
-              <i class="fa-solid fa-hands-helping"></i>
-              Get Involved
-            </a>
-          </li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="nav-main-home-link pl-4">
-      <a href="/">
-        <div class="flex">
-          <span class="text-xl leading-8">Boilermaker</span>
-          <img src="/assets/img/logo-flame.png" class="h-8"/>
+  <div class="w-1/4">
+    <div class="flex justify-start">
+      <div class="dropdown-container text-2xl">
+        <div class="dropdown-button inline-block align-middle">
+          <i class="fa-solid fa-bars"></i>
         </div>
-      </a>
+        <div class="dropdown-menu {{nav_dropdown_menu_style}} hidden">
+          <ul>
+            <li>
+              <a href="/" class="{{nav_dropdown_style}}">
+                <i class="fa-solid fa-house"></i>
+                Home
+              </a>
+            </li>
+            <li>
+              <a href="/templates" class="{{nav_dropdown_style}}">
+                <i class="fa-solid fa-note-sticky"></i>
+                Templates
+              </a>
+            </li>
+            <li>
+              <a href="/docs" class="{{nav_dropdown_style}}">
+                <i class="fa-solid fa-file-code"></i>
+                Docs
+              </a>
+            </li>
+            <li>
+              <a href="/get-involved" class="{{nav_dropdown_style}}">
+                <i class="fa-solid fa-hands-helping"></i>
+                Get Involved
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="nav-main-home-link pl-4">
+        <a href="/">
+          <div class="flex">
+            <span class="text-xl leading-8">Boilermaker</span>
+            <img src="/assets/img/logo-flame.png" class="h-8"/>
+          </div>
+        </a>
+      </div>
     </div>
   </div>
 
@@ -49,8 +51,8 @@
     <div class="w-full">
       <div class="relative">
         <input
-          class="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200 rounded-md pl-3 pr-28 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400 hover:border-slate-300 shadow-sm focus:shadow"
-          placeholder="UI Kits, Dashboards..."
+          class="w-full bg-transparent placeholder:text-neutral-400 placeholder:text-neutral-400 text-neutral-700 dark:text-neutral-300 text-sm border border-neutral-200 dark:border-neutral-700 rounded-md pl-3 pr-28 py-2 transition duration-300 ease focus:outline-none focus:border-neutral-400 hover:border-neutral-300 dark:hover:border-neutral-500 shadow-sm focus:shadow"
+          placeholder="Search Boilermaker..."
         />
         <button
           class="absolute top-1 right-1 flex items-center rounded bg-slate-800 py-1 px-2.5 border border-transparent text-center text-sm text-white transition-all shadow-sm hover:shadow focus:bg-slate-700 focus:shadow-none active:bg-slate-700 hover:bg-slate-700 active:shadow-none disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none"
@@ -67,6 +69,8 @@
   </div>
 
   <div id="nav-main-settings" class="w-1/4 text-right">
-    SETTINGS
+    <a href="/settings" class="text-xl">
+      <i class="fa-solid fa-gear"></i>
+    </a>
   </div>
 </nav>
