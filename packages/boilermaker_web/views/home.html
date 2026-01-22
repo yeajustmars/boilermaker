@@ -14,8 +14,8 @@
   </div>
 
   <div class="p-4">
-    <div class="p-6 border border-purple-50 dark:border-neutral-800 rounded-sm shadow-sm">
-      <h2 class="text-2xl text-purple-600 dark:text-purple-400">About</h2>
+    <div class="p-6 border border-sky-50 dark:border-neutral-800 rounded-sm shadow-sm">
+      <h2 class="text-2xl text-sky-600 dark:text-sky-400">About</h2>
       <p class="p-1 font-medium">Boilermaker is a language-agnostic project template system for getting code projects up-and-running fast.</p>
       <p class="p-1 pl-8 italic">
         Yea, that's a mouthful. It just means you can write templates for one or many files, for any language you want!
@@ -33,29 +33,57 @@
   </div>
 
   <div class="h-160 w-full p-4 flex sm:flex-col md:flex-row gap-8 text-neutral-700 dark:text-neutral-300">
-    <div class="h-full sm:w-full md:w-1/2 p-6 border border-purple-50 dark:border-neutral-800 rounded-sm shadow-sm">
-      <h2 class="text-2xl text-purple-600 dark:text-purple-400">Getting Started</h2>
+    <div class="h-full sm:w-full md:w-1/2 p-6 border border-sky-50 dark:border-neutral-800 rounded-sm shadow-sm">
+      <h2 class="text-2xl text-sky-600 dark:text-sky-400">Getting Started</h2>
       <p class="p-1 mb-4 dark:text-neutral-200 font-medium">First things first, <a href="/docs/getting-started" class="{{link_style}}">install Boilermaker</a>.</p>
-      <h3 class="mt-4 text-xl text-purple-600 dark:text-purple-400">Hello World in Rust</h3>
-      <pre class="text-sm">
-        <code class="language-shell"
-  >boil install https://github.com/yeajustmars/boilermaker \
-    --subdir examples/hello-world \
-    --lang rust \
+
+      <div class="collapsible">
+        <button class="collapsible-link text-xl text-sky-600 dark:text-sky-400">Hello World in Clojure</button>
+        <pre class="collapsible-content collapsible-content hidden text-sm">
+          <code class="language-shell">
+boil install https://github.com/yeajustmars/boil-hello-world \
+    --subdir clojure \
+    --name hello-world-clj
+boil new hello-world-clj -d /tmp
+cd /tmp/hello-world-clj
+bin/test
+          </code>
+        </pre>
+      </div>
+
+      <div class="collapsible">
+        <button class="collapsible-link text-xl text-sky-600 dark:text-sky-400">Hello World in Python</button>
+        <pre class="collapsible-content collapsible-content hidden text-sm">
+          <code class="language-shell">
+boil install https://github.com/yeajustmars/boil-hello-world \
+    --subdir python \
+    --name hello-world-py
+boil new hello-world-py -d /tmp
+cd /tmp/hello-world-py
+python3 src/main.py
+          </code>
+        </pre>
+      </div>
+
+      <div class="collapsible">
+        <button class="collapsible-link text-xl text-sky-600 dark:text-sky-400">Hello World in Rust</button>
+        <pre class="collapsible-content collapsible-content hidden text-sm">
+          <code class="language-shell">
+boil install https://github.com/yeajustmars/boil-hello-world \
+    --subdir rust \
     --name hello-world-rs
-
 boil new hello-world-rs -d /tmp
-
 cd /tmp/hello-world-rs
-
 cargo run
-        </code>
-      </pre>
+          </code>
+        </pre>
+      </div>
+
       <p class="p-1 mt-4">From here, check out the <a href="/docs" class="{{link_style}}">documentation</a> to learn more about Boilermaker and how to use it!</p>
     </div>
 
-    <div class="h-full sm:w-full md:w-1/2 p-6 border border-purple-50 dark:border-neutral-800 rounded-sm shadow-sm">
-      <h2 class="text-2xl text-purple-600 dark:text-purple-400">Get Involved!</h2>
+    <div class="h-full sm:w-full md:w-1/2 p-6 border border-sky-50 dark:border-neutral-800 rounded-sm shadow-sm">
+      <h2 class="text-2xl text-sky-600 dark:text-sky-400">Get Involved!</h2>
       <p class="p-1 font-medium">The Boilermaker Project is always looking for contributors and maintainers.</p>
       <p class="p-1">Let us know if you're interested in helping out with any of that.</p>
       <p class="p-1">You can find us on <a href="{{project_github_url}} class="{{link_style}}>Github</a></p>
