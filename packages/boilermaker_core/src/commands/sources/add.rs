@@ -1,28 +1,17 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use clap::{Parser, Subcommand};
+use clap::Parser;
 use color_eyre::{Result, eyre::eyre};
 use serde::Deserialize;
-use tabled::{Table, Tabled, settings::Style};
 use tracing::info;
 
-use crate::db::TabledSourceRow;
 use crate::db::source::{PartialSourceTemplateRow, SourceRow};
 use crate::state::AppState;
 use crate::template::{
     CloneContext, clean_dir, clone_repo, get_lang, get_template_config, make_name_from_url,
     make_tmp_dir_from_url,
 };
-use crate::util::string;
-
-#[derive(Subcommand)]
-pub enum Sources {
-    #[command(about = "Add a source")]
-    Add(Add),
-    #[command(about = "List added sources")]
-    List(List),
-}
 
 #[derive(Debug, Parser)]
 pub struct Add {
@@ -30,12 +19,7 @@ pub struct Add {
     coordinate: String,
 }
 
-#[derive(Debug, Deserialize)]
-pub struct SourceConfig {
-    pub source: HashMap<String, String>,
-    pub templates: Vec<HashMap<String, String>>,
-}
-
+#[tracing::instrument]
 pub async fn add(app_state: &AppState, cmd: &Add) -> Result<()> {
     let coordinate = cmd.coordinate.trim().to_owned();
     let src_text = reqwest::get(&coordinate).await?.text().await?;
@@ -116,55 +100,10 @@ pub async fn add(app_state: &AppState, cmd: &Add) -> Result<()> {
     Ok(())
 }
 
-#[derive(Debug, Parser)]
-pub struct List {
-    #[arg(short = 'l', long, help = "List only local sources")]
-    pub local: bool,
-}
-
-#[derive(Debug, Deserialize, Tabled)]
-pub struct SourceMap {
-    pub name: String,
-    pub backend: String,
-    pub description: String,
-}
-
-impl From<&HashMap<String, String>> for SourceMap {
-    #[tracing::instrument]
-    fn from(m: &HashMap<String, String>) -> Self {
-        let description = m.get("description").cloned().unwrap_or_default();
-        let description = if description.len() > 50 {
-            string::truncate_to_char_count(&description, 50) + "..."
-        } else {
-            description
-        };
-
-        SourceMap {
-            name: m.get("name").cloned().unwrap_or_default(),
-            backend: m.get("backend").cloned().unwrap_or_default(),
-            description,
-        }
-    }
-}
-
-#[tracing::instrument]
-pub async fn list(app_state: &AppState, _cmd: &List) -> Result<()> {
-    let sources = app_state.local_db.list_sources().await?;
-    if sources.is_empty() {
-        info!("No sources found.");
-        info!("💡 Have a look at `boil sources add`");
-        return Ok(());
-    }
-
-    let table_rows = sources
-        .into_iter()
-        .map(TabledSourceRow::from)
-        .collect::<Vec<_>>();
-    let mut table = Table::new(&table_rows);
-    table.with(Style::psql());
-    print!("\n\n{table}\n\n");
-
-    Ok(())
+#[derive(Debug, Deserialize)]
+pub struct SourceConfig {
+    pub source: HashMap<String, String>,
+    pub templates: Vec<HashMap<String, String>>,
 }
 
 impl From<&HashMap<String, String>> for CloneContext {

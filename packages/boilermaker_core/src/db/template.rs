@@ -413,27 +413,25 @@ pub struct SearchResult {
 
 #[derive(Debug, Tabled)]
 pub struct TabledSearchResult {
-    #[tabled(skip)]
-    pub kind: SearchResultKind,
-    #[tabled(skip)]
     pub id: i64,
     pub name: String,
     pub lang: String,
     pub repo: String,
     pub branch: String,
     pub subdir: String,
+    pub kind: SearchResultKind,
 }
 
 impl TabledSearchResult {
     pub fn from(sr: SearchResult) -> Self {
         Self {
-            kind: sr.kind,
             id: sr.id,
             name: sr.name,
             lang: sr.lang,
             repo: sr.repo,
             branch: sr.branch.unwrap_or_else(|| "-".to_owned()),
             subdir: sr.subdir.unwrap_or_else(|| "-".to_owned()),
+            kind: sr.kind,
         }
     }
 }

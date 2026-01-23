@@ -7,6 +7,7 @@ use tracing::info;
 
 use boilermaker_core::{
     commands,
+    commands::{Sources, sources, sources::templates::Templates as SourcesTemplates},
     config::{DEFAULT_LOCAL_CACHE_PATH_STRING, get_system_config},
     db::LocalCache,
     logging,
@@ -89,6 +90,7 @@ async fn main() -> Result<()> {
         return Ok(());
     };
 
+    // TODO: clean this up with aliases or direct imports.
     match command {
         Commands::Install(cmd) => commands::install(&app_state, &cmd).await,
         Commands::List(cmd) => commands::list(&app_state, &cmd).await,
@@ -97,8 +99,13 @@ async fn main() -> Result<()> {
         Commands::Search(cmd) => commands::search(&app_state, &cmd).await,
         Commands::Show(cmd) => commands::show(&app_state, &cmd).await,
         Commands::Sources(subcmd) => match subcmd {
-            commands::Sources::Add(cmd) => commands::sources::add(&app_state, &cmd).await,
-            commands::Sources::List(cmd) => commands::sources::list(&app_state, &cmd).await,
+            Sources::Add(cmd) => sources::add(&app_state, &cmd).await,
+            Sources::List(cmd) => sources::list(&app_state, &cmd).await,
+            Sources::Templates(subcmd) => match subcmd {
+                SourcesTemplates::Install(cmd) => {
+                    sources::templates::install(&app_state, &cmd).await
+                }
+            },
         },
         Commands::Update(cmd) => commands::update(&app_state, &cmd).await,
     }

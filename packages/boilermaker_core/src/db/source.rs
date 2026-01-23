@@ -18,7 +18,7 @@ pub trait SourceMethods: Send + Sync {
         source_row: SourceRow,
         partial_source_template_rows: Vec<(PathBuf, PartialSourceTemplateRow)>,
     ) -> Result<AddSourceResult>;
-    async fn list_sources(&self) -> Result<Vec<SourceRow>>;
+    async fn list_sources(&self) -> Result<Vec<SourceResult>>;
     //async fn search_sources(&self, term: &str) -> Result<Vec<SourceRow>>;
 }
 
@@ -114,10 +114,11 @@ impl SourceMethods for LocalCache {
     }
 
     #[tracing::instrument]
-    async fn list_sources(&self) -> Result<Vec<SourceRow>> {
-        let results = sqlx::query_as::<_, SourceRow>(
+    async fn list_sources(&self) -> Result<Vec<SourceResult>> {
+        let results = sqlx::query_as::<_, SourceResult>(
             r#"
-                SELECT name,
+                SELECT id,
+                       name,
                        backend,
                        coordinate,
                        description,
@@ -234,20 +235,48 @@ pub struct AddSourceResult {
 
 #[derive(Debug, Tabled)]
 pub struct TabledSourceRow {
+    pub id: i64,
     pub name: String,
-    pub backend: String,
     pub coordinate: String,
     pub description: String,
 }
 
+#[derive(Debug, Clone, sqlx::FromRow)]
+pub struct SourceResult {
+    pub id: i64,
+    pub name: String,
+    pub backend: String,
+    pub coordinate: String,
+    pub description: Option<String>,
+    pub sha256_hash: Option<String>,
+}
+
 impl TabledSourceRow {
-    pub fn from(row: SourceRow) -> Self {
-        let coordinate = row.coordinate.unicode_pad(80, Alignment::Left, true);
+    pub fn from(row: SourceResult) -> Self {
+        let mut coordinate = row
+            .coordinate
+            .unicode_pad(77, Alignment::Left, true)
+            .to_string();
+        if coordinate.len() >= 77 {
+            coordinate.push_str("...");
+        }
+
+        let description = match row.description {
+            None => "-".to_string(),
+            Some(s) => {
+                if s.len() >= 33 {
+                    s.unicode_pad(33, Alignment::Left, true).to_string()
+                } else {
+                    s
+                }
+            }
+        };
+
         Self {
+            id: row.id,
             name: row.name,
-            backend: row.backend,
-            description: row.description.unwrap_or("-".to_string()),
-            coordinate: coordinate.to_string(),
+            coordinate,
+            description,
         }
     }
 }
