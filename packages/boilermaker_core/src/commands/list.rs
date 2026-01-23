@@ -16,9 +16,7 @@ pub struct List {
 #[tracing::instrument]
 pub async fn list(app_state: &AppState, _cmd: &List) -> Result<()> {
     let cache = app_state.local_db.clone();
-
     let result = cache.list_templates(None).await?;
-
     let rows = result.into_iter().map(ListResult::from).collect::<Vec<_>>();
 
     if rows.is_empty() {
@@ -29,7 +27,6 @@ pub async fn list(app_state: &AppState, _cmd: &List) -> Result<()> {
 
     let mut table = Table::new(&rows);
     table.with(Style::psql());
-
     print!("\n\n{table}\n\n");
 
     Ok(())

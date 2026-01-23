@@ -19,7 +19,6 @@ pub trait SourceMethods: Send + Sync {
         partial_source_template_rows: Vec<(PathBuf, PartialSourceTemplateRow)>,
     ) -> Result<AddSourceResult>;
     async fn list_sources(&self) -> Result<Vec<SourceResult>>;
-    //async fn search_sources(&self, term: &str) -> Result<Vec<SourceRow>>;
 }
 
 #[async_trait::async_trait]
