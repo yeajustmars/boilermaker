@@ -7,7 +7,7 @@ use tracing::info;
 
 use boilermaker_core::{
     commands,
-    commands::{Sources, sources, sources::templates::Templates as SourcesTemplates},
+    commands::{Sources, sources, sources::templates::Templates as SourceTemplates},
     config::{DEFAULT_LOCAL_CACHE_PATH_STRING, get_system_config},
     db::LocalCache,
     logging,
@@ -102,11 +102,11 @@ async fn main() -> Result<()> {
             Sources::Add(cmd) => sources::add(&app_state, &cmd).await,
             Sources::List(cmd) => sources::list(&app_state, &cmd).await,
             Sources::Templates(subcmd) => match subcmd {
-                SourcesTemplates::Install(cmd) => {
+                SourceTemplates::Install(cmd) => {
                     sources::templates::install(&app_state, &cmd).await
                 }
-                SourcesTemplates::List(cmd) => sources::templates::list(&app_state, &cmd).await,
-                SourcesTemplates::Show(cmd) => sources::templates::show(&app_state, &cmd).await,
+                SourceTemplates::List(cmd) => sources::templates::list(&app_state, &cmd).await,
+                SourceTemplates::Show(cmd) => sources::templates::show(&app_state, &cmd).await,
             },
         },
         Commands::Update(cmd) => commands::update(&app_state, &cmd).await,
