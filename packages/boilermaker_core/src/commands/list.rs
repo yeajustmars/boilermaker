@@ -1,9 +1,8 @@
 use clap::Parser;
 use color_eyre::Result;
-use tabled::{Table, settings::Style};
 use tracing::info;
 
-use crate::{commands::ListResult, db::TemplateResult, state::AppState};
+use crate::{commands::ListResult, db::TemplateResult, state::AppState, util::output::print_table};
 
 #[derive(Parser, Debug)]
 pub struct List {
@@ -25,9 +24,7 @@ pub async fn list(app_state: &AppState, _cmd: &List) -> Result<()> {
         return Ok(());
     }
 
-    let mut table = Table::new(&rows);
-    table.with(Style::psql());
-    print!("\n\n{table}\n\n");
+    print_table(rows);
 
     Ok(())
 }

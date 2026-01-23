@@ -1,10 +1,10 @@
 use clap::Parser;
 use color_eyre::Result;
-use tabled::{Table, settings::Style};
 use tracing::info;
 
 use crate::db::TabledSourceRow;
 use crate::state::AppState;
+use crate::util::output::print_table;
 
 #[derive(Debug, Parser)]
 pub struct List {
@@ -20,14 +20,12 @@ pub async fn list(app_state: &AppState, _cmd: &List) -> Result<()> {
         info!("💡 Have a look at `boil sources add`");
         return Ok(());
     }
-
-    let table_rows = sources
+    let rows = sources
         .into_iter()
         .map(TabledSourceRow::from)
         .collect::<Vec<_>>();
-    let mut table = Table::new(&table_rows);
-    table.with(Style::psql());
-    print!("\n\n{table}\n\n");
+
+    print_table(rows);
 
     Ok(())
 }

@@ -21,6 +21,11 @@ pub trait SourceMethods: Send + Sync {
         partial_source_template_rows: Vec<(PathBuf, PartialSourceTemplateRow)>,
     ) -> Result<AddSourceResult>;
     async fn find_sources(&self, query: SourceFindParams) -> Result<Vec<SourceResult>>;
+    async fn find_source_templates(
+        &self,
+        query: SourceTemplateFindParams,
+    ) -> Result<Vec<SourceTemplateResult>>;
+    async fn get_source_template(&self, id: i64) -> Result<Option<SourceTemplateResult>>;
     async fn list_sources(&self) -> Result<Vec<SourceResult>>;
     async fn list_source_templates(
         &self,
@@ -159,6 +164,68 @@ impl SourceMethods for LocalCache {
         let results = q.fetch_all(&self.pool).await?;
 
         Ok(results)
+    }
+
+    //TODO: add regexs, fuzzy matching, predicates, etc
+    #[tracing::instrument]
+    async fn find_source_templates(
+        &self,
+        params: SourceTemplateFindParams,
+    ) -> Result<Vec<SourceTemplateResult>> {
+        let mut qb = QueryBuilder::new("SELECT * FROM source_template WHERE 1=1");
+
+        /*
+        if let Some(ids) = params.ids
+            && !ids.is_empty()
+        {
+            qb.push(" AND id IN (");
+            let mut separated = qb.separated(",");
+            for id in ids {
+                separated.push_bind(id);
+            }
+            separated.push_unseparated(")");
+        }
+         */
+        // TODO: add source_ids vec
+
+        if let Some(name) = params.name {
+            qb.push(" AND name = ");
+            qb.push_bind(name);
+        }
+        if let Some(lang) = params.lang {
+            qb.push(" AND lang = ");
+            qb.push_bind(lang);
+        }
+        if let Some(repo) = params.repo {
+            qb.push(" AND repo = ");
+            qb.push_bind(repo);
+        }
+        if let Some(branch) = params.branch {
+            qb.push(" AND branch = ");
+            qb.push_bind(branch);
+        }
+        if let Some(subdir) = params.subdir {
+            qb.push(" AND subdir = ");
+            qb.push_bind(subdir);
+        }
+        qb.push(" ORDER BY name ASC");
+
+        let q = qb.build_query_as::<SourceTemplateResult>();
+        let results = q.fetch_all(&self.pool).await?;
+
+        Ok(results)
+    }
+
+    #[tracing::instrument]
+    async fn get_source_template(&self, id: i64) -> Result<Option<SourceTemplateResult>> {
+        let result = sqlx::query_as::<_, SourceTemplateResult>(
+            "SELECT * FROM source_template WHERE id = ?;",
+        )
+        .bind(id)
+        .fetch_optional(&self.pool)
+        .await?;
+
+        Ok(result)
     }
 
     #[tracing::instrument]
@@ -372,5 +439,17 @@ pub struct SourceFindParams {
     pub name: Option<String>,
     pub coordinate: Option<String>,
     pub description: Option<String>,
+    pub sha256_hash: Option<String>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct SourceTemplateFindParams {
+    pub ids: Option<Vec<i64>>,
+    pub source_ids: Option<Vec<i64>>,
+    pub name: Option<String>,
+    pub lang: Option<String>,
+    pub repo: Option<String>,
+    pub branch: Option<String>,
+    pub subdir: Option<String>,
     pub sha256_hash: Option<String>,
 }

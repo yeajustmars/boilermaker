@@ -10,14 +10,17 @@ use minijinja::{
     value::{Value as JinjaValue, merge_maps},
 };
 use serde::Deserialize;
-use tabled::{Table, Tabled, settings::Style};
-use tracing::{error, info, warn};
+use tracing::{info, warn};
 
-use crate::db::{TemplateFindParams, TemplateResult};
-use crate::state::AppState;
-use crate::template as tpl;
-//use crate::template::static_analysis as ana;
-use crate::util::file::{copy_dir, move_file};
+use crate::{
+    db::{TemplateFindParams, TemplateResult},
+    state::AppState,
+    template as tpl,
+    util::{
+        file::{copy_dir, move_file},
+        help,
+    },
+};
 
 #[derive(Debug, Parser)]
 pub struct New {
@@ -25,7 +28,7 @@ pub struct New {
     pub id_or_name: String,
     #[arg(short, long)]
     pub lang: Option<String>,
-    #[arg(short, long)]
+    #[arg(short = 'n', long, help = "Rename")]
     pub rename: Option<String>,
     #[arg(short, long)]
     pub dir: Option<String>,
@@ -52,7 +55,7 @@ async fn setup_template(app_state: &AppState, cmd: &New) -> Result<(TemplateResu
                 0 => Err(eyre!("💥 Cannot find template: {}.", cmd.id_or_name))?,
                 1 => Ok((existing_templates[0].to_owned(), false)),
                 2.. => {
-                    print_multiple_template_results_help(&existing_templates);
+                    help::print_multiple_template_results_help(&existing_templates);
                     Err(eyre!(
                         "💥 Found multiple results matching template: {}.",
                         cmd.id_or_name
@@ -152,30 +155,6 @@ async fn get_existing_templates(app_state: &AppState, cmd: &New) -> Result<Vec<T
     let existing_templates = { cache.find_templates(find_params).await? };
 
     Ok(existing_templates)
-}
-
-#[derive(Tabled)]
-struct MultipleResultsRow {
-    #[tabled(rename = "Template")]
-    template: String,
-    #[tabled(rename = "Lang")]
-    lang: String,
-}
-
-#[tracing::instrument]
-fn print_multiple_template_results_help(template_rows: &Vec<TemplateResult>) {
-    let help_line = "Multiple templates found. (You need to provide --lang)";
-    let mut help_rows = Vec::new();
-    for t in template_rows {
-        help_rows.push(MultipleResultsRow {
-            template: t.name.clone(),
-            lang: t.lang.clone(),
-        });
-    }
-
-    let mut table = Table::new(&help_rows);
-    table.with(Style::psql());
-    error!("{}\n\n{table}\n", help_line);
 }
 
 /// Turn a vec like ["foo=bar", "baz=quux"] into a `HashMap<String, String>`.

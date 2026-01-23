@@ -19,8 +19,8 @@ use crate::{
 pub struct Install {
     #[arg(required = true)]
     pub template: String,
-    #[arg(short, long)]
-    pub name: Option<String>,
+    #[arg(short = 'n', long, help = "Rename")]
+    pub rename: Option<String>,
     #[arg(short, long)]
     pub lang: Option<String>,
     #[arg(short, long)]
@@ -29,6 +29,8 @@ pub struct Install {
     pub subdir: Option<String>,
     #[arg(short = 'f', long, default_value_t = false)]
     pub local: bool,
+    //#[arg(short = 'S', long, help = "Alias for `boil sources templates install`")]
+    //pub source: bool,
 }
 
 #[tracing::instrument]
@@ -84,7 +86,7 @@ async fn clone_remote_to_local_work_dir(
 
 #[tracing::instrument]
 async fn configure_install(cmd: &Install) -> Result<InstallConfig> {
-    let name = if let Some(name) = &cmd.name {
+    let name = if let Some(name) = &cmd.rename {
         name.to_owned()
     } else {
         make_name_from_url(&cmd.template)

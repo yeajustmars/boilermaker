@@ -1,12 +1,11 @@
 use clap::Parser;
 use color_eyre::{Result, eyre::eyre};
-use tabled::{Table, Tabled, settings::Style};
-use tracing::error;
+use tabled::Tabled;
 
 use crate::{
     db::{TemplateFindParams, TemplateResult},
     state::AppState,
-    util::time::timestamp_to_iso8601,
+    util::{help, output::print_table, time::timestamp_to_iso8601},
 };
 
 #[derive(Parser, Debug)]
@@ -46,7 +45,7 @@ async fn get_template(app_state: &AppState, cmd: &Show) -> Result<TemplateResult
                 ))?)
                 .to_owned()),
             2.. => {
-                print_multiple_template_results_help(&results);
+                help::print_multiple_template_results_help(&results);
                 Err(eyre!(
                     "💥 Found multiple results matching template: {}.",
                     cmd.id_or_name
@@ -57,7 +56,7 @@ async fn get_template(app_state: &AppState, cmd: &Show) -> Result<TemplateResult
 }
 
 #[tracing::instrument]
-fn row(key: &str, value: String) -> ShowResult {
+pub fn row(key: &str, value: String) -> ShowResult {
     ShowResult {
         key: key.to_string(),
         value,
@@ -85,47 +84,15 @@ pub async fn show(app_state: &AppState, cmd: &Show) -> Result<()> {
             .unwrap_or("-".to_string())),
     ];
 
-    let mut table = Table::new(&rows);
-    table.with(Style::psql());
-    print!("\n\n{table}\n\n");
+    print_table(rows);
 
     Ok(())
 }
 
 #[derive(Tabled)]
-struct ShowResult {
+pub struct ShowResult {
     #[tabled(rename = "Key")]
     key: String,
     #[tabled(rename = "Value")]
     value: String,
-}
-
-#[derive(Tabled)]
-struct MultipleResultsRow {
-    #[tabled(rename = "ID")]
-    id: i64,
-    #[tabled(rename = "Name")]
-    name: String,
-    #[tabled(rename = "Lang")]
-    lang: String,
-    #[tabled(rename = "Repo")]
-    repo: String,
-}
-
-#[tracing::instrument]
-fn print_multiple_template_results_help(template_rows: &Vec<TemplateResult>) {
-    let help_line = "Multiple templates found matching name. Use ID instead.";
-    let mut help_rows = Vec::new();
-    for t in template_rows {
-        help_rows.push(MultipleResultsRow {
-            id: t.id,
-            name: t.name.clone(),
-            lang: t.lang.clone(),
-            repo: t.repo.clone(),
-        });
-    }
-
-    let mut table = Table::new(&help_rows);
-    table.with(Style::psql());
-    error!("{}\n\n{table}\n", help_line);
 }

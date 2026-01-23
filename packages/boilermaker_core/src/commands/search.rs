@@ -2,12 +2,11 @@ use std::sync::Arc;
 
 use clap::Parser;
 use color_eyre::{Result, eyre::eyre};
-use tabled::Table;
-use tabled::settings::Style;
 use tracing::info;
 
 use crate::db::{SearchResult, TabledSearchResult, TemplateDb};
 use crate::state::AppState;
+use crate::util::output::print_table;
 
 #[derive(Debug, Parser)]
 pub struct Search {
@@ -40,9 +39,7 @@ pub async fn search(app_state: &AppState, cmd: &Search) -> Result<()> {
         .into_iter()
         .map(TabledSearchResult::from)
         .collect();
-    let mut table = Table::new(tabled);
-    table.with(Style::psql());
-    print!("\n\n{table}\n\n");
+    print_table(tabled);
 
     Ok(())
 }
