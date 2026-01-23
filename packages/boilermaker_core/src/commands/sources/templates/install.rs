@@ -1,13 +1,7 @@
-use clap::{Parser, Subcommand};
+use clap::Parser;
 use color_eyre::Result;
 
 use crate::state::AppState;
-
-#[derive(Subcommand)]
-pub enum Templates {
-    #[command(about = "Install from source")]
-    Install(Install),
-}
 
 #[derive(Debug, Parser)]
 pub struct Install {
@@ -19,6 +13,6 @@ pub struct Install {
 
 #[tracing::instrument]
 pub async fn install(app_state: &AppState, cmd: &Install) -> Result<()> {
-    println!("GOT IT!");
+    println!("Sources > Templates > Install");
     Ok(())
 }

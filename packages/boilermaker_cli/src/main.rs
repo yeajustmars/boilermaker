@@ -105,6 +105,8 @@ async fn main() -> Result<()> {
                 SourcesTemplates::Install(cmd) => {
                     sources::templates::install(&app_state, &cmd).await
                 }
+                SourcesTemplates::List(cmd) => sources::templates::list(&app_state, &cmd).await,
+                SourcesTemplates::Show(cmd) => sources::templates::show(&app_state, &cmd).await,
             },
         },
         Commands::Update(cmd) => commands::update(&app_state, &cmd).await,
