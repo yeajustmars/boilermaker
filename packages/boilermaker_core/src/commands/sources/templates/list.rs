@@ -73,11 +73,11 @@ impl From<&SourceTemplateResult> for ListResult {
     fn from(row: &SourceTemplateResult) -> Self {
         Self {
             id: row.id,
-            name: row.name.to_owned(),
-            lang: row.lang.to_owned(),
-            repo: row.repo.to_owned(),
-            branch: row.branch.to_owned().unwrap_or("-".to_string()),
-            subdir: row.subdir.to_owned().unwrap_or("-".to_string()),
+            name: row.name.clone(),
+            lang: row.lang.clone(),
+            repo: row.repo.clone(),
+            branch: row.branch.clone().unwrap_or("-".to_string()),
+            subdir: row.subdir.clone().unwrap_or("-".to_string()),
         }
     }
 }
