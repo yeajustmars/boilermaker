@@ -29,8 +29,6 @@ pub struct Install {
     pub subdir: Option<String>,
     #[arg(short = 'f', long, default_value_t = false)]
     pub local: bool,
-    //#[arg(short = 'S', long, help = "Alias for `boil sources templates install`")]
-    //pub source: bool,
 }
 
 #[tracing::instrument]
