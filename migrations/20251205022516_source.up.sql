@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS source_template (
   sha256_hash TEXT NOT NULL UNIQUE,
   created_at TIMESTAMP NOT NULL,
   updated_at TIMESTAMP,
-  UNIQUE (name, repo, branch, subdir),
+  UNIQUE (name, lang, repo, branch, subdir),
   FOREIGN KEY (source_id) REFERENCES source(id) DEFERRABLE INITIALLY DEFERRED
 );
 

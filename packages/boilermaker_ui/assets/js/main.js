@@ -1,31 +1,47 @@
 (function () {
-  const showElement = (el) => el.style.removeProperty("display");
+  const hideElement = (el) => {
+    el.classList.add("hidden");
+  };
 
-  const hideElement = (el) => el.style.display = "none";
+  const showElement = (el) => {
+    el.classList.remove("hidden");
+  }
 
   const toggleElement = (el) => {
-    if (el.style.display === "none") {
+    if (el.classList.contains("hidden")) {
       showElement(el);
     } else {
       hideElement(el);
     }
-  };
+  }
 
   document.addEventListener("DOMContentLoaded", function() {
-    const mainMenu = document.querySelector("#nav-main-dropdown-button");
-    const mainDropdown = document.querySelector("#nav-main-dropdown-menu");
+    // ________________________________________ Dropdown menus
+    const dropdownContainers = document.querySelectorAll(".dropdown-container");
+    dropdownContainers.forEach(container => {
+      let button = container.querySelector(".dropdown-button");
+      let menu = container.querySelector(".dropdown-menu");
 
-    hideElement(mainDropdown);
+      button.addEventListener("click", (event) => {
+        let menu = event.target.closest(".dropdown-container").querySelector(".dropdown-menu");
+        toggleElement(menu);
+      });
 
-    mainMenu.addEventListener("click", () => {
-      console.log("Toggling main dropdown");
-      toggleElement(mainDropdown);
+      menu.addEventListener("mouseleave", () => {
+        menu.classList.add("hidden");
+      });
     });
 
-    mainDropdown.addEventListener("mouseleave", () => {
-      hideElement(mainDropdown);
+    // ________________________________________ Collapsibles
+    const collapsibleButtons = document.querySelectorAll(".collapsible-button");
+    collapsibleButtons.forEach(button => {
+      button.addEventListener("click", (event) => {
+        let content = event.target.closest(".collapsible").querySelector(".collapsible-content");
+        toggleElement(content);
+      })
     });
 
+    // ________________________________________ Code
     hljs.highlightAll();
   });
 

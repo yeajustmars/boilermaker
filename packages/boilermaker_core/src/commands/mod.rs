@@ -1,3 +1,5 @@
+use tabled::Tabled;
+
 pub mod install;
 pub mod list;
 pub mod new;
@@ -16,3 +18,14 @@ pub use search::{Search, search};
 pub use show::{Show, show};
 pub use sources::Sources;
 pub use update::{Update, update};
+
+// TODO: rename to TemplateOutputTableRow
+#[derive(Debug, Tabled)]
+pub struct ListResult {
+    pub id: i64,
+    pub name: String,
+    pub lang: String,
+    pub repo: String,
+    pub branch: String,
+    pub subdir: String,
+}

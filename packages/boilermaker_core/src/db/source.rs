@@ -2,12 +2,14 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 
 use color_eyre::{Result, eyre::eyre};
+use sqlx::QueryBuilder;
 use tabled::Tabled;
 use unicode_truncate::{Alignment, UnicodeTruncateStr};
 
-use crate::template as tmpl;
-use crate::util::crypto::sha256_hash_string;
-use crate::util::file::read_file_to_string;
+use crate::{
+    db::template::ListTemplateOptions, template as tmpl, util::crypto::sha256_hash_string,
+    util::file::read_file_to_string,
+};
 
 use super::LocalCache;
 
@@ -18,8 +20,18 @@ pub trait SourceMethods: Send + Sync {
         source_row: SourceRow,
         partial_source_template_rows: Vec<(PathBuf, PartialSourceTemplateRow)>,
     ) -> Result<AddSourceResult>;
-    async fn list_sources(&self) -> Result<Vec<SourceRow>>;
-    //async fn search_sources(&self, term: &str) -> Result<Vec<SourceRow>>;
+    async fn find_sources(&self, query: SourceFindParams) -> Result<Vec<SourceResult>>;
+    async fn find_source_templates(
+        &self,
+        query: SourceTemplateFindParams,
+    ) -> Result<Vec<SourceTemplateResult>>;
+    async fn get_source_template(&self, id: i64) -> Result<Option<SourceTemplateResult>>;
+    async fn list_sources(&self) -> Result<Vec<SourceResult>>;
+    async fn list_source_templates(
+        &self,
+        source_id: i64,
+        opts: Option<ListTemplateOptions>,
+    ) -> Result<Vec<SourceTemplateResult>>;
 }
 
 #[async_trait::async_trait]
@@ -113,11 +125,115 @@ impl SourceMethods for LocalCache {
         })
     }
 
+    //TODO: add regexs, fuzzy matching, predicates, etc
     #[tracing::instrument]
-    async fn list_sources(&self) -> Result<Vec<SourceRow>> {
-        let results = sqlx::query_as::<_, SourceRow>(
+    async fn find_sources(&self, params: SourceFindParams) -> Result<Vec<SourceResult>> {
+        let mut qb = QueryBuilder::new("SELECT * FROM source WHERE 1=1");
+
+        /*
+        if let Some(ids) = params.ids
+            && !ids.is_empty()
+        {
+            qb.push(" AND id IN (");
+            let mut separated = qb.separated(",");
+            for id in ids {
+                separated.push_bind(id);
+            }
+            separated.push_unseparated(")");
+        }
+         */
+        if let Some(name) = params.name {
+            qb.push(" AND name = ");
+            qb.push_bind(name);
+        }
+        if let Some(coordinate) = params.coordinate {
+            qb.push(" AND coordinate = ");
+            qb.push_bind(coordinate);
+        }
+        if let Some(description) = params.description {
+            qb.push(" AND description = ");
+            qb.push_bind(description);
+        }
+        if let Some(sha256_hash) = params.sha256_hash {
+            qb.push(" AND sha256_hash = ");
+            qb.push_bind(sha256_hash);
+        }
+        qb.push(" ORDER BY name ASC");
+
+        let q = qb.build_query_as::<SourceResult>();
+        let results = q.fetch_all(&self.pool).await?;
+
+        Ok(results)
+    }
+
+    //TODO: add regexs, fuzzy matching, predicates, etc
+    #[tracing::instrument]
+    async fn find_source_templates(
+        &self,
+        params: SourceTemplateFindParams,
+    ) -> Result<Vec<SourceTemplateResult>> {
+        let mut qb = QueryBuilder::new("SELECT * FROM source_template WHERE 1=1");
+
+        /*
+        if let Some(ids) = params.ids
+            && !ids.is_empty()
+        {
+            qb.push(" AND id IN (");
+            let mut separated = qb.separated(",");
+            for id in ids {
+                separated.push_bind(id);
+            }
+            separated.push_unseparated(")");
+        }
+         */
+        // TODO: add source_ids vec
+
+        if let Some(name) = params.name {
+            qb.push(" AND name = ");
+            qb.push_bind(name);
+        }
+        if let Some(lang) = params.lang {
+            qb.push(" AND lang = ");
+            qb.push_bind(lang);
+        }
+        if let Some(repo) = params.repo {
+            qb.push(" AND repo = ");
+            qb.push_bind(repo);
+        }
+        if let Some(branch) = params.branch {
+            qb.push(" AND branch = ");
+            qb.push_bind(branch);
+        }
+        if let Some(subdir) = params.subdir {
+            qb.push(" AND subdir = ");
+            qb.push_bind(subdir);
+        }
+        qb.push(" ORDER BY name ASC");
+
+        let q = qb.build_query_as::<SourceTemplateResult>();
+        let results = q.fetch_all(&self.pool).await?;
+
+        Ok(results)
+    }
+
+    #[tracing::instrument]
+    async fn get_source_template(&self, id: i64) -> Result<Option<SourceTemplateResult>> {
+        let result = sqlx::query_as::<_, SourceTemplateResult>(
+            "SELECT * FROM source_template WHERE id = ?;",
+        )
+        .bind(id)
+        .fetch_optional(&self.pool)
+        .await?;
+
+        Ok(result)
+    }
+
+    #[tracing::instrument]
+    async fn list_sources(&self) -> Result<Vec<SourceResult>> {
+        let results = sqlx::query_as::<_, SourceResult>(
             r#"
-                SELECT name,
+                SELECT id,
+                       name,
                        backend,
                        coordinate,
                        description,
@@ -128,6 +244,28 @@ impl SourceMethods for LocalCache {
         )
         .fetch_all(&self.pool)
         .await?;
+        Ok(results)
+    }
+
+    // TODO: add options for ordering, pagination, filtering, etc
+    #[tracing::instrument]
+    async fn list_source_templates(
+        &self,
+        source_id: i64,
+        _opts: Option<ListTemplateOptions>,
+    ) -> Result<Vec<SourceTemplateResult>> {
+        let results = sqlx::query_as::<_, SourceTemplateResult>(
+            r#"
+                SELECT *
+                FROM source_template
+                WHERE source_id = ?
+                ORDER BY name ASC;
+            "#,
+        )
+        .bind(source_id)
+        .fetch_all(&self.pool)
+        .await?;
+
         Ok(results)
     }
 }
@@ -150,6 +288,7 @@ impl SourceRow {
     }
 }
 
+// TODO: is this cruft?
 pub fn hash_source_row(row: &SourceRow) -> String {
     let input = format!("{}~~{}~~{}", row.name, row.backend, row.coordinate);
     sha256_hash_string(&input)
@@ -234,20 +373,83 @@ pub struct AddSourceResult {
 
 #[derive(Debug, Tabled)]
 pub struct TabledSourceRow {
+    pub id: i64,
     pub name: String,
-    pub backend: String,
     pub coordinate: String,
     pub description: String,
 }
 
+#[derive(Debug, Clone, sqlx::FromRow)]
+pub struct SourceResult {
+    pub id: i64,
+    pub name: String,
+    pub backend: String,
+    pub coordinate: String,
+    pub description: Option<String>,
+    pub sha256_hash: Option<String>,
+}
+
 impl TabledSourceRow {
-    pub fn from(row: SourceRow) -> Self {
-        let coordinate = row.coordinate.unicode_pad(80, Alignment::Left, true);
+    pub fn from(row: SourceResult) -> Self {
+        let mut coordinate = row
+            .coordinate
+            .unicode_pad(77, Alignment::Left, true)
+            .to_string();
+        if coordinate.len() >= 77 {
+            coordinate.push_str("...");
+        }
+
+        let description = match row.description {
+            None => "-".to_string(),
+            Some(s) => {
+                if s.len() >= 33 {
+                    s.unicode_pad(33, Alignment::Left, true).to_string()
+                } else {
+                    s
+                }
+            }
+        };
+
         Self {
+            id: row.id,
             name: row.name,
-            backend: row.backend,
-            description: row.description.unwrap_or("-".to_string()),
-            coordinate: coordinate.to_string(),
+            coordinate,
+            description,
         }
     }
+}
+
+#[derive(Debug, Clone, sqlx::FromRow)]
+pub struct SourceTemplateResult {
+    pub id: i64,
+    pub source_id: i64,
+    pub name: String,
+    pub lang: String,
+    pub repo: String,
+    pub branch: Option<String>,
+    pub subdir: Option<String>,
+    pub sha256_hash: Option<String>,
+    pub created_at: Option<i32>,
+    pub updated_at: Option<i32>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct SourceFindParams {
+    pub ids: Option<Vec<i64>>,
+    pub name: Option<String>,
+    pub coordinate: Option<String>,
+    pub description: Option<String>,
+    pub sha256_hash: Option<String>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct SourceTemplateFindParams {
+    pub ids: Option<Vec<i64>>,
+    pub source_ids: Option<Vec<i64>>,
+    pub name: Option<String>,
+    pub lang: Option<String>,
+    pub repo: Option<String>,
+    pub branch: Option<String>,
+    pub subdir: Option<String>,
+    pub sha256_hash: Option<String>,
 }

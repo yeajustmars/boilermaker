@@ -1,31 +1,32 @@
 use clap::Parser;
 use color_eyre::{Result, eyre::eyre};
-use tabled::Tabled;
 
 use crate::{
-    db::{TemplateFindParams, TemplateResult},
+    commands::show::row,
+    db::{SourceTemplateFindParams, SourceTemplateResult},
     state::AppState,
     util::{help, output::print_table, time::timestamp_to_iso8601},
 };
 
-#[derive(Parser, Debug)]
+#[derive(Debug, Parser)]
 pub struct Show {
     #[arg(required = true)]
     pub id_or_name: String,
 }
 
 #[tracing::instrument]
-async fn get_template(app_state: &AppState, cmd: &Show) -> Result<TemplateResult> {
+async fn get_source_template(app_state: &AppState, cmd: &Show) -> Result<SourceTemplateResult> {
     let cache = app_state.local_db.clone();
 
     if let Ok(id) = cmd.id_or_name.parse::<i64>() {
         Ok(cache
-            .get_template(id)
+            .get_source_template(id)
             .await?
-            .expect("Failed to unwrap template result"))
+            .expect("Failed to unwrap source template result"))
     } else {
-        let find_params = TemplateFindParams {
+        let find_params = SourceTemplateFindParams {
             ids: None,
+            source_ids: None,
             name: Some(cmd.id_or_name.to_owned()),
             lang: None,
             repo: None,
@@ -33,7 +34,7 @@ async fn get_template(app_state: &AppState, cmd: &Show) -> Result<TemplateResult
             subdir: None,
             sha256_hash: None,
         };
-        let results = cache.find_templates(find_params).await?;
+        let results = cache.find_source_templates(find_params).await?;
 
         match results.len() {
             0 => Err(eyre!("💥 Cannot find template: {}.", cmd.id_or_name))?,
@@ -45,7 +46,7 @@ async fn get_template(app_state: &AppState, cmd: &Show) -> Result<TemplateResult
                 ))?)
                 .to_owned()),
             2.. => {
-                help::print_multiple_template_results_help(&results);
+                help::print_multiple_source_template_results_help(&results);
                 Err(eyre!(
                     "💥 Found multiple results matching template: {}.",
                     cmd.id_or_name
@@ -55,21 +56,14 @@ async fn get_template(app_state: &AppState, cmd: &Show) -> Result<TemplateResult
     }
 }
 
-#[tracing::instrument]
-pub fn row(key: &str, value: String) -> ShowResult {
-    ShowResult {
-        key: key.to_string(),
-        value,
-    }
-}
-
-#[tracing::instrument]
+// TODO: look at making various show's take a trait object as this isn't DRY
 pub async fn show(app_state: &AppState, cmd: &Show) -> Result<()> {
-    let template = get_template(app_state, cmd).await?;
+    let template = get_source_template(app_state, cmd).await?;
 
     #[rustfmt::skip]
     let rows = vec![
         row("ID", template.id.to_string()),
+        row("Source ID", template.source_id.to_string()),
         row("Name", template.name),
         row("Lang", template.lang),
         row("Repo", template.repo),
@@ -83,16 +77,7 @@ pub async fn show(app_state: &AppState, cmd: &Show) -> Result<()> {
             .map(|v| timestamp_to_iso8601(v as i64))
             .unwrap_or("-".to_string())),
     ];
-
     print_table(rows);
 
     Ok(())
-}
-
-#[derive(Tabled)]
-pub struct ShowResult {
-    #[tabled(rename = "Key")]
-    key: String,
-    #[tabled(rename = "Value")]
-    value: String,
 }

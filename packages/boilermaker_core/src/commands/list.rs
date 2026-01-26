@@ -1,9 +1,8 @@
 use clap::Parser;
 use color_eyre::Result;
-use tabled::{Table, Tabled, settings::Style};
 use tracing::info;
 
-use crate::{db::TemplateResult, state::AppState};
+use crate::{commands::ListResult, db::TemplateResult, state::AppState, util::output::print_table};
 
 #[derive(Parser, Debug)]
 pub struct List {
@@ -16,9 +15,7 @@ pub struct List {
 #[tracing::instrument]
 pub async fn list(app_state: &AppState, _cmd: &List) -> Result<()> {
     let cache = app_state.local_db.clone();
-
     let result = cache.list_templates(None).await?;
-
     let rows = result.into_iter().map(ListResult::from).collect::<Vec<_>>();
 
     if rows.is_empty() {
@@ -27,26 +24,13 @@ pub async fn list(app_state: &AppState, _cmd: &List) -> Result<()> {
         return Ok(());
     }
 
-    let mut table = Table::new(&rows);
-    table.with(Style::psql());
-
-    print!("\n\n{table}\n\n");
+    print_table(rows);
 
     Ok(())
 }
 
-#[derive(Debug, Tabled)]
-pub struct ListResult {
-    pub id: i64,
-    pub name: String,
-    pub lang: String,
-    pub repo: String,
-    pub branch: String,
-    pub subdir: String,
-}
-
-impl ListResult {
-    pub fn from(row: TemplateResult) -> Self {
+impl From<TemplateResult> for ListResult {
+    fn from(row: TemplateResult) -> Self {
         Self {
             id: row.id,
             name: row.name,

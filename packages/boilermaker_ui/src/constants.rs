@@ -27,7 +27,7 @@ pub const DROPDOWN_LINK_STYLE: &str =
 pub const INDENTED_DROPDOWN_LINK_STYLE: &str =
     "block px-8 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-700";
 
-pub const LINK_STYLE: &str = "text-purple-300";
+pub const LINK_STYLE: &str = "text-sky-600";
 
 pub const BTN_BLUE_STYLE: &str =
     "bg-neutral-300 hover:bg-blue-500 dark:bg-neutral-700 text-white py-1 px-2 rounded";
