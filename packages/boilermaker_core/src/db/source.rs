@@ -31,7 +31,7 @@ pub trait SourceMethods: Send + Sync {
     async fn list_source_templates(
         &self,
         source_id: i64,
-        opts: Option<ListTemplateOptions>,
+        opts: Option<&ListTemplateOptions>,
     ) -> Result<Vec<SourceTemplateResult>>;
 }
 
@@ -253,19 +253,51 @@ impl SourceMethods for LocalCache {
     async fn list_source_templates(
         &self,
         source_id: i64,
-        _opts: Option<ListTemplateOptions>,
+        options: Option<&ListTemplateOptions>,
     ) -> Result<Vec<SourceTemplateResult>> {
-        let results = sqlx::query_as::<_, SourceTemplateResult>(
-            r#"
-                SELECT *
-                FROM source_template
-                WHERE source_id = ?
-                ORDER BY name ASC;
-            "#,
-        )
-        .bind(source_id)
-        .fetch_all(&self.pool)
-        .await?;
+        let results = match options {
+            None => {
+                sqlx::query_as::<_, SourceTemplateResult>(
+                    r#"
+                        SELECT *
+                        FROM source_template
+                        WHERE source_id = ?
+                        ORDER BY name ASC;
+                    "#,
+                )
+                .bind(source_id)
+                .fetch_all(&self.pool)
+                .await?
+            }
+            Some(opts) => {
+                let mut qb = QueryBuilder::new(
+                    r#"
+                        SELECT *
+                        FROM source_template
+                        WHERE source_id =
+                    "#,
+                );
+                qb.push_bind(source_id);
+
+                if let Some(order_by) = &opts.order_by {
+                    qb.push(" ORDER BY ");
+                    qb.push_bind(order_by);
+                } else {
+                    qb.push(" ORDER BY name ASC");
+                }
+                if let Some(limit) = opts.limit {
+                    qb.push(" LIMIT ");
+                    qb.push_bind(limit);
+                }
+                if let Some(offset) = opts.offset {
+                    qb.push(" OFFSET ");
+                    qb.push_bind(offset);
+                }
+
+                let q = qb.build_query_as::<SourceTemplateResult>();
+                q.fetch_all(&self.pool).await?
+            }
+        };
 
         Ok(results)
     }
