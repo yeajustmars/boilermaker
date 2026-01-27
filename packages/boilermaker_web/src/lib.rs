@@ -48,7 +48,9 @@ impl WebAppState {
         let log_level = 1;
 
         let db_path = if is_dev_env {
-            DEFAULT_LOCAL_CACHE_PATH_STRING.as_str()
+            let db_path = DEFAULT_LOCAL_CACHE_PATH_STRING.as_str();
+            info!("Running in dev mode, using db_path: {}", db_path);
+            db_path
         } else {
             DEFAULT_WEBSITE_DATABASE_PATH_STRING.as_str()
         };

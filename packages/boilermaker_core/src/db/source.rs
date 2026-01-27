@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 
 use color_eyre::{Result, eyre::eyre};
+use serde::Serialize;
 use sqlx::QueryBuilder;
 use tabled::Tabled;
 use unicode_truncate::{Alignment, UnicodeTruncateStr};
@@ -379,7 +380,7 @@ pub struct TabledSourceRow {
     pub description: String,
 }
 
-#[derive(Debug, Clone, sqlx::FromRow)]
+#[derive(Debug, Clone, sqlx::FromRow, Serialize)]
 pub struct SourceResult {
     pub id: i64,
     pub name: String,
@@ -419,7 +420,7 @@ impl TabledSourceRow {
     }
 }
 
-#[derive(Debug, Clone, sqlx::FromRow)]
+#[derive(Debug, Clone, sqlx::FromRow, Serialize)]
 pub struct SourceTemplateResult {
     pub id: i64,
     pub source_id: i64,
