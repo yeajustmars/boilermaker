@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use color_eyre::{Result, eyre::eyre};
+use serde::Deserialize;
 use sqlx::QueryBuilder;
 use tabled::Tabled;
 
@@ -20,7 +21,7 @@ pub trait TemplateMethods: Send + Sync {
     async fn index_template(&self, id: i64) -> Result<()>;
     async fn list_templates(
         &self,
-        opts: Option<ListTemplateOptions>,
+        opts: Option<&ListTemplateOptions>,
     ) -> Result<Vec<TemplateResult>>;
     async fn template_table_exists(&self) -> Result<bool>;
     async fn update_template(&self, id: i64, row: TemplateRow) -> Result<i64>;
@@ -184,7 +185,7 @@ impl TemplateMethods for LocalCache {
     #[tracing::instrument]
     async fn list_templates(
         &self,
-        _opts: Option<ListTemplateOptions>,
+        _opts: Option<&ListTemplateOptions>,
     ) -> Result<Vec<TemplateResult>> {
         let results =
             sqlx::query_as::<_, TemplateResult>("SELECT * FROM template ORDER BY created_at DESC;")
@@ -377,11 +378,11 @@ pub struct TemplateFindParams {
     pub sha256_hash: Option<String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct ListTemplateOptions {
     pub order_by: Option<String>,
-    pub limit: Option<u64>,
-    pub offset: Option<u64>,
+    pub offset: Option<u16>,
+    pub limit: Option<u16>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, sqlx::Type)]

@@ -10,6 +10,7 @@
     --color-red-400: oklch(70.4% 0.191 22.216);
     --color-red-500: oklch(63.7% 0.237 25.331);
     --color-red-700: oklch(50.5% 0.213 27.518);
+    --color-orange-400: oklch(75% 0.183 55.934);
     --color-green-400: oklch(79.2% 0.209 151.711);
     --color-green-500: oklch(72.3% 0.219 149.579);
     --color-green-700: oklch(52.7% 0.154 150.069);
@@ -615,6 +616,9 @@
   }
   .text-neutral-800 {
     color: var(--color-neutral-800);
+  }
+  .text-orange-400 {
+    color: var(--color-orange-400);
   }
   .text-purple-200 {
     color: var(--color-purple-200);
