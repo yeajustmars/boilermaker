@@ -5,25 +5,58 @@
 {% block content %}
 <div class="p-4 text-neutral-800 dark:text-neutral-200">
   <h1 class="hidden">Templates</h1>
+  <pre>
+    <code language="javascript" class="text-sm">
+{{query}}
+
+{% if query.sort_by %}sort_by: {{query.sort_by}}{% endif %}
+
+{% if query.limit %}limit: {{query.limit}}{% endif %}
+
+{% if query.offset %}offset: {{query.offset}}{% endif %}
+
+{% if query.order %}order: {{query.order}}{% endif %}
+    </code>
+  </pre>
   <div class="tabs mt-4">
     <div class="tab-buttons flex border-b border-neutral-300 dark:border-neutral-700">
       {% set btn_style = 'mr-2 p-1 border border-1 border-b-0 border-neutral-300 dark:border-neutral-700' %}
       <div><button class="tab-button active {{btn_style}}" data-target="templates">Templates</button></div>
       <div><button class="tab-button {{btn_style}}" data-target="sources">Sources</button></div>
     </div>
-
     <div class="tab-panes">
       <div data-tab="templates" class="tab active">
         <table class="table-auto border-collapse">
           <thead>
             {% set th_style = 'text-left p-2 text-sm font-normal text-neutral-300 dark:text-neutral-500' %}
+            {% set hover_style = 'hover:underline hover:text-neutral-600 dark:hover:text-neutral-200' %}
             <tr>
               <th class=""></th>
-              <th class="{{th_style}}">Name</th>
-              <th class="{{th_style}}">Lang</th>
-              <th class="{{th_style}}">Repo</th>
-              <th class="{{th_style}}">Branch</th>
-              <th class="{{th_style}}">Subdir</th>
+              <th class="{{th_style}}">
+                <a href="/templates?sort_by=name&order={{ 'desc' if query.sort_by == 'name' and query.order == 'asc' else 'asc' }}" class="{{hover_style}}">
+                  Name  <span class="text-[0.6rem]">{% if query.sort_by == 'name' %}{{ '▲' if query.order == 'asc' else '▼' }}{% endif %}</span>
+                </a>
+              </th>
+              <th class="{{th_style}}">
+                <a href="/templates?sort_by=lang&order={{ 'desc' if query.sort_by == 'lang' and query.order == 'asc' else 'asc' }}" class="{{hover_style}}">
+                  Lang  <span class="text-[0.6rem]">{% if query.sort_by == 'lang' %}{{ '▲' if query.order == 'asc' else '▼' }}{% endif %}</span>
+                </a>
+              </th>
+              <th class="{{th_style}}">
+                <a href="/templates?sort_by=repo&order={{ 'desc' if query.sort_by == 'repo' and query.order == 'asc' else 'asc' }}" class="{{hover_style}}">
+                  Repo  <span class="text-[0.6rem]">{% if query.sort_by == 'repo' %}{{ '▲' if query.order == 'asc' else '▼' }}{% endif %}</span>
+                </a>
+              </th>
+              <th class="{{th_style}}">
+                <a href="/templates?sort_by=branch&order={{ 'desc' if query.sort_by == 'branch' and query.order == 'asc' else 'asc' }}" class="{{hover_style}}">
+                  Branch  <span class="text-[0.6rem]">{% if query.sort_by == 'branch' %}{{ '▲' if query.order == 'asc' else '▼' }}{% endif %}</span>
+                </a>
+              </th>
+              <th class="{{th_style}}">
+                <a href="/templates?sort_by=subdir&order={{ 'desc' if query.sort_by == 'subdir' and query.order == 'asc' else 'asc' }}" class="{{hover_style}}">
+                  Subdir  <span class="text-[0.6rem]">{% if query.sort_by == 'subdir' %}{{ '▲' if query.order == 'asc' else '▼' }}{% endif %}</span>
+                </a>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -47,7 +80,7 @@
           </tbody>
         </table>
         <pre>
-          <code language="javascript">
+          <code language="javascript" class="text-sm">
 {{templates}}
           </code>
         </pre>
@@ -55,7 +88,7 @@
 
       <div data-tab="sources" class="tab">
         <pre>
-          <code language="javascript">
+          <code language="javascript" class="text-sm">
 {{sources}}
           </code>
         </pre>
