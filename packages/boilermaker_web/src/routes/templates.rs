@@ -8,7 +8,7 @@ use axum::{
 use axum_template::TemplateEngine;
 use color_eyre::Result;
 use minijinja::context;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use tracing::error;
 
 use crate::{make_context, WebAppState};
@@ -44,12 +44,12 @@ pub async fn templates(
     State(app): State<Arc<WebAppState>>,
     query: Result<Query<PageQuery>, QueryRejection>,
 ) -> Result<Html<String>, StatusCode> {
-    let options = match query {
+    let (query, options) = match query {
         Err(rejection) => {
             error!("Malformed template query: {rejection}");
             return template_error(app, TemplateError::MalformedQuery);
         }
-        Ok(Query(pq)) => Some(ListTemplateOptions::from(pq)),
+        Ok(Query(pq)) => (pq.clone(), Some(ListTemplateOptions::from(pq))),
     };
 
     let (sources, templates) = {
@@ -76,6 +76,7 @@ pub async fn templates(
         title => "Templates",
         sources => sources,
         templates => templates,
+        query => query,
     });
     let out = app
         .template
@@ -85,7 +86,7 @@ pub async fn templates(
     Ok(Html(out))
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub enum Order {
     #[serde(rename = "asc")]
     ASC,
@@ -102,7 +103,7 @@ impl fmt::Display for Order {
     }
 }
 
-#[derive(Default, Deserialize, Debug)]
+#[derive(Clone, Default, Serialize, Deserialize, Debug)]
 pub struct PageQuery {
     pub sort_by: Option<String>,
     pub offset: Option<u16>,
