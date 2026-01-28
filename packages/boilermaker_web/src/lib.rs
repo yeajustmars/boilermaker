@@ -111,6 +111,7 @@ impl WebApp {
             .route("/docs/{path}", get(routes::doc))
             .route("/get-involved", get(routes::get_involved))
             .route("/settings", get(routes::settings))
+            .route("/template/{template_id}", get(routes::template))
             .route("/templates", get(routes::templates))
             .nest_service("/assets", serve_assets)
             .with_state(app_state);

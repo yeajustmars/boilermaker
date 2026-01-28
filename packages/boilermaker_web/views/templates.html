@@ -13,9 +13,11 @@
     </div>
     <div class="tab-panes">
       <div data-tab="templates" class="tab active">
+        <div class="flex">
+        </div>
         <table class="table-auto border-collapse">
           <thead>
-            {% set th_style = 'text-left p-2 text-sm font-normal text-neutral-300 dark:text-neutral-500' %}
+            {% set th_style = 'text-left p-2 pl-1 text-sm font-normal text-neutral-300 dark:text-neutral-500' %}
             {% set hover_style = 'hover:underline hover:text-neutral-600 dark:hover:text-neutral-200' %}
             <tr>
               <th class=""></th>
@@ -60,8 +62,8 @@
               <td class="{{td_style}}">
                 <a href="/templates?repo={{ template.repo | urlencode }}" class="{{secondary_link_style}}">{{ template.repo }}</a>
               </td>
-              <td class="{{td_style}}">{{ template.branch}}</td>
-              <td class="{{td_style}}">{{ template.subdir}}</td>
+              <td class="{{td_style}}">{% if template.branch %}{{ template.branch }}{% else %}-{% endif %}</td>
+              <td class="{{td_style}}">{% if template.subdir %}{{ template.subdir }}{% else %}-{% endif %}</td>
             </tr>
             {% endfor %}
           </tbody>

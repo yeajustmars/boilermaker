@@ -51,8 +51,6 @@ pub async fn templates(
         }
         Ok(Query(pq)) => (pq.clone(), Some(ListTemplateOptions::from(pq))),
     };
-    println!("--------------> query: {query:#?}");
-    println!("--------------> options: {options:#?}");
 
     let (sources, templates) = {
         let db = app.db.clone();
