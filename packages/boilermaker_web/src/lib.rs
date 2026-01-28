@@ -24,6 +24,7 @@ use boilermaker_core::{
 use boilermaker_ui::constants::{
     DROPDOWN_LINK_STYLE, DROPDOWN_MENU_STYLE, FONT_AWESOME_URL, FONT_FIRA_CODE_URL,
     FONT_ROBOTO_URL, INDENTED_DROPDOWN_LINK_STYLE, LAYOUT_STYLE, LINK_STYLE, NAVBAR_STYLE,
+    SECONDARY_LINK_STYLE,
 };
 
 pub mod routes;
@@ -152,6 +153,7 @@ pub struct BaseContext {
     nav_dropdown_style: &'static str,
     nav_indented_dropdown_style: &'static str,
     link_style: &'static str,
+    secondary_link_style: &'static str,
     font_awesome_url: &'static str,
     font_roboto_url: &'static str,
     font_fira_code_url: &'static str,
@@ -164,6 +166,7 @@ pub const BASE_CONTEXT: BaseContext = BaseContext {
     nav_dropdown_style: DROPDOWN_LINK_STYLE,
     nav_indented_dropdown_style: INDENTED_DROPDOWN_LINK_STYLE,
     link_style: LINK_STYLE,
+    secondary_link_style: SECONDARY_LINK_STYLE,
     font_awesome_url: FONT_AWESOME_URL,
     font_roboto_url: FONT_ROBOTO_URL,
     font_fira_code_url: FONT_FIRA_CODE_URL,
@@ -178,6 +181,7 @@ impl From<BaseContext> for JinjaContext {
             nav_dropdown_style => ctx.nav_dropdown_style,
             nav_indented_dropdown_style => ctx.nav_indented_dropdown_style,
             link_style => ctx.link_style,
+            secondary_link_style => ctx.secondary_link_style,
             font_awesome_url => ctx.font_awesome_url,
             font_roboto_url => ctx.font_roboto_url,
             font_fira_code_url => ctx.font_fira_code_url,

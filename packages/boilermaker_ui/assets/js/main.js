@@ -16,7 +16,8 @@
   }
 
   document.addEventListener("DOMContentLoaded", function() {
-    // ________________________________________ Dropdown menus
+
+    // ________________________________________ Dropdowns
     const dropdownContainers = document.querySelectorAll(".dropdown-container");
     dropdownContainers.forEach(container => {
       let button = container.querySelector(".dropdown-button");
@@ -38,7 +39,35 @@
       button.addEventListener("click", (event) => {
         let content = event.target.closest(".collapsible").querySelector(".collapsible-content");
         toggleElement(content);
-      })
+      });
+    });
+
+    // ________________________________________ Tabs
+    const tabButtons = document.querySelectorAll(".tab-button");
+    tabButtons.forEach(button => {
+      button.addEventListener("click", (event) => {
+        let btn = event.target;
+        let target = btn.dataset.target;
+        let tabButtons = event.target.closest(".tab-buttons").querySelectorAll(".tab-button");
+        let tabs = event
+          .target
+          .closest(".tabs")
+          .querySelector(".tab-panes")
+          .querySelectorAll(".tab");
+
+        tabButtons.forEach(btn => {
+          btn.classList.remove("active");
+        });
+        btn.classList.add("active");
+
+        tabs.forEach(tab => {
+          if (tab.dataset.tab === target) {
+            tab.classList.add("active");
+          } else {
+            tab.classList.remove("active");
+          }
+        });
+      });
     });
 
     // ________________________________________ Code

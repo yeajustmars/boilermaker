@@ -25,3 +25,15 @@ pre, code {
 .doc h4 { font-size: 1.25rem; }
 .doc h5 { font-size: 1.1rem; }
 .doc p { padding: 1rem 0 1rem 0; }
+
+.tabs .tab-button.active {
+  font-weight: bold;
+}
+
+.tabs .tab-panes .tab {
+  display: none;
+}
+
+.tabs .tab-panes .tab.active {
+  display: block;
+}

@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{fmt, sync::Arc};
 
 use axum::{
     extract::{rejection::QueryRejection, Query, State},
@@ -8,7 +8,7 @@ use axum::{
 use axum_template::TemplateEngine;
 use color_eyre::Result;
 use minijinja::context;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use tracing::error;
 
 use crate::{make_context, WebAppState};
@@ -44,29 +44,31 @@ pub async fn templates(
     State(app): State<Arc<WebAppState>>,
     query: Result<Query<PageQuery>, QueryRejection>,
 ) -> Result<Html<String>, StatusCode> {
-    let q = match query {
-        Ok(Query(query)) => query,
+    let options = match query {
         Err(rejection) => {
             error!("Malformed template query: {rejection}");
             return template_error(app, TemplateError::MalformedQuery);
         }
+        Ok(Query(pq)) => Some(ListTemplateOptions::from(pq)),
     };
-    let options = ListTemplateOptions::from(q);
 
     let (sources, templates) = {
         let db = app.db.clone();
+
         let sources = db
             .list_sources()
             .await
             .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
         let mut templates: Vec<SourceTemplateResult> = vec![];
         for source in &sources {
             let more_templates = db
-                .list_source_templates(source.id, Some(&options))
+                .list_source_templates(source.id, options.as_ref())
                 .await
                 .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
             templates.extend(more_templates);
         }
+
         (sources, templates)
     };
 
@@ -91,41 +93,39 @@ pub enum Order {
     DESC,
 }
 
-#[derive(Deserialize, Debug)]
+impl fmt::Display for Order {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Order::ASC => write!(f, "ASC"),
+            Order::DESC => write!(f, "DESC"),
+        }
+    }
+}
+
+#[derive(Default, Deserialize, Debug)]
 pub struct PageQuery {
-    pub sort_by: String,
-    pub offset: usize,
-    pub limit: usize,
-    pub order: Order,
+    pub sort_by: Option<String>,
+    pub offset: Option<u16>,
+    pub limit: Option<u16>,
+    pub order: Option<Order>,
 }
 
 impl From<PageQuery> for ListTemplateOptions {
     fn from(q: PageQuery) -> Self {
-        let sort_by = if q.sort_by.is_empty() {
-            "name".to_string()
-        } else {
-            q.sort_by
+        let sort_by = match q.sort_by {
+            Some(s) => s,
+            None => "name".to_string(),
         };
         let direction = match q.order {
-            Order::ASC => "ASC",
-            Order::DESC => "DESC",
+            Some(order) => &order.to_string(),
+            None => "ASC",
         };
         let order_by = Some(format!("{sort_by} {direction}"));
-        let limit = if q.limit > 0 {
-            Some(q.limit as u16)
-        } else {
-            None
-        };
-        let offset = if q.offset > 0 {
-            Some(q.offset as u16)
-        } else {
-            None
-        };
 
         Self {
             order_by,
-            limit,
-            offset,
+            limit: q.limit,
+            offset: q.offset,
         }
     }
 }
