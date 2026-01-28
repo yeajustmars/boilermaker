@@ -248,7 +248,6 @@ impl SourceMethods for LocalCache {
         Ok(results)
     }
 
-    // TODO: add options for ordering, pagination, filtering, etc
     #[tracing::instrument]
     async fn list_source_templates(
         &self,
@@ -258,37 +257,29 @@ impl SourceMethods for LocalCache {
         let results = match options {
             None => {
                 sqlx::query_as::<_, SourceTemplateResult>(
-                    r#"
-                        SELECT *
-                        FROM source_template
-                        WHERE source_id = ?
-                        ORDER BY name ASC;
-                    "#,
+                    "SELECT * FROM source_template WHERE source_id = ? ORDER BY name ASC LIMIT 50",
                 )
                 .bind(source_id)
                 .fetch_all(&self.pool)
                 .await?
             }
             Some(opts) => {
-                let mut qb = QueryBuilder::new(
-                    r#"
-                        SELECT *
-                        FROM source_template
-                        WHERE source_id =
-                    "#,
-                );
+                let mut qb = QueryBuilder::new("SELECT * FROM source_template WHERE source_id = ");
                 qb.push_bind(source_id);
 
                 if let Some(order_by) = &opts.order_by {
-                    qb.push(" ORDER BY ");
-                    qb.push_bind(order_by);
+                    qb.push(format!(" ORDER BY {order_by} "));
                 } else {
                     qb.push(" ORDER BY name ASC");
                 }
+
                 if let Some(limit) = opts.limit {
                     qb.push(" LIMIT ");
                     qb.push_bind(limit);
+                } else {
+                    qb.push(" LIMIT 50");
                 }
+
                 if let Some(offset) = opts.offset {
                     qb.push(" OFFSET ");
                     qb.push_bind(offset);
