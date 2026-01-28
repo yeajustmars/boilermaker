@@ -3,14 +3,64 @@
 {% block title %}Boilermaker | {{title}}{% endblock %}
 
 {% block content %}
-<div class="text-neutral-800 dark:text-neutral-200">
-  <h1>Templates</h1>
+<div class="p-4 text-neutral-800 dark:text-neutral-200">
+  <h1 class="hidden">Templates</h1>
+  <div class="tabs mt-4">
+    <div class="tab-buttons flex border-b border-neutral-300 dark:border-neutral-700">
+      {% set btn_style = 'mr-2 p-1 border border-1 border-b-0 border-neutral-300 dark:border-neutral-700' %}
+      <div><button class="tab-button active {{btn_style}}" data-target="templates">Templates</button></div>
+      <div><button class="tab-button {{btn_style}}" data-target="sources">Sources</button></div>
+    </div>
 
-  <h2>Sources</h2>
-  {{sources}}
+    <div class="tab-panes">
+      <div data-tab="templates" class="tab active">
+        <table class="table-auto border-collapse">
+          <thead>
+            {% set th_style = 'text-left p-2 text-sm font-normal text-neutral-300 dark:text-neutral-500' %}
+            <tr>
+              <th class=""></th>
+              <th class="{{th_style}}">Name</th>
+              <th class="{{th_style}}">Lang</th>
+              <th class="{{th_style}}">Repo</th>
+              <th class="{{th_style}}">Branch</th>
+              <th class="{{th_style}}">Subdir</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% set td_style = 'p-2 border-b border-b-1 border-b-neutral-300 dark:border-b-neutral-700' %}
+            {% for template in templates %}
+            <tr>
+              <td class="class text-xs text-right text-neutral-200 dark:text-neutral-400">{{ loop.index }}.</td>
+              <td class="{{td_style}}">
+                <a href="/template/{{template.id}}" class="{{link_style}}">{{ template.name }}</a>
+              </td>
+              <td class="{{td_style}}">
+                <a href="/templates?lang={{ template.lang | urlencode }}" class="{{secondary_link_style}}">{{ template.lang }}</a>
+              </td>
+              <td class="{{td_style}}">
+                <a href="/templates?repo={{ template.repo | urlencode }}" class="{{secondary_link_style}}">{{ template.repo }}</a>
+              </td>
+              <td class="{{td_style}}">{{ template.branch}}</td>
+              <td class="{{td_style}}">{{ template.subdir}}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <pre>
+          <code language="javascript">
+{{templates}}
+          </code>
+        </pre>
+      </div>
 
-  <h2>Templates</h2>
-  {{templates}}
-
+      <div data-tab="sources" class="tab">
+        <pre>
+          <code language="javascript">
+{{sources}}
+          </code>
+        </pre>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}
