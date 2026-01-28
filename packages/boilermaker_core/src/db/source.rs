@@ -27,6 +27,11 @@ pub trait SourceMethods: Send + Sync {
         query: SourceTemplateFindParams,
     ) -> Result<Vec<SourceTemplateResult>>;
     async fn get_source_template(&self, id: i64) -> Result<Option<SourceTemplateResult>>;
+    // TODO: add get_source_template_content for a single file's contents
+    async fn get_source_template_content_all(
+        &self,
+        id: i64,
+    ) -> Result<Vec<SourceTemplateContentResult>>;
     async fn list_sources(&self) -> Result<Vec<SourceResult>>;
     async fn list_source_templates(
         &self,
@@ -227,6 +232,22 @@ impl SourceMethods for LocalCache {
         .await?;
 
         Ok(result)
+    }
+
+    // TODO: set relative (or at least useful) paths for file.file_path (not /var/tmp/...) when
+    // inserting contents
+    #[tracing::instrument]
+    async fn get_source_template_content_all(
+        &self,
+        id: i64,
+    ) -> Result<Vec<SourceTemplateContentResult>> {
+        let results = sqlx::query_as::<_, SourceTemplateContentResult>(
+            "SELECT * FROM source_template_content WHERE source_template_id = ?;",
+        )
+        .bind(id)
+        .fetch_all(&self.pool)
+        .await?;
+        Ok(results)
     }
 
     #[tracing::instrument]
@@ -476,4 +497,14 @@ pub struct SourceTemplateFindParams {
     pub branch: Option<String>,
     pub subdir: Option<String>,
     pub sha256_hash: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
+pub struct SourceTemplateContentResult {
+    pub id: i64,
+    pub source_template_id: i64,
+    pub file_path: String,
+    pub content: String,
+    pub created_at: Option<i32>,
+    pub updated_at: Option<i32>,
 }

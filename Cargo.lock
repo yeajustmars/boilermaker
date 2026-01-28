@@ -3845,6 +3845,7 @@ dependencies = [
  "percent-encoding",
  "self_cell",
  "serde",
+ "serde_json",
  "v_htmlescape",
 ]
 

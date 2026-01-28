@@ -1,0 +1,92 @@
+{% extends "layout.html" %}
+
+{% block title %}Boilermaker | {{title}}{% endblock %}
+
+{% block content %}
+<div class="p-4 text-neutral-800 dark:text-neutral-200">
+  <h1 class="text-2xl">Template Details: {{ template.name }} (id: {{ template.id }})</h1>
+  <div class="tabs mt-4">
+    <div class="tab-buttons flex border-b border-neutral-300 dark:border-neutral-700">
+      {% set btn_style = 'mr-2 p-1 border border-1 border-b-0 border-neutral-300 dark:border-neutral-700' %}
+      <div><button class="tab-button active {{btn_style}}" data-target="overview">Overview</button></div>
+      <div><button class="tab-button {{btn_style}}" data-target="readme">README</button></div>
+      <div><button class="tab-button {{btn_style}}" data-target="raw">Raw Details</button></div>
+      <div><button class="tab-button {{btn_style}}" data-target="files">Files</button></div>
+    </div>
+    <div class="tab-panes">
+      <div data-tab="overview" class="tab active">
+        <table class="table-auto border-collapse mt-4">
+          {% set th_style = 'text-right p-2 pl-1 text-sm font-normal text-neutral-300 dark:text-neutral-500' %}
+          <tbody>
+            {% set td_style = 'p-2 border-b border-b-1 border-b-neutral-300 dark:border-b-neutral-700' %}
+            <tr>
+              <td class="{{th_style}}">Name</td>
+              <td class="{{td_style}}">{{ template.name }}</td>
+            </tr>
+            <tr>
+              <td class="{{th_style}}">Lang</td>
+              <td class="{{td_style}}">{{ template.lang }}</td>
+            </tr>
+            <tr>
+              <td class="{{th_style}}">Repo</td>
+              <td class="{{td_style}}">{{ template.repo }}</td>
+            </tr>
+            <tr>
+              <td class="{{th_style}}">Branch</td>
+              <td class="{{td_style}}">{{ template.branch }}</td>
+            </tr>
+            <tr>
+              <td class="{{th_style}}">Subdir</td>
+              <td class="{{td_style}}">{{ template.subdir }}</td>
+            </tr>
+            <tr>
+              <td class="{{th_style}}">Source</td>
+              <td class="{{td_style}}">{{ template.source_id }}</td>
+            </tr>
+            <tr>
+              <td class="{{th_style}}">Template ID</td>
+              <td class="{{td_style}}">{{ template.id }}</td>
+            </tr>
+            <tr>
+              <td class="{{th_style}}">SHA Hash</td>
+              <td class="{{td_style}}">{{ template.sha256_hash }}</td>
+            </tr>
+            <tr>
+              <td class="{{th_style}}">Created</td>
+              <td class="{{td_style}}">{{ template.created_at }}</td>
+            </tr>
+            <tr>
+              <td class="{{th_style}}">Updated</td>
+              <td class="{{td_style}}">{{ template.updated_at }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div data-tab="readme" class="tab">
+        <pre>
+          <code language="javascript" class="text-sm">
+          TODO: add rendered README (suppor Markdown, AsciiDoc)
+          </code>
+        </pre>
+      </div>
+      <div data-tab="raw" class="tab">
+        <pre>
+          <code language="javascript" class="text-sm">
+{{ template|tojson(indent=2) }}
+          </code>
+        </pre>
+      </div>
+      <div data-tab="files" class="tab">
+      {% for file in files %}
+      <div class="">
+        <p>{{ file.file_path }}</p>
+        <pre>
+          <code language="plaintext" class="text-sm">{{ file.content }}</code>
+        </pre>
+      </div>
+      {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
