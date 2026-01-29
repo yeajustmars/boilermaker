@@ -8,8 +8,8 @@ use tabled::Tabled;
 use unicode_truncate::{Alignment, UnicodeTruncateStr};
 
 use crate::{
-    db::template::ListTemplateOptions, template as tmpl, util::crypto::sha256_hash_string,
-    util::file::read_file_to_string,
+    db::template::ListTemplateOptions, template as tmpl, template::make_name_from_url,
+    util::crypto::sha256_hash_string, util::file::read_file_to_string,
 };
 
 use super::LocalCache;
@@ -102,9 +102,19 @@ impl SourceMethods for LocalCache {
 
             let source_template_id = template_result.last_insert_rowid();
 
+            let repo_name_relative = make_name_from_url(&source_template_row.repo);
+
             let files = tmpl::list_template_files(&path).await?;
             for file in files {
+                let file_path = file.to_string_lossy().to_string();
+                let base_path_index = file_path.find(&repo_name_relative).unwrap();
+                let file_path = file_path
+                    .split_at(base_path_index)
+                    .1
+                    .replace(&repo_name_relative, "");
+
                 let content = read_file_to_string(&file)?;
+
                 let _ = sqlx::query(
                     r#"
                     INSERT INTO source_template_content
@@ -114,7 +124,7 @@ impl SourceMethods for LocalCache {
                     "#,
                 )
                 .bind(source_template_id)
-                .bind(file.to_string_lossy().to_string())
+                .bind(file_path)
                 .bind(content)
                 .execute(&mut *tx)
                 .await?;
