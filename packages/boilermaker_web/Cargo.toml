@@ -2,6 +2,7 @@
 name = "boilermaker_web"
 version = "0.1.0"
 edition = "2021"
+repository = "https://github.com/yeajustmars/boilermaker.git"
 
 [dependencies]
 # Internal

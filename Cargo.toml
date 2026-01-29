@@ -64,3 +64,8 @@ boilermaker_cli = { path = "packages/boilermaker_cli" }
 boilermaker_core = { path = "packages/boilermaker_core" }
 boilermaker_desktop = { path = "packages/boilermaker_desktop" }
 boilermaker_ui = { path = "packages/boilermaker_ui" }
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"

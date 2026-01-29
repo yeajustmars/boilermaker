@@ -2,6 +2,7 @@
 name = "boilermaker_cli"
 version = "0.1.0"
 edition = "2024"
+repository = "https://github.com/yeajustmars/boilermaker.git"
 
 [dependencies]
 boilermaker_core = { workspace = true }
