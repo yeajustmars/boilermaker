@@ -14,6 +14,9 @@ use crate::{
 
 use super::LocalCache;
 
+type SourceId = i64;
+type SourceTemplateId = i64;
+
 #[async_trait::async_trait]
 pub trait SourceMethods: Send + Sync {
     async fn add_source(
@@ -26,16 +29,23 @@ pub trait SourceMethods: Send + Sync {
         &self,
         query: SourceTemplateFindParams,
     ) -> Result<Vec<SourceTemplateResult>>;
-    async fn get_source_template(&self, id: i64) -> Result<Option<SourceTemplateResult>>;
+    async fn get_source_template(
+        &self,
+        source_template_id: SourceTemplateId,
+    ) -> Result<Option<SourceTemplateResult>>;
     // TODO: add get_source_template_content for a single file's contents
     async fn get_source_template_content_all(
         &self,
-        id: i64,
+        source_id: SourceId,
     ) -> Result<Vec<SourceTemplateContentResult>>;
+    async fn get_source_template_content_readme_boilermaker(
+        &self,
+        source_template_id: SourceTemplateId,
+    ) -> Result<SourceTemplateContentReadmeBoilermaker>;
     async fn list_sources(&self) -> Result<Vec<SourceResult>>;
     async fn list_source_templates(
         &self,
-        source_id: i64,
+        source_id: SourceId,
         opts: Option<&ListTemplateOptions>,
     ) -> Result<Vec<SourceTemplateResult>>;
 }
@@ -69,7 +79,7 @@ impl SourceMethods for LocalCache {
 
         let source_id = source_result.last_insert_rowid();
 
-        let mut source_template_ids: Vec<i64> = Vec::new();
+        let mut source_template_ids: Vec<SourceTemplateId> = Vec::new();
         for (path, partial) in partial_source_template_rows.into_iter() {
             let source_template_row = SourceTemplateRow {
                 source_id,
@@ -233,11 +243,14 @@ impl SourceMethods for LocalCache {
     }
 
     #[tracing::instrument]
-    async fn get_source_template(&self, id: i64) -> Result<Option<SourceTemplateResult>> {
+    async fn get_source_template(
+        &self,
+        source_template_id: SourceTemplateId,
+    ) -> Result<Option<SourceTemplateResult>> {
         let result = sqlx::query_as::<_, SourceTemplateResult>(
             "SELECT * FROM source_template WHERE id = ?;",
         )
-        .bind(id)
+        .bind(source_template_id)
         .fetch_optional(&self.pool)
         .await?;
 
@@ -249,15 +262,39 @@ impl SourceMethods for LocalCache {
     #[tracing::instrument]
     async fn get_source_template_content_all(
         &self,
-        id: i64,
+        source_id: SourceId,
     ) -> Result<Vec<SourceTemplateContentResult>> {
         let results = sqlx::query_as::<_, SourceTemplateContentResult>(
             "SELECT * FROM source_template_content WHERE source_template_id = ?;",
         )
-        .bind(id)
+        .bind(source_id)
         .fetch_all(&self.pool)
         .await?;
         Ok(results)
+    }
+
+    #[tracing::instrument]
+    async fn get_source_template_content_readme_boilermaker(
+        &self,
+        source_template_id: SourceTemplateId,
+    ) -> Result<SourceTemplateContentReadmeBoilermaker> {
+        let results = sqlx::query_as::<_, SourceTemplateContentResult>(
+            r#"
+                SELECT *
+                FROM source_template_content
+                WHERE
+                    source_template_id = ?
+                    AND
+                        file_path LIKE '/README.%' OR
+                        file_path LIKE '/boilermaker.%'
+                COLLATE NOCASE
+            "#,
+        )
+        .bind(source_template_id)
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(SourceTemplateContentReadmeBoilermaker::from(results))
     }
 
     #[tracing::instrument]
@@ -282,7 +319,7 @@ impl SourceMethods for LocalCache {
     #[tracing::instrument]
     async fn list_source_templates(
         &self,
-        source_id: i64,
+        source_id: SourceId,
         options: Option<&ListTemplateOptions>,
     ) -> Result<Vec<SourceTemplateResult>> {
         let results = match options {
@@ -360,7 +397,7 @@ pub struct PartialSourceTemplateRow {
 
 #[derive(Debug, Clone)]
 pub struct SourceTemplateRow {
-    pub source_id: i64,
+    pub source_id: SourceId,
     pub repo: String,
     pub lang: String,
     pub name: String,
@@ -371,7 +408,7 @@ pub struct SourceTemplateRow {
 
 // TODO: increase validation
 pub fn hashmap_into_source_template_row(
-    source_id: i64,
+    source_id: SourceId,
     m: &HashMap<String, String>,
 ) -> Result<SourceTemplateRow> {
     let repo = m
@@ -422,13 +459,13 @@ pub fn hash_source_template_row(row: &SourceTemplateRow) -> String {
 
 #[derive(Debug, Clone)]
 pub struct AddSourceResult {
-    pub source_id: i64,
-    pub source_template_ids: Vec<i64>,
+    pub source_id: SourceId,
+    pub source_template_ids: Vec<SourceTemplateId>,
 }
 
 #[derive(Debug, Tabled)]
 pub struct TabledSourceRow {
-    pub id: i64,
+    pub id: SourceId,
     pub name: String,
     pub coordinate: String,
     pub description: String,
@@ -436,7 +473,7 @@ pub struct TabledSourceRow {
 
 #[derive(Debug, Clone, sqlx::FromRow, Serialize)]
 pub struct SourceResult {
-    pub id: i64,
+    pub id: SourceId,
     pub name: String,
     pub backend: String,
     pub coordinate: String,
@@ -476,8 +513,8 @@ impl TabledSourceRow {
 
 #[derive(Debug, Clone, sqlx::FromRow, Serialize)]
 pub struct SourceTemplateResult {
-    pub id: i64,
-    pub source_id: i64,
+    pub id: SourceTemplateId,
+    pub source_id: SourceId,
     pub name: String,
     pub lang: String,
     pub repo: String,
@@ -490,7 +527,7 @@ pub struct SourceTemplateResult {
 
 #[derive(Debug, Clone, Default)]
 pub struct SourceFindParams {
-    pub ids: Option<Vec<i64>>,
+    pub ids: Option<Vec<SourceId>>,
     pub name: Option<String>,
     pub coordinate: Option<String>,
     pub description: Option<String>,
@@ -499,8 +536,8 @@ pub struct SourceFindParams {
 
 #[derive(Debug, Clone, Default)]
 pub struct SourceTemplateFindParams {
-    pub ids: Option<Vec<i64>>,
-    pub source_ids: Option<Vec<i64>>,
+    pub ids: Option<Vec<SourceTemplateId>>,
+    pub source_ids: Option<Vec<SourceId>>,
     pub name: Option<String>,
     pub lang: Option<String>,
     pub repo: Option<String>,
@@ -511,10 +548,36 @@ pub struct SourceTemplateFindParams {
 
 #[derive(Debug, Clone, Serialize, sqlx::FromRow)]
 pub struct SourceTemplateContentResult {
-    pub id: i64,
-    pub source_template_id: i64,
+    pub id: SourceId,
+    pub source_template_id: SourceTemplateId,
     pub file_path: String,
     pub content: String,
     pub created_at: Option<i32>,
     pub updated_at: Option<i32>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct SourceTemplateContentReadmeBoilermaker {
+    pub readme: Option<SourceTemplateContentResult>,
+    pub boilermaker: Option<SourceTemplateContentResult>,
+}
+
+impl From<Vec<SourceTemplateContentResult>> for SourceTemplateContentReadmeBoilermaker {
+    fn from(results: Vec<SourceTemplateContentResult>) -> Self {
+        let mut readme: Option<SourceTemplateContentResult> = None;
+        let mut boilermaker: Option<SourceTemplateContentResult> = None;
+
+        for r in results.into_iter() {
+            if r.file_path.to_lowercase().starts_with("/readme.") {
+                readme = Some(r);
+            } else if r.file_path.to_lowercase().starts_with("/boilermaker.") {
+                boilermaker = Some(r);
+            }
+        }
+
+        SourceTemplateContentReadmeBoilermaker {
+            readme,
+            boilermaker,
+        }
+    }
 }

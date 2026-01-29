@@ -11,7 +11,6 @@
       <div><button class="tab-button active {{btn_style}}" data-target="overview">Overview</button></div>
       <div><button class="tab-button {{btn_style}}" data-target="readme">README</button></div>
       <div><button class="tab-button {{btn_style}}" data-target="raw">Raw Details</button></div>
-      <div><button class="tab-button {{btn_style}}" data-target="files">Files</button></div>
     </div>
     <div class="tab-panes">
       <div data-tab="overview" class="tab active">
@@ -62,12 +61,8 @@
           </tbody>
         </table>
       </div>
-      <div data-tab="readme" class="tab">
-        <pre>
-          <code language="javascript" class="text-sm">
-          TODO: add rendered README (suppor Markdown, AsciiDoc)
-          </code>
-        </pre>
+      <div data-tab="readme" class="tab readme">
+        {{ readme_rendered | safe }}
       </div>
       <div data-tab="raw" class="tab">
         <pre>
@@ -75,16 +70,6 @@
 {{ template|tojson(indent=2) }}
           </code>
         </pre>
-      </div>
-      <div data-tab="files" class="tab">
-      {% for file in files %}
-      <div class="">
-        <p>{{ file.file_path }}</p>
-        <pre>
-          <code language="plaintext" class="text-sm">{{ file.content }}</code>
-        </pre>
-      </div>
-      {% endfor %}
       </div>
     </div>
   </div>

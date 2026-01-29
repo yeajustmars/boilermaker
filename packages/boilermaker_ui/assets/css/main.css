@@ -37,3 +37,19 @@ pre, code {
 .tabs .tab-panes .tab.active {
   display: block;
 }
+
+.readme h1 { font-size: 2.0rem; }
+.readme h2 { font-size: 1.8rem; }
+.readme h3 { font-size: 1.6rem; }
+.readme h4 { font-size: 1.4rem; }
+.readme h4 { font-size: 1.2rem; }
+.readme p { padding: 1rem 0 1rem 0; }
+.readme pre, .readme code {
+    font-size: 0.8rem;
+}
+.readme blockquote {
+    border-left: 4px solid #ccc;
+    margin-left: 0;
+    padding-left: 1rem;
+    color: #666;
+}
