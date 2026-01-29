@@ -53,8 +53,6 @@
     --text-xl--line-height: calc(1.75 / 1.25);
     --text-2xl: 1.5rem;
     --text-2xl--line-height: calc(2 / 1.5);
-    --text-3xl: 1.875rem;
-    --text-3xl--line-height: calc(2.25 / 1.875);
     --text-4xl: 2.25rem;
     --text-4xl--line-height: calc(2.5 / 2.25);
     --font-weight-normal: 400;
@@ -555,9 +553,6 @@
   .pr-28 {
     padding-right: calc(var(--spacing) * 28);
   }
-  .pl-0 {
-    padding-left: calc(var(--spacing) * 0);
-  }
   .pl-1 {
     padding-left: calc(var(--spacing) * 1);
   }
@@ -592,10 +587,6 @@
     font-size: var(--text-2xl);
     line-height: var(--tw-leading, var(--text-2xl--line-height));
   }
-  .text-3xl {
-    font-size: var(--text-3xl);
-    line-height: var(--tw-leading, var(--text-3xl--line-height));
-  }
   .text-4xl {
     font-size: var(--text-4xl);
     line-height: var(--tw-leading, var(--text-4xl--line-height));
@@ -616,17 +607,8 @@
     font-size: var(--text-xs);
     line-height: var(--tw-leading, var(--text-xs--line-height));
   }
-  .text-\[0\.5rem\] {
-    font-size: 0.5rem;
-  }
   .text-\[0\.6rem\] {
     font-size: 0.6rem;
-  }
-  .text-\[0\.7rem\] {
-    font-size: 0.7rem;
-  }
-  .text-\[10px\] {
-    font-size: 10px;
   }
   .leading-8 {
     --tw-leading: calc(var(--spacing) * 8);
@@ -706,9 +688,6 @@
   }
   .underline {
     text-decoration-line: underline;
-  }
-  .decoration-neutral-200 {
-    text-decoration-color: var(--color-neutral-200);
   }
   .decoration-neutral-300 {
     text-decoration-color: var(--color-neutral-300);
@@ -1002,16 +981,6 @@
       color: var(--color-neutral-500);
     }
   }
-  .dark\:text-neutral-600 {
-    @media (prefers-color-scheme: dark) {
-      color: var(--color-neutral-600);
-    }
-  }
-  .dark\:text-neutral-800 {
-    @media (prefers-color-scheme: dark) {
-      color: var(--color-neutral-800);
-    }
-  }
   .dark\:text-purple-400 {
     @media (prefers-color-scheme: dark) {
       color: var(--color-purple-400);
@@ -1030,11 +999,6 @@
   .dark\:decoration-neutral-500 {
     @media (prefers-color-scheme: dark) {
       text-decoration-color: var(--color-neutral-500);
-    }
-  }
-  .dark\:decoration-neutral-700 {
-    @media (prefers-color-scheme: dark) {
-      text-decoration-color: var(--color-neutral-700);
     }
   }
   .dark\:ring-neutral-700 {

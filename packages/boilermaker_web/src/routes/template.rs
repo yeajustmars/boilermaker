@@ -8,6 +8,7 @@ use axum::{
 use axum_template::TemplateEngine;
 use color_eyre::Result;
 use minijinja::context;
+use pulldown_cmark::{html, Options, Parser};
 use tracing::error;
 
 use crate::{make_context, WebAppState};
@@ -78,9 +79,10 @@ pub async fn template(
                 return template_error(app.clone(), TemplateDetailsError::UnknownTemplate);
             }
         };
+
         // TODO: decide on pulling all of this. Maybe put it as an option?
         let files = db
-            .get_source_template_content_all(template_id)
+            .get_source_template_content_readme_boilermaker(template_id)
             .await
             .map_err(|e| {
                 error!(
@@ -92,11 +94,27 @@ pub async fn template(
         (template, files)
     };
 
+    let readme_rendered = {
+        match &files.readme {
+            None => "No README found".to_string(),
+            Some(readme) => {
+                let options = Options::empty();
+                let parser = Parser::new_ext(&readme.content, options);
+                let mut html_output = String::new();
+                html::push_html(&mut html_output, parser);
+                html_output
+            }
+        }
+    };
+
     let ctx = make_context(context! {
         title => "Templates",
         template => template,
-        files => files,
+        readme => files.readme,
+        readme_rendered => readme_rendered,
+        boilermaker => files.boilermaker,
     });
+
     let out = app
         .template
         .render("template.html", ctx)
