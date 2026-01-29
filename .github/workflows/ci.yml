@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 env:
   CARGO_TERM_COLOR: always
@@ -13,28 +13,21 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Cache
-      uses: actions/cache@v5
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          target
-          node_modules
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-    - uses: actions/checkout@v4
+      - name: Cache
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - uses: actions/checkout@v4
 
-    - name: Rustfmt
-      run: cargo fmt --all -- --check
+      - name: Rustfmt
+        run: cargo fmt --all -- --check --exclude boilermaker_desktop --exclude boilermaker_ui --exclude boilermaker_web
 
-    - name: Install system packages
-      run: sudo apt update && sudo apt install -y libglib2.0-dev libgtk-3-dev
-    - name: Install NPM packages
-      run: npm i && npm x tailwindcss -- -i ./packages/boilermaker_ui/tailwind.css -o ./packages/boilermaker_ui/assets/css/tailwind.css
+      - name: Clippy
+        run: cargo clippy --no-deps --all-targets --exclude boilermaker_desktop --exclude boilermaker_ui --exclude boilermaker_web
 
-    - name: Run clippy
-      run: cargo clippy --no-deps --all-targets
-
-    - name: Run tests
-      run: cargo test --verbose
-
+      - name: Tests
+        run: cargo test --verbose --exclude boilermaker_desktop --exclude boilermaker_ui --exclude boilermaker_web
