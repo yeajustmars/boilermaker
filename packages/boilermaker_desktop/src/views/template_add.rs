@@ -25,7 +25,7 @@ pub fn TemplateAdd() -> Element {
     let mut branch = use_signal(String::new);
     let mut subdir = use_signal(String::new);
     let mut lang = use_signal(String::new);
-    let mut name = use_signal(String::new);
+    let mut rename = use_signal(String::new);
     let mut description = use_signal(String::new);
     let mut status = use_signal(StatusHashMapType::new);
     let mut processing = use_signal(|| false);
@@ -76,7 +76,8 @@ pub fn TemplateAdd() -> Element {
                                     branch: string_to_option(&sigval(&branch)),
                                     subdir: string_to_option(&sigval(&subdir)),
                                     lang: string_to_option(&sigval(&lang)),
-                                    name: string_to_option(&sigval(&name)),
+                                    rename: string_to_option(&sigval(&rename)),
+                                    local: false,
                                 };
                                 match install(app_state, &data).await {
                                     Ok(_) => {
@@ -166,9 +167,9 @@ pub fn TemplateAdd() -> Element {
                                     r#type: "text",
                                     class: INPUT_STYLE,
                                     placeholder: "Enter template name",
-                                    oninput: move |e| name.set(e.value()),
-                                    value: "{name}",
-                                    onblur: move |e| validate_name(e, &name, &mut status),
+                                    oninput: move |e| rename.set(e.value()),
+                                    value: "{rename}",
+                                    onblur: move |e| validate_name(e, &rename, &mut status),
                                 }
                             }
                             div { class: "mb-4",
