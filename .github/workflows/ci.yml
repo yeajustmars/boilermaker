@@ -28,8 +28,6 @@ jobs:
     - uses: actions/checkout@v4
     - name: NPM
       run: npm i && npm x tailwindcss -- -i ./packages/boilermaker_ui/tailwind.css -o ./packages/boilermaker_ui/assets/css/tailwind.css
-    - name: Build
-      run: cargo build --verbose --profile ${{ matrix.BUILD_TARGET }}
     - name: Run tests
       run: cargo test --verbose --profile ${{ matrix.BUILD_TARGET }}
 
