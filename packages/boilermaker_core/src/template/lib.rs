@@ -421,5 +421,3 @@ pub async fn interpolate_template_filepaths(
 pub fn render_var(path: &str, ctx: &JinjaValue) -> Result<String> {
     Ok(JinjaEnv::new().render_str(&format!("{{{{ {} }}}}", path), ctx)?)
 }
-
-
