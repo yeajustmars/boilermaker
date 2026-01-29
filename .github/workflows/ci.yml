@@ -33,7 +33,7 @@ jobs:
       run: npm i && npm x tailwindcss -- -i ./packages/boilermaker_ui/tailwind.css -o ./packages/boilermaker_ui/assets/css/tailwind.css
 
     - name: Run clippy
-      run: cargo clippy --all-targets
+      run: cargo clippy --no-deps --all-targets
 
     - name: Run tests
       run: cargo test --verbose
