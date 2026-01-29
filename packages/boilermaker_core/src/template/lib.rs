@@ -410,7 +410,7 @@ pub async fn interpolate_template_filepaths(
 /// ```rust
 /// use minijinja::{context, Environment as JinjaEnv};
 ///
-/// use boilermaker::tpl::render_var;
+/// use boilermaker_core::template::render_var;
 ///
 /// let ctx = context! { a => context! { b => "Hello, World!" } };
 /// let rendered = render_var("a.b", &ctx).unwrap();
