@@ -1,0 +1,39 @@
+<div class="w-full">
+  <div class="relative">
+    <form hx-post="/search" hx-target="#search-results" hx-indicator=".htmx-indicator" hx-swap="innerHTML">
+      <div class="flex items-justify border-1 border-neutral-300 dark:border-neutral-800 rounded-md p-1 focus-within:outline-1 focus-within:outline-sky-500">
+        <div class="w-1/5">
+          <select name="category" class="h-full w-full bg-slate-200 rounded-sm text-slate-600">
+            <option value="all"></option>
+            <option value="template">Templates only</option>
+            <option value="source">Sources only</option>
+            <option value="doc">Docs only</option>
+          </select>
+        </div>
+        <div class="w-3/5">
+          <input
+              placeholder="Search Boilermaker..."
+              value="example"
+              name="term"
+              class="h-full w-full px-2 placeholder-slate-600 focus:outline-none"
+          />
+        </div>
+        <div class="w-1/5">
+          <button _="on click show #search-results"
+            type="submit"
+            class="h-full w-full bg-slate-800 text-white rounded-sm flex items-center justify-center px-2">
+            <i class="fa fa-search pr-2"></i>
+            Search
+          </button>
+        </div>
+      </div>
+    </form>
+    <div id="search-results"
+         class="w-full mt-0 absolute bg-white dark:bg-neutral-800 p-2 border-1 border-neutral-100 rounded-md shadow-lg min-h-24"
+         style="display:none;">
+      <div class="container w-full flex justify-center">
+        <img src="/assets/img/preloader.gif" class="htmx-indicator h-16 w-16"/>
+      </div>
+    </div>
+  </div>
+</div>

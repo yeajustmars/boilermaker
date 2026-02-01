@@ -1,7 +1,11 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{fmt, sync::Arc};
 
-use axum::{routing::get, serve::Serve, Router};
+use axum::{
+    routing::{get, post},
+    serve::Serve,
+    Router,
+};
 use axum_embed::ServeEmbed;
 use axum_template::engine::Engine;
 use color_eyre::eyre::Result;
@@ -110,6 +114,7 @@ impl WebApp {
             .route("/docs", get(routes::docs))
             .route("/docs/{path}", get(routes::doc))
             .route("/get-involved", get(routes::get_involved))
+            .route("/search", post(routes::search))
             .route("/settings", get(routes::settings))
             .route("/template/{template_id}", get(routes::template))
             .route("/templates", get(routes::templates))
@@ -146,6 +151,7 @@ impl fmt::Debug for WebApp {
     }
 }
 
+// TODO: clean up repetitive context (3 blocks for a single context?)
 #[derive(Serialize, Debug, Clone)]
 pub struct BaseContext {
     layout_style: &'static str,
@@ -158,6 +164,8 @@ pub struct BaseContext {
     font_awesome_url: &'static str,
     font_roboto_url: &'static str,
     font_fira_code_url: &'static str,
+    github_project_url: &'static str,
+    github_discussions_url: &'static str,
 }
 
 pub const BASE_CONTEXT: BaseContext = BaseContext {
@@ -171,6 +179,8 @@ pub const BASE_CONTEXT: BaseContext = BaseContext {
     font_awesome_url: FONT_AWESOME_URL,
     font_roboto_url: FONT_ROBOTO_URL,
     font_fira_code_url: FONT_FIRA_CODE_URL,
+    github_project_url: "https://github.com/yeajustmars/boilermaker",
+    github_discussions_url: "https://github.com/yeajustmars/boilermaker/discussions",
 };
 
 impl From<BaseContext> for JinjaContext {
@@ -186,6 +196,8 @@ impl From<BaseContext> for JinjaContext {
             font_awesome_url => ctx.font_awesome_url,
             font_roboto_url => ctx.font_roboto_url,
             font_fira_code_url => ctx.font_fira_code_url,
+            github_project_url => ctx.github_project_url,
+            github_discussions_url => ctx.github_discussions_url,
         }
     }
 }

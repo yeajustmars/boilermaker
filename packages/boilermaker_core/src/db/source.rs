@@ -8,8 +8,9 @@ use tabled::Tabled;
 use unicode_truncate::{Alignment, UnicodeTruncateStr};
 
 use crate::{
-    db::template::ListTemplateOptions, template as tmpl, template::make_name_from_url,
-    util::crypto::sha256_hash_string, util::file::read_file_to_string,
+    db::SearchResult, db::template::ListTemplateOptions, template as tmpl,
+    template::make_name_from_url, util::crypto::sha256_hash_string,
+    util::file::read_file_to_string,
 };
 
 use super::LocalCache;
@@ -48,6 +49,11 @@ pub trait SourceMethods: Send + Sync {
         source_id: SourceId,
         opts: Option<&ListTemplateOptions>,
     ) -> Result<Vec<SourceTemplateResult>>;
+    async fn search_sources(
+        &self,
+        source_name: Option<String>,
+        term: &str,
+    ) -> Result<Vec<SearchResult>>;
 }
 
 #[async_trait::async_trait]
@@ -359,6 +365,42 @@ impl SourceMethods for LocalCache {
         };
 
         Ok(results)
+    }
+
+    // Search the content of all templates in source_name.
+    #[tracing::instrument]
+    async fn search_sources(
+        &self,
+        source_name: Option<String>,
+        term: &str,
+    ) -> Result<Vec<SearchResult>> {
+        let term = term.trim();
+        let mut qb = QueryBuilder::new(
+            r#"
+                SELECT 'source' as kind,
+                       st.id,
+                       st.name,
+                       st.lang,
+                       st.repo,
+                       st.branch,
+                       st.subdir
+                FROM source_template_content_fts AS ft_search
+                    LEFT JOIN source_template_content AS stc ON ft_search.rowid = stc.id
+                    LEFT JOIN source_template as st ON stc.source_template_id = st.id
+                    LEFT JOIN source as s ON st.source_id = s.id
+                WHERE source_template_content_fts MATCH
+            "#,
+        );
+        qb.push_bind(term);
+
+        if let Some(name) = source_name {
+            qb.push(" AND s.name = ");
+            qb.push_bind(name);
+        }
+        qb.push(" GROUP BY st.id");
+
+        let q = qb.build_query_as::<SearchResult>();
+        Ok(q.fetch_all(&self.pool).await?)
     }
 }
 

@@ -7,7 +7,7 @@
   <h1 class="text-2xl">Template Details: {{ template.name }} (id: {{ template.id }})</h1>
   <div class="tabs mt-4">
     <div class="tab-buttons flex border-b border-neutral-300 dark:border-neutral-700">
-      {% set btn_style = 'mr-2 p-1 border border-1 border-b-0 border-neutral-300 dark:border-neutral-700' %}
+      {% set btn_style = 'mr-2 p-1 border border-1 border-b-0 rounded-t-sm border-neutral-300 dark:border-neutral-700' %}
       <div><button class="tab-button active {{btn_style}}" data-target="overview">Overview</button></div>
       <div><button class="tab-button {{btn_style}}" data-target="readme">README</button></div>
       <div><button class="tab-button {{btn_style}}" data-target="boilermaker">Config</button></div>

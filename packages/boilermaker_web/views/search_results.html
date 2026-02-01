@@ -1,0 +1,27 @@
+<div class="">
+  <div class="w-full flex justify-end mb-4 border-b-1 border-b-neutral-200 pb-2">
+    <button _="on click hide #search-results"
+      class="h-full bg-sky-200 text-white rounded-sm flex justify-center px-2">
+      <i class="fa fa-close"></i>
+      Close
+    </button>
+  </div>
+
+  {% for sr in search_results %}
+  <div class="search-result">
+    {% if sr.kind == 'Source' or sr.kind == 'Template' %}
+    <div class="flex justify-between">
+      <div>
+        <span class="text-xs text-grey-200">{{ loop.index }}</span>
+        <a href="/template/{{ sr.id }}" class="text-xl {{link_style}}">{{ sr.name }}</a>
+        <span class="text-xs ml-2">{{ sr.lang }}</span>
+      </div>
+      <div class="ml-4"><span class="bg-yellow-100 text-xs">Template</span></div>
+    </div>
+    <div class=""><a href="{{ sr.repo }}" class="{{secondary_link_style}} ml-4" target="_blank" rel="noopener noreferrer">{{ sr.repo }}</a></div>
+    {% endif %}
+  </div>
+  {% else %}
+    <p>No results found.</p>
+  {% endfor %}
+</div>
