@@ -11,6 +11,8 @@ html, body {
   :root {
     --link-style: #0284C7;
     --blockquote-border-left: 1px solid #ccc;
+    --highlighted-bg: yellow;
+    --highlighted-fg: black;
   }
 }
 
@@ -18,6 +20,8 @@ html, body {
   :root {
     --link-style: #7DD3FC;
     --blockquote-border-left: 1px solid #ccc;
+    --highlighted-bg: #ca8a04;
+    --highlighted-fg: white;
   }
 }
 
@@ -61,4 +65,10 @@ pre, code {
 }
 .readme a:link, .readme a:visited {
   color: var(--link-style);
+}
+
+.highlighted {
+    font-family: "Fira Code", monospace;
+    background-color: var(--highlighted-bg);
+    color: var(--highlighted-fg);
 }

@@ -1,27 +1,46 @@
-<div class="">
-  <div class="w-full flex justify-end mb-4 border-b-1 border-b-neutral-200 pb-2">
+<div>
+  <div class="w-full flex justify-end mb-4 border-b-1 border-b-neutral-200 dark:border-b-neutral-700 pb-2">
     <button _="on click hide #search-results"
-      class="h-full bg-sky-200 text-white rounded-sm flex justify-center px-2">
+      class="h-full bg-sky-200 dark:bg-sky-600 text-white rounded-sm flex justify-center px-2">
       <i class="fa fa-close"></i>
       Close
     </button>
   </div>
 
   {% for sr in search_results %}
-  <div class="search-result">
-    {% if sr.kind == 'Source' or sr.kind == 'Template' %}
-    <div class="flex justify-between">
-      <div>
-        <span class="text-xs text-grey-200">{{ loop.index }}</span>
-        <a href="/template/{{ sr.id }}" class="text-xl {{link_style}}">{{ sr.name }}</a>
-        <span class="text-xs ml-2">{{ sr.lang }}</span>
-      </div>
-      <div class="ml-4"><span class="bg-yellow-100 text-xs">Template</span></div>
+    <div class="search-result">
+      {% if sr.kind == 'source' or sr.kind == 'template' %}
+        <div class="flex justify-between">
+          <div>
+            <span class="text-xs text-grey-200">{{ loop.index }}</span>
+            <a href="/template/{{ sr.id }}" class="text-xl {{link_style}}">{{ sr.name }}</a>
+            <span class="text-xs ml-2">{{ sr.lang }}</span>
+          </div>
+          <div class="ml-4"><span class="bg-yellow-100 dark:bg-yellow-700 text-xs">Template</span></div>
+        </div>
+        <div class="ml-3 mb-1"><a href="{{ sr.repo }}" class="{{secondary_link_style}} text-sm" target="_blank" rel="noopener noreferrer">{{ sr.repo }}</a></div>
+
+        {% if sr.highlighted_lines|length > 0 %}
+          {% for hl in sr.highlighted_lines %}
+            <div class="flex">
+              <div class="w-12 pr-4 text-right text-xs text-neutral-200 dark:text-neutral-500">{{ hl.line_number }}</div>
+              <div class="text-sm text-neutral-400 dark:text-neutral-400">{{ hl.line | safe }}</div>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endif %}
     </div>
-    <div class=""><a href="{{ sr.repo }}" class="{{secondary_link_style}} ml-4" target="_blank" rel="noopener noreferrer">{{ sr.repo }}</a></div>
-    {% endif %}
-  </div>
   {% else %}
     <p>No results found.</p>
   {% endfor %}
+
+  {% if search_results|length > 5 %}
+  <div class="w-full flex justify-end mb-4 border-b-1 border-b-neutral-200 dark:border-b-neutral-700 pb-2">
+    <button _="on click hide #search-results"
+      class="h-full bg-sky-200 dark:bg-sky-600 text-white rounded-sm flex justify-center px-2">
+      <i class="fa fa-close"></i>
+      Close
+    </button>
+  </div>
+  {% endif %}
 </div>

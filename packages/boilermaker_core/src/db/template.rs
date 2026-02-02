@@ -6,7 +6,7 @@ use sqlx::QueryBuilder;
 use tabled::Tabled;
 
 use super::LocalCache;
-use crate::db::{SearchResult, SearchResultKind};
+use crate::db::{SearchOptions, SearchResult, SearchResultKind};
 use crate::template as tmpl;
 use crate::util::crypto::sha256_hash_string;
 use crate::util::file::read_file_to_string;
@@ -26,7 +26,11 @@ pub trait TemplateMethods: Send + Sync {
     ) -> Result<Vec<TemplateResult>>;
     async fn template_table_exists(&self) -> Result<bool>;
     async fn update_template(&self, id: i64, row: TemplateRow) -> Result<i64>;
-    async fn search_templates(&self, term: &str) -> Result<Vec<SearchResult>>;
+    async fn search_templates(
+        &self,
+        term: &str,
+        opts: Option<SearchOptions>,
+    ) -> Result<Vec<SearchResult>>;
 }
 
 #[async_trait::async_trait]
@@ -192,7 +196,11 @@ impl TemplateMethods for LocalCache {
     }
 
     #[tracing::instrument]
-    async fn search_templates(&self, term: &str) -> Result<Vec<SearchResult>> {
+    async fn search_templates(
+        &self,
+        term: &str,
+        _opts: Option<SearchOptions>,
+    ) -> Result<Vec<SearchResult>> {
         let term = term.trim();
         let results = sqlx::query_as::<_, SearchResult>(
             r#"

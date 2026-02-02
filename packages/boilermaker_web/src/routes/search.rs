@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 use tracing::error;
 
 use crate::{make_context, WebAppState};
-use boilermaker_core::db::{SearchResult, SearchResultKind};
+use boilermaker_core::db::{SearchOptions, SearchResult, SearchResultKind};
 
 /*
 enum SearchError {
@@ -66,21 +66,21 @@ pub async fn search(
     State(app): State<Arc<WebAppState>>,
     Form(params): Form<SearchParams>,
 ) -> Result<Html<String>, StatusCode> {
-    //println!("Search params: {:?}", params);
-    //let ten_seconds = std::time::Duration::from_secs(1);
-    //std::thread::sleep(ten_seconds);
-
     let term = params.term;
+    let opts = SearchOptions { content: true };
+
     let search_results: JinjaValue = {
         let db = app.db.clone();
         match params.category.unwrap_or(SearchParamsCategory::All) {
             SearchParamsCategory::All => {
                 let template_results = db
-                    .search_sources(None, &term)
+                    .search_sources(None, &term, Some(opts))
                     .await
-                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+                    .into_iter()
+                    .map(|res: SearchResult| WebSearchResult::to_context(res, &term))
+                    .collect::<Vec<WebSearchResult>>();
                 context! { search_results => template_results }
-                // TODO: add doc_results
             }
             SearchParamsCategory::Template => context! {},
             SearchParamsCategory::Doc => context! {},
@@ -89,6 +89,7 @@ pub async fn search(
 
     let base_ctx = make_context(context! { title => "Search Results" });
     let ctx = merge_maps([base_ctx, search_results]);
+    println!("ctx: {:#?}", ctx);
 
     let out = app
         .template
@@ -101,32 +102,68 @@ pub async fn search(
     Ok(Html(out))
 }
 
-fn search_templates() -> Vec<JinjaValue> {
-    vec![]
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct HighlightedLine {
+    pub line_number: u16,
+    pub line: String,
 }
 
-fn search_docs() -> Vec<JinjaValue> {
-    vec![]
+pub fn highlight_search_term(content: &str, term: &str) -> Vec<HighlightedLine> {
+    let escaped_term = regex::escape(term);
+    let re = regex::RegexBuilder::new(&escaped_term)
+        .case_insensitive(true)
+        .build()
+        .unwrap();
+
+    let mut relevant_lines: Vec<HighlightedLine> = Vec::new();
+    for (index, line) in content.lines().enumerate() {
+        if line.contains(term) {
+            let highlighted = re
+                .replace_all(line, |caps: &regex::Captures| {
+                    format!(r#"<span class="highlighted">{}</span>"#, &caps[0])
+                })
+                .to_string();
+            relevant_lines.push(HighlightedLine {
+                line_number: (index + 1) as u16,
+                line: highlighted,
+            });
+        }
+    }
+    relevant_lines
 }
 
-/*
-pub async fn search_templates(
-    cache: Arc<dyn TemplateDb>,
-    term: &str,
-    scope: SearchScope,
-) -> Result<Vec<SearchResult>> {
-    match scope {
-        SearchScope::Local => Ok(cache.search_templates(term).await?),
-        SearchScope::Source(name) => Ok(cache.search_sources(Some(name), term).await?),
-        SearchScope::All => {
-            let mut all_results = Vec::new();
-            let local = cache.search_templates(term).await?;
-            all_results.extend(local);
+#[derive(Debug, Clone, Serialize)]
+pub struct WebSearchResult {
+    pub kind: String,
+    pub id: i64,
+    pub name: String,
+    pub lang: String,
+    pub repo: String,
+    pub branch: Option<String>,
+    pub subdir: Option<String>,
+    pub highlighted_lines: Option<Vec<HighlightedLine>>,
+}
 
-            let sources = cache.search_sources(None, term).await?;
-            all_results.extend(sources);
-            Ok(all_results)
+impl WebSearchResult {
+    pub fn to_context(res: SearchResult, term: &str) -> Self {
+        let highlighted_lines = if (res.kind == SearchResultKind::Template
+            || res.kind == SearchResultKind::Source)
+            && res.content.is_some()
+        {
+            res.content.map(|c| highlight_search_term(&c, term))
+        } else {
+            None
+        };
+
+        Self {
+            kind: res.kind.to_string(),
+            id: res.id,
+            name: res.name,
+            lang: res.lang,
+            repo: res.repo,
+            branch: res.branch,
+            subdir: res.subdir,
+            highlighted_lines,
         }
     }
 }
- */

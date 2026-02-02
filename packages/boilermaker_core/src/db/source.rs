@@ -8,8 +8,11 @@ use tabled::Tabled;
 use unicode_truncate::{Alignment, UnicodeTruncateStr};
 
 use crate::{
-    db::SearchResult, db::template::ListTemplateOptions, template as tmpl,
-    template::make_name_from_url, util::crypto::sha256_hash_string,
+    db::template::ListTemplateOptions,
+    db::{SearchOptions, SearchResult},
+    template as tmpl,
+    template::make_name_from_url,
+    util::crypto::sha256_hash_string,
     util::file::read_file_to_string,
 };
 
@@ -53,6 +56,7 @@ pub trait SourceMethods: Send + Sync {
         &self,
         source_name: Option<String>,
         term: &str,
+        opts: Option<SearchOptions>,
     ) -> Result<Vec<SearchResult>>;
 }
 
@@ -373,24 +377,41 @@ impl SourceMethods for LocalCache {
         &self,
         source_name: Option<String>,
         term: &str,
+        opts: Option<SearchOptions>,
     ) -> Result<Vec<SearchResult>> {
         let term = term.trim();
-        let mut qb = QueryBuilder::new(
+        let include_content = if let Some(opts) = opts {
+            opts.content
+        } else {
+            false
+        };
+
+        let select_stmt = if include_content {
             r#"
-                SELECT 'source' as kind,
-                       st.id,
-                       st.name,
-                       st.lang,
-                       st.repo,
-                       st.branch,
-                       st.subdir
-                FROM source_template_content_fts AS ft_search
-                    LEFT JOIN source_template_content AS stc ON ft_search.rowid = stc.id
-                    LEFT JOIN source_template as st ON stc.source_template_id = st.id
-                    LEFT JOIN source as s ON st.source_id = s.id
-                WHERE source_template_content_fts MATCH
-            "#,
-        );
+            SELECT
+                'source' AS kind,
+                st.id, st.name, st.lang, st.repo, st.branch, st.subdir,
+                ft_search.content
+            "#
+        } else {
+            r#"
+            SELECT
+                'source' AS kind,
+                st.id, st.name, st.lang, st.repo, st.branch, st.subdir,
+                '' AS content
+            "#
+        };
+
+        let mut qb = QueryBuilder::new(format!(
+            r#"
+            {select_stmt}
+            FROM source_template_content_fts AS ft_search
+                LEFT JOIN source_template_content AS stc ON ft_search.rowid = stc.id
+                LEFT JOIN source_template as st ON stc.source_template_id = st.id
+                LEFT JOIN source as s ON st.source_id = s.id
+            WHERE source_template_content_fts MATCH
+            "#
+        ));
         qb.push_bind(term);
 
         if let Some(name) = source_name {

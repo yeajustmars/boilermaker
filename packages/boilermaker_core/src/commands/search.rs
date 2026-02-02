@@ -68,14 +68,14 @@ pub async fn search_templates(
     scope: SearchScope,
 ) -> Result<Vec<SearchResult>> {
     match scope {
-        SearchScope::Local => Ok(cache.search_templates(term).await?),
-        SearchScope::Source(name) => Ok(cache.search_sources(Some(name), term).await?),
+        SearchScope::Local => Ok(cache.search_templates(term, None).await?),
+        SearchScope::Source(name) => Ok(cache.search_sources(Some(name), term, None).await?),
         SearchScope::All => {
             let mut all_results = Vec::new();
-            let local = cache.search_templates(term).await?;
+            let local = cache.search_templates(term, None).await?;
             all_results.extend(local);
 
-            let sources = cache.search_sources(None, term).await?;
+            let sources = cache.search_sources(None, term, None).await?;
             all_results.extend(sources);
             Ok(all_results)
         }

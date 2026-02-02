@@ -33,4 +33,10 @@ pub struct SearchResult {
     pub repo: String,
     pub branch: Option<String>,
     pub subdir: Option<String>,
+    pub content: Option<String>,
+}
+
+#[derive(Clone, Debug)]
+pub struct SearchOptions {
+    pub content: bool,
 }
