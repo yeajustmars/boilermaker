@@ -1,7 +1,34 @@
--- docs down
+-- docs up
 
-DROP TABLE IF EXISTS doc;
-DROP TABLE IF EXISTS doc_fts;
-DROP TRIGGER IF EXISTS doc_after_insert;
-DROP TRIGGER IF EXISTS doc_after_update;
-DROP TRIGGER IF EXISTS doc_after_delete;
+CREATE TABLE IF NOT EXISTS doc (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  path TEXT NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL
+);
+
+CREATE VIRTUAL TABLE IF NOT EXISTS doc_fts USING fts5(name, content);
+
+-- after insert
+CREATE TRIGGER IF NOT EXISTS doc_after_insert
+AFTER INSERT ON doc
+BEGIN
+  INSERT INTO doc_fts(rowid, name, content) VALUES (new.id, new.name, new.content);
+END;
+
+-- after update
+CREATE TRIGGER IF NOT EXISTS doc_after_update
+AFTER UPDATE ON doc
+BEGIN
+  INSERT INTO doc_fts(doc_fts, rowid) VALUES('delete', old.id);
+
+  INSERT INTO doc_fts(rowid, name, content) VALUES (new.id, new.name, new.content);
+END;
+
+-- after delete
+CREATE TRIGGER IF NOT EXISTS doc_after_delete
+AFTER DELETE ON doc
+BEGIN
+  INSERT INTO doc_fts(doc_fts, rowid) VALUES('delete', old.id);
+END;
