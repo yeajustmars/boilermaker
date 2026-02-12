@@ -10,19 +10,32 @@ use color_eyre::eyre::Result;
 use minijinja::context;
 use pulldown_cmark::{html, Options, Parser};
 
-use crate::{make_context, Docs, WebAppState};
+use crate::{make_context, WebAppState};
+use boilermaker_core::docs::{build_docs_tree, DocFiles, DocTreeNode};
 
 #[tracing::instrument]
 pub async fn docs(State(app): State<Arc<WebAppState>>) -> Result<Html<String>, StatusCode> {
-    let ctx = make_context(context! { title => "Docs", });
+    let docs = app
+        .db
+        .get_docs()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let mut docs_tree = build_docs_tree(docs);
+    for node in &mut docs_tree {
+        node.sort_children();
+    }
+
+    let ctx = make_context(context! {
+        title => "Docs",
+        docs_tree => docs_tree
+    });
     let out = app
         .template
         .render("docs.html", ctx)
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
     Ok(Html(out))
 }
-
-// TODO: remove static assets for docs if not needed.
 
 #[tracing::instrument]
 pub async fn doc(
@@ -32,7 +45,7 @@ pub async fn doc(
     let title = "Docs";
 
     let template = format!("{}.md", path);
-    let content = match Docs::get(&template) {
+    let content = match DocFiles::get(&template) {
         Some(file) => {
             let bytes = file.data.to_vec();
             String::from_utf8(bytes).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
@@ -58,3 +71,5 @@ pub async fn doc(
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(Html(out))
 }
+
+// TODO: move docs sidebar to generic location, if it makes sense.

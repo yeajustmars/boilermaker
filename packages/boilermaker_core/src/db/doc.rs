@@ -1,30 +1,16 @@
 use color_eyre::{Result, eyre::eyre};
 use lazy_static::lazy_static;
 use regex::Regex;
-use rust_embed::RustEmbed;
+use serde::Serialize;
 use sqlx::QueryBuilder;
 
 use super::LocalCache;
-
-#[derive(RustEmbed, Clone, Debug)]
-#[folder = "../../packages/boilermaker_ui/docs/"]
-struct DocFiles;
+use crate::docs::DocFiles;
 
 #[async_trait::async_trait]
 pub trait DocMethods: Send + Sync {
     async fn index_docs(&self) -> Result<()>;
-}
-
-#[derive(Debug, Clone)]
-struct Doc {
-    content: String,
-    created_at: i32,
-    rel_path: String,
-    title: Option<String>,
-}
-
-lazy_static! {
-    static ref TITLE_REGEX: Regex = Regex::new(r"(?m)^#\s.*").unwrap();
+    async fn get_docs(&self) -> Result<Vec<DocRow>>;
 }
 
 #[async_trait::async_trait]
@@ -66,4 +52,43 @@ impl DocMethods for LocalCache {
 
         Ok(())
     }
+
+    #[tracing::instrument]
+    async fn get_docs(&self) -> Result<Vec<DocRow>> {
+        let rows = sqlx::query_as::<_, DocRow>(
+            r#"
+            SELECT id, rel_path, content, title, created_at
+            FROM doc
+            ORDER BY rel_path ASC
+            "#,
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| eyre!("Failed to get docs: {e}"))?;
+
+        Ok(rows)
+    }
+}
+
+lazy_static! {
+    static ref TITLE_REGEX: Regex = Regex::new(r"(?m)^#\s.*").unwrap();
+}
+
+#[derive(Debug, Clone)]
+pub struct Doc {
+    pub content: String,
+    pub created_at: i32,
+    pub rel_path: String,
+    pub title: Option<String>,
+}
+
+type DocumentId = i64;
+
+#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
+pub struct DocRow {
+    pub id: DocumentId,
+    pub content: String,
+    pub created_at: i32,
+    pub rel_path: String,
+    pub title: Option<String>,
 }

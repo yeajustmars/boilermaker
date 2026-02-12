@@ -14,7 +14,6 @@ static MIGRATOR: Migrator = sqlx::migrate!("../../migrations");
 
 #[async_trait::async_trait]
 pub trait TemplateDb: TemplateMethods + SourceMethods + DocMethods + Send + Sync {
-    // TODO: rename create_schema or similar (now local_db has cache + sources)
     async fn create_schema(&self) -> Result<()>;
 }
 
