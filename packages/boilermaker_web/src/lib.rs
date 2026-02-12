@@ -91,10 +91,6 @@ impl WebAppState {
 #[folder = "../../packages/boilermaker_ui/assets/"]
 struct Assets;
 
-#[derive(RustEmbed, Clone)]
-#[folder = "../../packages/boilermaker_ui/docs/"]
-struct Docs;
-
 pub struct WebApp {
     server: Serve<tokio::net::TcpListener, Router, Router>,
     pub address: String,

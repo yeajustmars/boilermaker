@@ -89,7 +89,6 @@ pub async fn search(
 
     let base_ctx = make_context(context! { title => "Search Results" });
     let ctx = merge_maps([base_ctx, search_results]);
-    println!("ctx: {:#?}", ctx);
 
     let out = app
         .template

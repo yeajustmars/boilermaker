@@ -11,7 +11,7 @@ use crate::{
     db::template::ListTemplateOptions,
     db::{SearchOptions, SearchResult},
     template as tmpl,
-    template::make_name_from_url,
+    template::{InstallableTemplate, make_name_from_url},
     util::crypto::sha256_hash_string,
     util::file::read_file_to_string,
 };
@@ -420,6 +420,8 @@ impl SourceMethods for LocalCache {
         }
         qb.push(" GROUP BY st.id");
 
+        qb.push(" ORDER BY rank DESC");
+
         let q = qb.build_query_as::<SearchResult>();
         Ok(q.fetch_all(&self.pool).await?)
     }
@@ -586,6 +588,28 @@ pub struct SourceTemplateResult {
     pub sha256_hash: Option<String>,
     pub created_at: Option<i32>,
     pub updated_at: Option<i32>,
+}
+
+impl InstallableTemplate for SourceTemplateResult {
+    fn id(&self) -> i64 {
+        self.id
+    }
+
+    fn repo(&self) -> &str {
+        &self.repo
+    }
+
+    fn lang(&self) -> Option<&String> {
+        Some(&self.lang)
+    }
+
+    fn branch(&self) -> Option<&String> {
+        self.branch.as_ref()
+    }
+
+    fn subdir(&self) -> Option<&String> {
+        self.subdir.as_ref()
+    }
 }
 
 #[derive(Debug, Clone, Default)]

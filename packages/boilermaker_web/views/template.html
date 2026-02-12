@@ -10,6 +10,7 @@
       {% set btn_style = 'mr-2 p-1 border border-1 border-b-0 rounded-t-sm border-neutral-300 dark:border-neutral-700' %}
       <div><button class="tab-button active {{btn_style}}" data-target="overview">Overview</button></div>
       <div><button class="tab-button {{btn_style}}" data-target="readme">README</button></div>
+      <div><button class="tab-button {{btn_style}}" data-target="install">Install</button></div>
       <div><button class="tab-button {{btn_style}}" data-target="boilermaker">Config</button></div>
     </div>
     <div class="tab-panes">
@@ -66,15 +67,20 @@
         </table>
         <h2 class="text-xl mt-6">Raw</h2>
         <pre>
-          <code language="javascript" class="text-xs">{{ template|tojson(indent=2) }}</code>
+          <code class="text-sm">{{ template|tojson(indent=2) }}</code>
         </pre>
       </div>
       <div data-tab="readme" class="tab readme mt-4">
         {{ readme_rendered | safe }}
       </div>
-      <div data-tab="boilermaker" class="tab readme mt-4">
+      <div data-tab="install" class="tab mt-4">
         <pre>
-          <code language="toml" class="text-xs">{{ boilermaker.content }}</code>
+          <code class="language-bash text-sm">{{ cmd_install }}</code>
+        </pre>
+      </div>
+      <div data-tab="boilermaker" class="tab mt-4">
+        <pre>
+          <code class="language-toml text-sm">{{ boilermaker.content }}</code>
         </pre>
       </div>
     </div>

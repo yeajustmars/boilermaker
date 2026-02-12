@@ -22,6 +22,8 @@ pub async fn docs(State(app): State<Arc<WebAppState>>) -> Result<Html<String>, S
     Ok(Html(out))
 }
 
+// TODO: remove static assets for docs if not needed.
+
 #[tracing::instrument]
 pub async fn doc(
     State(app): State<Arc<WebAppState>>,

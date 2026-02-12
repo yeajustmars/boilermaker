@@ -8,6 +8,7 @@ use tabled::Tabled;
 use super::LocalCache;
 use crate::db::{SearchOptions, SearchResult, SearchResultKind};
 use crate::template as tmpl;
+use crate::template::InstallableTemplate;
 use crate::util::crypto::sha256_hash_string;
 use crate::util::file::read_file_to_string;
 
@@ -334,6 +335,28 @@ pub struct TemplateResult {
     pub sha256_hash: Option<String>,
     pub created_at: Option<i32>,
     pub updated_at: Option<i32>,
+}
+
+impl InstallableTemplate for TemplateResult {
+    fn id(&self) -> i64 {
+        self.id
+    }
+
+    fn repo(&self) -> &str {
+        &self.repo
+    }
+
+    fn lang(&self) -> Option<&String> {
+        Some(&self.lang)
+    }
+
+    fn branch(&self) -> Option<&String> {
+        self.branch.as_ref()
+    }
+
+    fn subdir(&self) -> Option<&String> {
+        self.subdir.as_ref()
+    }
 }
 
 #[derive(Debug, Clone, Default)]

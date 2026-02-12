@@ -81,6 +81,7 @@ async fn main() -> Result<()> {
         let cache = app_state.local_db.clone();
         if !cache.template_table_exists().await? {
             cache.create_schema().await?;
+            cache.index_docs().await?;
         }
     }
 

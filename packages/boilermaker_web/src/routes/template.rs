@@ -12,6 +12,7 @@ use pulldown_cmark::{html, Options, Parser};
 use tracing::error;
 
 use crate::{make_context, WebAppState};
+use boilermaker_core::template::make_install_cmd;
 
 enum TemplateDetailsError {
     InvalidTemplateId,
@@ -113,6 +114,7 @@ pub async fn template(
         readme => files.readme,
         readme_rendered => readme_rendered,
         boilermaker => files.boilermaker,
+        cmd_install => make_install_cmd(&template),
     });
 
     let out = app

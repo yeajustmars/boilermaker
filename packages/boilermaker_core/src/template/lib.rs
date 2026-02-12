@@ -421,3 +421,31 @@ pub async fn interpolate_template_filepaths(
 pub fn render_var(path: &str, ctx: &JinjaValue) -> Result<String> {
     Ok(JinjaEnv::new().render_str(&format!("{{{{ {} }}}}", path), ctx)?)
 }
+
+// TODO: find a simpler way to do this with less boilerplate (simple to->from?)
+pub trait InstallableTemplate {
+    fn id(&self) -> i64;
+    fn repo(&self) -> &str;
+    fn lang(&self) -> Option<&String>;
+    fn branch(&self) -> Option<&String>;
+    fn subdir(&self) -> Option<&String>;
+}
+
+// TODO: #[tracing::instrument]
+pub fn make_install_cmd(t: &impl InstallableTemplate) -> String {
+    let mut cmd = format!("boil install {}", t.repo());
+
+    if let Some(lang) = t.lang() {
+        cmd.push_str(&format!(" --lang {}", lang));
+    }
+
+    if let Some(branch) = t.branch() {
+        cmd.push_str(&format!(" --branch {}", branch));
+    }
+
+    if let Some(subdir) = t.subdir() {
+        cmd.push_str(&format!(" --subdir {}", subdir));
+    }
+
+    cmd
+}

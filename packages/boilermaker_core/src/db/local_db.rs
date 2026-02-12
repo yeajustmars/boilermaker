@@ -1,15 +1,19 @@
+use std::str;
+
 use color_eyre::Result;
 use sqlx::{
     migrate::Migrator,
     sqlite::{SqliteConnectOptions, SqlitePool},
 };
 
-use super::{SourceMethods, TemplateMethods};
+use super::{DocMethods, SourceMethods, TemplateMethods};
 
 static MIGRATOR: Migrator = sqlx::migrate!("../../migrations");
 
+//pub const DOCS_DIR: &str = "../../packages/boilermaker_ui/docs/";
+
 #[async_trait::async_trait]
-pub trait TemplateDb: TemplateMethods + SourceMethods + Send + Sync {
+pub trait TemplateDb: TemplateMethods + SourceMethods + DocMethods + Send + Sync {
     // TODO: rename create_schema or similar (now local_db has cache + sources)
     async fn create_schema(&self) -> Result<()>;
 }
