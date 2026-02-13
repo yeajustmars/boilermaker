@@ -21,7 +21,7 @@ use tracing::info;
 
 use boilermaker_core::{
     config::{DEFAULT_LOCAL_CACHE_PATH_STRING, DEFAULT_WEBSITE_DATABASE_PATH_STRING},
-    db::{DocMethods, LocalCache, TemplateDb, TemplateMethods},
+    db::{DocMethods, IndexDocsOptions, LocalCache, TemplateDb, TemplateMethods},
     state::TemplateDbType,
     util::env::is_dev_env,
 };
@@ -65,7 +65,9 @@ impl WebAppState {
             let db = db.clone();
             if !db.template_table_exists().await? {
                 db.create_schema().await?;
-                db.index_docs().await?;
+
+                let idx_docs_opts = Some(IndexDocsOptions { dev: is_dev_env });
+                db.index_docs(idx_docs_opts).await?;
             }
         }
 

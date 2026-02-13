@@ -9,9 +9,10 @@ use boilermaker_core::{
     commands,
     commands::{Sources, sources, sources::templates::Templates as SourceTemplates},
     config::{DEFAULT_LOCAL_CACHE_PATH_STRING, get_system_config},
-    db::LocalCache,
+    db::{IndexDocsOptions, LocalCache},
     logging,
     state::AppState,
+    util::env::is_dev_env,
 };
 
 #[derive(Parser)]
@@ -66,6 +67,8 @@ async fn main() -> Result<()> {
 
     logging::init_tracing(cli.debug)?;
 
+    let is_dev_env = is_dev_env();
+
     let cache_path = DEFAULT_LOCAL_CACHE_PATH_STRING.as_str();
 
     // TODO: decide where a remote db should be allowed vs just searching remote and installing
@@ -81,7 +84,9 @@ async fn main() -> Result<()> {
         let cache = app_state.local_db.clone();
         if !cache.template_table_exists().await? {
             cache.create_schema().await?;
-            cache.index_docs().await?;
+
+            let idx_docs_opts = Some(IndexDocsOptions { dev: is_dev_env });
+            cache.index_docs(idx_docs_opts).await?;
         }
     }
 

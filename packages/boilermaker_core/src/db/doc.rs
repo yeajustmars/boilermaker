@@ -9,14 +9,14 @@ use crate::docs::DocFiles;
 
 #[async_trait::async_trait]
 pub trait DocMethods: Send + Sync {
-    async fn index_docs(&self) -> Result<()>;
+    async fn index_docs(&self, opts: Option<IndexDocsOptions>) -> Result<()>;
     async fn get_docs(&self) -> Result<Vec<DocRow>>;
 }
 
 #[async_trait::async_trait]
 impl DocMethods for LocalCache {
     #[tracing::instrument]
-    async fn index_docs(&self) -> Result<()> {
+    async fn index_docs(&self, _opts: Option<IndexDocsOptions>) -> Result<()> {
         let doc_rows = DocFiles::iter()
             .map(|file| {
                 let f = DocFiles::get(&file).unwrap();
@@ -91,4 +91,9 @@ pub struct DocRow {
     pub created_at: i32,
     pub rel_path: String,
     pub title: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct IndexDocsOptions {
+    pub dev: bool,
 }

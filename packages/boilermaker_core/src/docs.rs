@@ -7,7 +7,7 @@ use crate::db::DocRow;
 
 // TODO: review if doc files are needed if all are indexed in DB
 #[derive(RustEmbed, Clone, Debug)]
-#[folder = "../../packages/boilermaker_ui/docs/"]
+#[folder = "../../docs/"]
 pub struct DocFiles;
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
