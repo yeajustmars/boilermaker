@@ -97,3 +97,19 @@ fn insert_doc_recursive(nodes: &mut Vec<DocTreeNode>, parts: &[&str], full_path:
         }
     }
 }
+
+#[tracing::instrument]
+pub fn print_docs_tree(nodes: &[DocTreeNode], depth: usize) {
+    let indent = "    ".repeat(depth);
+    for node in nodes {
+        match node {
+            DocTreeNode::File { name, .. } => {
+                println!("{}{}", indent, name);
+            }
+            DocTreeNode::Dir { name, children } => {
+                println!("{}{}", indent, name);
+                print_docs_tree(children, depth + 1);
+            }
+        }
+    }
+}

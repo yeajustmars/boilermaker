@@ -1,5 +1,6 @@
 use tabled::Tabled;
 
+pub mod docs;
 pub mod install;
 pub mod list;
 pub mod new;
@@ -10,6 +11,7 @@ pub mod sources;
 pub mod test;
 pub mod update;
 
+pub use docs::Docs;
 pub use install::{Install, install};
 pub use list::{List, list};
 pub use new::{New, new};

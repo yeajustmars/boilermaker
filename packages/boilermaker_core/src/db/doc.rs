@@ -3,6 +3,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use serde::Serialize;
 use sqlx::QueryBuilder;
+use tabled::Tabled;
 
 use super::LocalCache;
 use crate::docs::DocFiles;
@@ -82,7 +83,7 @@ pub struct Doc {
     pub title: Option<String>,
 }
 
-type DocumentId = i64;
+pub type DocumentId = i64;
 
 #[derive(Debug, Clone, Serialize, sqlx::FromRow)]
 pub struct DocRow {
@@ -96,4 +97,25 @@ pub struct DocRow {
 #[derive(Debug, Clone)]
 pub struct IndexDocsOptions {
     pub dev: bool,
+}
+
+#[derive(Debug, Tabled)]
+pub struct TabledDocRow {
+    pub id: DocumentId,
+    pub content: String,
+    pub created_at: i32,
+    pub rel_path: String,
+    pub title: String,
+}
+
+impl From<DocRow> for TabledDocRow {
+    fn from(doc: DocRow) -> Self {
+        Self {
+            id: doc.id,
+            content: doc.content,
+            created_at: doc.created_at,
+            rel_path: doc.rel_path,
+            title: doc.title.unwrap_or("".to_string()),
+        }
+    }
 }

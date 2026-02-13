@@ -20,10 +20,10 @@ pub async fn docs(State(app): State<Arc<WebAppState>>) -> Result<Html<String>, S
         .get_docs()
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    let mut docs_tree = build_docs_tree(docs);
-    for node in &mut docs_tree {
-        node.sort_children();
-    }
+    let docs_tree = build_docs_tree(docs);
+    // for node in &mut docs_tree {
+    //     node.sort_children();
+    // }
 
     let ctx = make_context(context! {
         title => "Docs",

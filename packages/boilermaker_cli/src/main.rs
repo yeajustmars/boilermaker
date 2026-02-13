@@ -7,7 +7,7 @@ use tracing::info;
 
 use boilermaker_core::{
     commands,
-    commands::{Sources, sources, sources::templates::Templates as SourceTemplates},
+    commands::{Docs, Sources, docs, sources, sources::templates::Templates as SourceTemplates},
     config::{DEFAULT_LOCAL_CACHE_PATH_STRING, get_system_config},
     db::{IndexDocsOptions, LocalCache},
     logging,
@@ -40,6 +40,8 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    #[command(subcommand, about = "Documentation")]
+    Docs(commands::Docs),
     #[command(about = "Install a template locally")]
     Install(commands::Install),
     #[command(about = "List all templates in the local cache")]
@@ -98,6 +100,9 @@ async fn main() -> Result<()> {
 
     // TODO: clean this up with aliases or direct imports.
     match command {
+        Commands::Docs(subcmd) => match subcmd {
+            Docs::List(cmd) => docs::list(&app_state, &cmd).await,
+        },
         Commands::Install(cmd) => commands::install(&app_state, &cmd).await,
         Commands::List(cmd) => commands::list(&app_state, &cmd).await,
         Commands::New(cmd) => commands::new(&app_state, &cmd).await,
