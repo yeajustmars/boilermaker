@@ -102,6 +102,7 @@ async fn main() -> Result<()> {
     match command {
         Commands::Docs(subcmd) => match subcmd {
             Docs::List(cmd) => docs::list(&app_state, &cmd).await,
+            Docs::View(cmd) => docs::view(&app_state, &cmd).await,
         },
         Commands::Install(cmd) => commands::install(&app_state, &cmd).await,
         Commands::List(cmd) => commands::list(&app_state, &cmd).await,

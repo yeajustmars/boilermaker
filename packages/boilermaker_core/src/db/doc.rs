@@ -11,7 +11,9 @@ use crate::docs::DocFiles;
 #[async_trait::async_trait]
 pub trait DocMethods: Send + Sync {
     async fn index_docs(&self, opts: Option<IndexDocsOptions>) -> Result<()>;
+    async fn get_doc(&self, id: DocumentId) -> Result<DocRow>;
     async fn get_docs(&self) -> Result<Vec<DocRow>>;
+    async fn find_docs(&self, query: DocFindParams) -> Result<Vec<DocRow>>;
 }
 
 #[async_trait::async_trait]
@@ -55,6 +57,17 @@ impl DocMethods for LocalCache {
     }
 
     #[tracing::instrument]
+    async fn get_doc(&self, id: DocumentId) -> Result<DocRow> {
+        let row = sqlx::query_as::<_, DocRow>("SELECT * FROM doc WHERE id = ?")
+            .bind(id)
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| eyre!("Failed to get doc with id {id}: {e}"))?;
+
+        Ok(row)
+    }
+
+    #[tracing::instrument]
     async fn get_docs(&self) -> Result<Vec<DocRow>> {
         let rows = sqlx::query_as::<_, DocRow>(
             r#"
@@ -68,6 +81,31 @@ impl DocMethods for LocalCache {
         .map_err(|e| eyre!("Failed to get docs: {e}"))?;
 
         Ok(rows)
+    }
+
+    #[tracing::instrument]
+    async fn find_docs(&self, query: DocFindParams) -> Result<Vec<DocRow>> {
+        let mut qb = QueryBuilder::new("SELECT * FROM doc WHERE 1=1 ");
+
+        if let Some(rel_path) = query.rel_path {
+            qb.push("AND rel_path = ").push_bind(rel_path);
+        }
+        if let Some(content) = query.content {
+            qb.push("AND content LIKE ")
+                .push_bind(format!("%{content}%"));
+        }
+        if let Some(title) = query.title {
+            qb.push("AND title LIKE ").push_bind(format!("%{title}%"));
+        }
+        // TODO: make date find more flexible (e.g. date range)
+        if let Some(created_at) = query.created_at {
+            qb.push("AND created_at = ").push_bind(created_at);
+        }
+
+        let q = qb.build_query_as::<DocRow>();
+        let results = q.fetch_all(&self.pool).await?;
+
+        Ok(results)
     }
 }
 
@@ -118,4 +156,13 @@ impl From<DocRow> for TabledDocRow {
             title: doc.title.unwrap_or("".to_string()),
         }
     }
+}
+
+#[derive(Debug, Clone)]
+pub struct DocFindParams {
+    pub id: Option<DocumentId>,
+    pub content: Option<String>,
+    pub created_at: Option<i32>,
+    pub rel_path: Option<String>,
+    pub title: Option<String>,
 }
