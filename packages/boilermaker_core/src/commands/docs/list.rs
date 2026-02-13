@@ -6,7 +6,7 @@ use crate::{
     db::{DocRow, DocumentId},
     docs::{build_docs_tree, print_docs_tree},
     state::AppState,
-    util::{output::print_table, string::truncate_to_char_count, time::timestamp_to_iso8601},
+    util::{output::print_table, string::truncate_to_char_count},
 };
 
 #[derive(Debug, Clone, ValueEnum)]
@@ -61,7 +61,6 @@ pub async fn list(app_state: &AppState, cmd: &List) -> Result<()> {
 pub struct ListTableRow {
     pub id: DocumentId,
     pub rel_path: String,
-    pub created_at: String,
     pub title: String,
 }
 
@@ -82,7 +81,6 @@ impl From<DocRow> for ListTableRow {
         Self {
             id: doc.id,
             rel_path: doc.rel_path,
-            created_at: timestamp_to_iso8601(doc.created_at as i64),
             title,
         }
     }

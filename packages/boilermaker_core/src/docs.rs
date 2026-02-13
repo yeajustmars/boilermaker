@@ -1,5 +1,6 @@
 use std::{cmp::Ordering, path::Path};
 
+use colored::Colorize;
 use rust_embed::RustEmbed;
 use serde::Serialize;
 
@@ -107,7 +108,7 @@ pub fn print_docs_tree(nodes: &[DocTreeNode], depth: usize) {
                 println!("{}{}", indent, name);
             }
             DocTreeNode::Dir { name, children } => {
-                println!("{}{}", indent, name);
+                println!("{}{}/", indent, name.bold().blue());
                 print_docs_tree(children, depth + 1);
             }
         }
