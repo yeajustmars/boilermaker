@@ -1,5 +1,5 @@
 {
-  description = "Boilermaker Rust dev shell with pkg-config support";
+  description = "Boilermaker Rust dev (call `nix develop`)";
 
   inputs = {
     #nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable"; # comment out to use unstable
