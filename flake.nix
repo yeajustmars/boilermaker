@@ -36,6 +36,7 @@
             pango
             wayland
             webkitgtk_4_1
+            xdotool
           ];
 
           # OPTIONAL: Useful for IDEs (rust-analyzer) to find libraries
@@ -49,6 +50,7 @@
               pkgs.openssl
               pkgs.pango
               pkgs.webkitgtk_4_1
+              pkgs.xdotool
             ]}:$LD_LIBRARY_PATH
           '';
         };
