@@ -27,14 +27,29 @@
           # buildInputs is for libraries you need to LINK against
           buildInputs = with pkgs; [
             atk
+            cairo
+            git
+            gdk-pixbuf
             glib
+            gtk3
             openssl
+            pango
             wayland
+            webkitgtk_4_1
           ];
 
           # OPTIONAL: Useful for IDEs (rust-analyzer) to find libraries
           shellHook = ''
-            export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath [ pkgs.openssl ]}:$LD_LIBRARY_PATH
+            export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath [
+              pkgs.cairo
+              pkgs.gdk-pixbuf
+              pkgs.glib
+              pkgs.gtk3
+              pkgs.libglvnd
+              pkgs.openssl
+              pkgs.pango
+              pkgs.webkitgtk_4_1
+            ]}:$LD_LIBRARY_PATH
           '';
         };
       }
