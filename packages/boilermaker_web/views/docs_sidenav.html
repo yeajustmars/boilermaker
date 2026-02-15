@@ -1,12 +1,12 @@
 {%- macro render_tree(nodes) -%}
-<ul class="pl-4">
+<ul class="pl-2">
   {%- for node in nodes -%}
     <li>
-      {%- if node.File -%}
-      <a href="/doc/{{ node.File.name }}" class="text-2xl">{{ node.File.name }}</a>
-      {%- elif node.Dir %}
-        <span class="text-green-400">DIR: /{{ node.Dir.name }}/</span>
+      {%- if node.Dir %}
+        <span class="text-sky-700 dark:text-neutral-400">{{ node.Dir.name }}/</span>
         {{ render_tree(node.Dir.children) }}
+      {%- elif node.File -%}
+        <a href="/doc/{{ node.File.name }}" class="text-neutral-600 dark:text-neutral-300">{{ node.File.name }}</a>
       {%- endif -%}
     </li>
   {%- endfor -%}

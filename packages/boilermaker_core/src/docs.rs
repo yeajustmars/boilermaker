@@ -15,6 +15,7 @@ pub struct DocFiles;
 pub enum DocTreeNode {
     File {
         name: String,
+        filename: String,
         full_path: String,
     },
     Dir {
@@ -68,7 +69,13 @@ fn insert_doc_recursive(nodes: &mut Vec<DocTreeNode>, parts: &[&str], full_path:
     if let Some((current_part, rest_parts)) = parts.split_first() {
         if rest_parts.is_empty() {
             nodes.push(DocTreeNode::File {
-                name: current_part.to_string(),
+                name: Path::new(current_part)
+                    .file_stem()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_string(),
+                filename: current_part.to_string(),
                 full_path,
             });
         } else {

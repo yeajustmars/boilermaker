@@ -11,7 +11,7 @@ use minijinja::context;
 use pulldown_cmark::{html, Options, Parser};
 
 use crate::{make_context, WebAppState};
-use boilermaker_core::docs::{build_docs_tree, DocFiles, DocTreeNode};
+use boilermaker_core::docs::{build_docs_tree, DocFiles};
 
 #[tracing::instrument]
 pub async fn docs(State(app): State<Arc<WebAppState>>) -> Result<Html<String>, StatusCode> {
@@ -21,9 +21,6 @@ pub async fn docs(State(app): State<Arc<WebAppState>>) -> Result<Html<String>, S
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let docs_tree = build_docs_tree(docs);
-    // for node in &mut docs_tree {
-    //     node.sort_children();
-    // }
 
     let ctx = make_context(context! {
         title => "Docs",
