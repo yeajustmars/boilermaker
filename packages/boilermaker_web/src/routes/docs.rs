@@ -41,6 +41,7 @@ pub async fn doc(
     State(app): State<Arc<WebAppState>>,
     Path(path): Path<String>,
 ) -> Result<Html<String>, StatusCode> {
+    // TODO: set title to first `# ...` in markdown
     let title = "Docs";
 
     let template = format!("{}.md", path);
