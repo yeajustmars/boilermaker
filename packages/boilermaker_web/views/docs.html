@@ -5,24 +5,26 @@
 {% block content %}
 
 <div class="flex mt-4 gap-8">
-  <div class="p-2 border-r-1 border-r-green-300">
-    <h2 class="text-xl text-neutral-400 dark:text-neutral-600">Index</h2>
+  <div class="p-2 pr-10 border-r-1 border-r-neutral-200 dark:border-r-neutral-700">
     {% include 'docs_sidenav.html' %}
   </div>
   <div class="p-2">
-    <h1 class="text-4xl text-xl text-neutral-400 dark:text-neutral-600">Boilermaker {{title}}</h1>
+    <h1 class="text-4xl text-neutral-200 dark:text-neutral-700">Boilermaker | {{title}}</h1>
 
-    <p class="p-2">Welcome to the official Boilermaker documentation. Here you will find guides, references, and examples to help you get started with Boilermaker and make the most out of its features.</p>
+    <p class="p-2">Welcome to the official Boilermaker documentation.</p>
 
-    <h2 class="mt-4 text-lg text-neutral-400 dark:text-neutral-600">Some common places to start:</h2>
+    <p class="p-2">Here you will find guides, references, and examples. Let's. Make. Boilerplate. Sane!</p>
+
+    <h2 class="mt-4 text-lg text-neutral-400 dark:text-neutral-400">Some common places to start:</h2>
     <div class="p-6 pt-2">
       <ol class="list-decimal marker:text-neutral-400">
         <li><a href="/docs/install" class="{{link_style}}">Install Boilermaker</a></li>
         <li><a href="/docs/getting-started" class="{{link_style}}">Getting Started</a></li>
         <li><a href="/docs/project-structure" class="{{link_style}}">Project Structure</a></li>
         <li><a href="/docs/variables" class="{{link_style}}">Variables</a></li>
-        <li><a href="/docs/" class="{{link_style}}"></a></li>
-        <li><a href="/docs/" class="{{link_style}}"></a></li>
+        <li><a href="/docs/paths" class="{{link_style}}">File Paths</a></li>
+        <li><a href="/docs/sources" class="{{link_style}}">Sources<a></li>
+        <li><a href="/docs/examples" class="{{link_style}}">Examples</a></li>
       </ol>
     </div>
   </div>

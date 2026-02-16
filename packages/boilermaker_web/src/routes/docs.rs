@@ -24,7 +24,7 @@ pub async fn docs(State(app): State<Arc<WebAppState>>) -> Result<Html<String>, S
 
     let ctx = make_context(context! {
         title => "Docs",
-        docs_tree => docs_tree
+        docs_tree,
     });
     let out = app
         .template
@@ -34,6 +34,8 @@ pub async fn docs(State(app): State<Arc<WebAppState>>) -> Result<Html<String>, S
     Ok(Html(out))
 }
 
+// TODO: fix single doc request with HTMX, to not do full rerender of page (sidebar, etc).
+// NOTE: to get this out the door, whack-it-with-a-hammer ;)
 #[tracing::instrument]
 pub async fn doc(
     State(app): State<Arc<WebAppState>>,
@@ -57,9 +59,18 @@ pub async fn doc(
         html_output
     };
 
+    // TODO: replace this w/ HTMX; there's no need to rebuild this _every_ request.
+    let docs = app
+        .db
+        .get_docs()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let docs_tree = build_docs_tree(docs);
+
     let ctx = make_context(context! {
         title => title,
         doc_page => doc_page,
+        docs_tree,
     });
 
     let out = app
