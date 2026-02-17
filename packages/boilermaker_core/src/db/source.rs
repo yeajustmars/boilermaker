@@ -1,7 +1,6 @@
-use std::collections::HashMap;
 use std::path::PathBuf;
 
-use color_eyre::{Result, eyre::eyre};
+use color_eyre::Result;
 use serde::Serialize;
 use sqlx::QueryBuilder;
 use tabled::Tabled;
@@ -74,9 +73,9 @@ impl SourceMethods for LocalCache {
         let source_result = sqlx::query(
             r#"
             INSERT INTO source
-              (name, backend, coordinate, description, sha256_hash, created_at)
+              (name, backend, coordinate, description, sha256_hash, created_at, readme)
             VALUES
-              (?, ?, ?, ?, ?, strftime('%s','now'));
+              (?, ?, ?, ?, ?, strftime('%s','now'), ?);
             "#,
         )
         .bind(&source_row.name)
@@ -84,6 +83,7 @@ impl SourceMethods for LocalCache {
         .bind(&source_row.coordinate)
         .bind(&source_row.description)
         .bind(&source_row.sha256_hash)
+        .bind(&source_row.readme)
         .execute(&mut *tx)
         .await?;
 
@@ -98,6 +98,7 @@ impl SourceMethods for LocalCache {
                 name: partial.name,
                 branch: partial.branch,
                 subdir: partial.subdir,
+                config: partial.config,
                 sha256_hash: None,
             }
             .set_hash_string();
@@ -105,9 +106,9 @@ impl SourceMethods for LocalCache {
             let template_result = sqlx::query(
                 r#"
                 INSERT INTO source_template
-                  (source_id, repo, lang, name, branch, subdir, sha256_hash, created_at)
+                  (source_id, repo, lang, name, branch, subdir, sha256_hash, created_at, config)
                 VALUES
-                  (?, ?, ?, ?, ?, ?, ?, strftime('%s','now'));
+                  (?, ?, ?, ?, ?, ?, ?, strftime('%s','now'), ?);
                 "#,
             )
             .bind(source_id)
@@ -117,6 +118,7 @@ impl SourceMethods for LocalCache {
             .bind(&source_template_row.branch)
             .bind(&source_template_row.subdir)
             .bind(&source_template_row.sha256_hash)
+            .bind(&source_template_row.config)
             .execute(&mut *tx)
             .await?;
 
@@ -294,9 +296,7 @@ impl SourceMethods for LocalCache {
                 FROM source_template_content
                 WHERE
                     source_template_id = ?
-                    AND
-                        file_path LIKE '/README.%' OR
-                        file_path LIKE '/boilermaker.%'
+                    AND (file_path LIKE '%/README.%' OR file_path LIKE '/boilermaker.%')
                 COLLATE NOCASE
             "#,
         )
@@ -434,6 +434,7 @@ pub struct SourceRow {
     pub coordinate: String,
     pub description: Option<String>,
     pub sha256_hash: Option<String>,
+    pub readme: Option<String>,
 }
 
 impl SourceRow {
@@ -456,6 +457,7 @@ pub struct PartialSourceTemplateRow {
     pub repo: String,
     pub lang: String,
     pub name: String,
+    pub config: String,
     pub branch: Option<String>,
     pub subdir: Option<String>,
 }
@@ -466,38 +468,10 @@ pub struct SourceTemplateRow {
     pub repo: String,
     pub lang: String,
     pub name: String,
+    pub config: String,
     pub branch: Option<String>,
     pub subdir: Option<String>,
     pub sha256_hash: Option<String>,
-}
-
-// TODO: increase validation
-pub fn hashmap_into_source_template_row(
-    source_id: SourceId,
-    m: &HashMap<String, String>,
-) -> Result<SourceTemplateRow> {
-    let repo = m
-        .get("repo")
-        .cloned()
-        .ok_or(eyre!("Template missing repo"))?;
-    let url = repo.clone();
-    let lang = m
-        .get("lang")
-        .cloned()
-        .ok_or(eyre!("Template missing lang"))?;
-
-    let mut row = SourceTemplateRow {
-        source_id,
-        repo,
-        lang,
-        name: tmpl::make_name_from_url(&url),
-        branch: m.get("branch").cloned(),
-        subdir: m.get("subdir").cloned(),
-        sha256_hash: None,
-    };
-    row = row.set_hash_string();
-
-    Ok(row)
 }
 
 impl SourceTemplateRow {
@@ -655,7 +629,7 @@ impl From<Vec<SourceTemplateContentResult>> for SourceTemplateContentReadmeBoile
         let mut boilermaker: Option<SourceTemplateContentResult> = None;
 
         for r in results.into_iter() {
-            if r.file_path.to_lowercase().starts_with("/readme.") {
+            if r.file_path.to_lowercase().contains("readme.") {
                 readme = Some(r);
             } else if r.file_path.to_lowercase().starts_with("/boilermaker.") {
                 boilermaker = Some(r);

@@ -13,7 +13,7 @@ It shows the following:
 ## URL/Remote
 
 ```
-boil install https://raw.githubusercontent.com/yeajustmars/boilermaker/refs/heads/main/examples/source_sqlite/boilermaker_source.toml
+boil sources add https://raw.githubusercontent.com/yeajustmars/boilermaker/refs/heads/main/examples/source_sqlite/boilermaker_source.toml
 ```
 
 ## Local
@@ -22,7 +22,7 @@ boil install https://raw.githubusercontent.com/yeajustmars/boilermaker/refs/head
 # git clone https://github.com/yeajustmars/boilermaker
 # cd boilermaker
 
-boil install examples/source_sqlite/boilermaker_source.toml
+boil sources install examples/source_sqlite/boilermaker_source.toml
 ```
 
 # Breakdown

@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS source (
   description TEXT,
   sha256_hash TEXT NOT NULL UNIQUE,
   created_at TIMESTAMP NOT NULL,
-  updated_at TIMESTAMP
+  updated_at TIMESTAMP,
+  readme TEXT
 );
 
 CREATE VIRTUAL TABLE IF NOT EXISTS source_fts USING fts5(
@@ -18,6 +19,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS source_fts USING fts5(
   coordinate,
   description,
   sha256_hash,
+  readme,
   content='source',
   content_rowid='id'
 );
@@ -62,6 +64,7 @@ CREATE TABLE IF NOT EXISTS source_template (
   sha256_hash TEXT NOT NULL UNIQUE,
   created_at TIMESTAMP NOT NULL,
   updated_at TIMESTAMP,
+  config TEXT NOT NULL,
   UNIQUE (name, lang, repo, branch, subdir),
   FOREIGN KEY (source_id) REFERENCES source(id) DEFERRABLE INITIALLY DEFERRED
 );
@@ -73,6 +76,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS source_template_fts USING fts5(
   branch,
   subdir,
   sha256_hash,
+  config,
   content='source_template',
   content_rowid='id'
 );

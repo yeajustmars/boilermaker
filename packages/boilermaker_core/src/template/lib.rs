@@ -9,10 +9,18 @@ use minijinja::{Environment as JinjaEnv, value::Value as JinjaValue};
 use tracing::info;
 use walkdir::WalkDir;
 
-use crate::config::TemplateConfig;
-pub use crate::config::get_template_config;
-use crate::constants::TEMPLATE_FILEPATH_VAR_PATTERN as FILEPATH_VARS;
-use crate::util::file::{list_dir, move_file};
+pub use crate::config::{
+    get_template_config, get_template_config_text, template_config_text_to_config,
+};
+use crate::{
+    config::TemplateConfig,
+    constants::TEMPLATE_FILEPATH_VAR_PATTERN as FILEPATH_VARS,
+    db::HashableTemplateValues,
+    util::{
+        crypto::sha256_hash_string,
+        file::{list_dir, move_file},
+    },
+};
 
 #[derive(Debug)]
 pub struct CloneContext {
@@ -448,4 +456,62 @@ pub fn make_install_cmd(t: &impl InstallableTemplate) -> String {
     }
 
     cmd
+}
+
+#[tracing::instrument]
+pub fn remove_other_langs(install: &InstallConfig) -> Result<()> {
+    let keep = install.lang.as_str();
+    for entry in fs::read_dir(&install.work_dir)? {
+        let entry = entry?;
+        let path = entry.path();
+        if path.is_dir() {
+            let dir_name = path.file_name().unwrap().to_string_lossy();
+            if keep == dir_name.as_ref() {
+                continue;
+            }
+            std::fs::remove_dir_all(&path)?;
+        }
+    }
+
+    Ok(())
+}
+
+#[derive(Debug, Clone)]
+pub struct InstallConfig {
+    pub name: String,
+    pub lang: String,
+    pub repo: String,
+    pub branch: String,
+    pub subdir: Option<String>,
+    pub work_dir: PathBuf,
+    pub sha256_hash: Option<String>,
+    pub template_dir: Option<PathBuf>,
+}
+
+impl InstallConfig {
+    #[tracing::instrument]
+    pub fn set_hash_string(&mut self) {
+        self.sha256_hash = Some(self.hash_values());
+    }
+
+    #[tracing::instrument]
+    pub fn set_template_dir(&mut self) {
+        let hash = self.sha256_hash.as_ref().unwrap();
+        let dir = get_template_dir_path(hash).expect("Failed to get template dir path");
+        self.template_dir = Some(dir);
+    }
+}
+
+impl HashableTemplateValues for InstallConfig {
+    fn hash_values(&self) -> String {
+        let input = format!(
+            "{}~~{}~~{}~~{}~~{}",
+            self.repo,
+            self.name,
+            self.lang,
+            self.branch,
+            self.subdir.as_deref().unwrap_or(""),
+        );
+        sha256_hash_string(&input)
+    }
 }

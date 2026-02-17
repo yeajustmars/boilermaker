@@ -3,14 +3,17 @@ use std::path::PathBuf;
 
 use clap::Parser;
 use color_eyre::{Result, eyre::eyre};
+use reqwest::{StatusCode, get as http_get};
 use serde::Deserialize;
 use tracing::info;
 
-use crate::db::source::{PartialSourceTemplateRow, SourceRow};
-use crate::state::AppState;
-use crate::template::{
-    CloneContext, clean_dir, clone_repo, get_lang, get_template_config, make_name_from_url,
-    make_tmp_dir_from_url,
+use crate::{
+    db::source::{PartialSourceTemplateRow, SourceRow},
+    state::AppState,
+    template::{
+        CloneContext, clean_dir, clone_repo, get_lang, get_template_config_text,
+        make_name_from_url, make_tmp_dir_from_url, template_config_text_to_config,
+    },
 };
 
 #[derive(Debug, Parser)]
@@ -22,8 +25,17 @@ pub struct Add {
 #[tracing::instrument]
 pub async fn add(app_state: &AppState, cmd: &Add) -> Result<()> {
     let coordinate = cmd.coordinate.trim().to_owned();
-    let src_text = reqwest::get(&coordinate).await?.text().await?;
+    let base_url = coordinate.replace("/boilermaker_source.toml", "");
+
+    let src_text = http_get(&coordinate).await?.text().await?;
     let src_cnf: SourceConfig = toml::from_str(&src_text)?;
+
+    let readme_url = format!("{base_url}/README.md");
+    let readme_response = http_get(&readme_url).await?;
+    let readme = match readme_response.status() {
+        StatusCode::OK => Some(readme_response.text().await?),
+        _ => None,
+    };
 
     let name = match src_cnf.source.get("name") {
         Some(source_name) => source_name.to_string(),
@@ -43,6 +55,7 @@ pub async fn add(app_state: &AppState, cmd: &Add) -> Result<()> {
         description: description.cloned(),
         coordinate: coordinate.to_owned(),
         sha256_hash: None,
+        readme,
     };
     let source_row = source_row.set_hash_string();
 
@@ -71,19 +84,22 @@ pub async fn add(app_state: &AppState, cmd: &Add) -> Result<()> {
             return Err(eyre!("💥 Failed to clone template: {}", err));
         }
 
-        let work_dir = if let Some(subdir) = &template.get("subdir") {
+        let base_work_dir = if let Some(subdir) = &template.get("subdir") {
             clone_dir.join(subdir)
         } else {
             clone_dir.to_path_buf()
         };
-
-        let cnf = get_template_config(work_dir.as_path())?;
+        let base_path = base_work_dir.as_path();
+        let cnf_text = get_template_config_text(base_path)?;
+        let cnf = template_config_text_to_config(&cnf_text)?;
         let lang = get_lang(&cnf, &template.get("lang").cloned())?;
+        let work_dir = base_work_dir.join(&lang);
 
         let partial_row = PartialSourceTemplateRow {
             name: name.clone(),
             lang: lang.clone(),
             repo: repo.to_owned(),
+            config: cnf_text,
             branch: template.get("branch").cloned(),
             subdir: template.get("subdir").cloned(),
         };
@@ -95,7 +111,8 @@ pub async fn add(app_state: &AppState, cmd: &Add) -> Result<()> {
     let r = sources
         .add_source(source_row, partial_source_template_rows)
         .await?;
-    info!("Source added with ID: {r:#?}");
+    info!("Source added with Source ID: {}", r.source_id);
+    info!("Added {} Templates to Source", r.source_template_ids.len());
 
     Ok(())
 }
