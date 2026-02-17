@@ -205,8 +205,9 @@ impl TemplateMethods for LocalCache {
         let term = term.trim();
         let results = sqlx::query_as::<_, SearchResult>(
             r#"
-            SELECT 'template' as kind,
-                    src.template_id as id,
+            SELECT 'template' AS kind,
+                    src.template_id AS id,
+                    src.content AS content,
                     t.name,
                     t.lang,
                     t.repo,
@@ -214,7 +215,7 @@ impl TemplateMethods for LocalCache {
                     t.subdir
             FROM template_content_fts AS ft_search
                 LEFT JOIN template_content AS src ON ft_search.rowid=src.id
-                LEFT JOIN template as t ON src.template_id = t.id
+                LEFT JOIN template AS t ON src.template_id = t.id
             WHERE template_content_fts MATCH ?
             GROUP BY t.id
             "#,
