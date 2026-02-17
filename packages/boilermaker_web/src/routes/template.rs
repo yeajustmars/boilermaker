@@ -17,6 +17,7 @@ use boilermaker_core::template::make_install_cmd;
 enum TemplateDetailsError {
     InvalidTemplateId,
     UnknownTemplate,
+    InternalError,
 }
 
 // TODO: impl custom error details w/o EVER revealing the underlying logged error
@@ -54,6 +55,20 @@ fn template_error(
 
             Ok(Html(err_page))
         }
+        TemplateDetailsError::InternalError => {
+            let ctx = make_context(context! {
+                title => "Template Details Error",
+                status => 500,
+                error_msg => "500 Internal Server Error",
+                error_details => "Oops! Something went wrong.",
+            });
+            let err_page = app
+                .template
+                .render("error.html", ctx)
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+            Ok(Html(err_page))
+        }
     }
 }
 
@@ -69,7 +84,8 @@ pub async fn template(
         }
     };
 
-    let (template, files) = {
+    // TODO: cleanup
+    let (template, related, files) = {
         let db = app.db.clone();
         let template = match db.get_source_template(template_id).await.map_err(|e| {
             error!("DB error retrieving source template {}: {}", template_id, e);
@@ -80,6 +96,18 @@ pub async fn template(
                 return template_error(app.clone(), TemplateDetailsError::UnknownTemplate);
             }
         };
+
+        let related = db.find_alt_lang_impls(&template).await;
+        match related {
+            Ok(r) => r,
+            Err(e) => {
+                error!(
+                    "DB error retrieving related templates for {}: {}",
+                    template_id, e
+                );
+                return template_error(app.clone(), TemplateDetailsError::InternalError);
+            }
+        }
 
         // TODO: decide on pulling all of this. Maybe put it as an option?
         let files = db
@@ -92,7 +120,7 @@ pub async fn template(
                 );
                 StatusCode::INTERNAL_SERVER_ERROR
             })?;
-        (template, files)
+        (template, related, files)
     };
 
     let readme_rendered = {
@@ -115,6 +143,7 @@ pub async fn template(
         readme_rendered => readme_rendered,
         boilermaker => files.boilermaker,
         cmd_install => make_install_cmd(&template),
+        related => related,
     });
 
     let out = app

@@ -27,6 +27,10 @@ pub trait SourceMethods: Send + Sync {
         source_row: SourceRow,
         partial_source_template_rows: Vec<(PathBuf, PartialSourceTemplateRow)>,
     ) -> Result<AddSourceResult>;
+    async fn find_alt_lang_impls(
+        &self,
+        source_template: &SourceTemplateResult,
+    ) -> Result<Vec<SourceTemplateResult>>;
     async fn find_sources(&self, query: SourceFindParams) -> Result<Vec<SourceResult>>;
     async fn find_source_templates(
         &self,
@@ -161,6 +165,35 @@ impl SourceMethods for LocalCache {
             source_id,
             source_template_ids,
         })
+    }
+
+    /// Return Source Templates where repo/branch/subdir match but lang does not match lang.
+    #[tracing::instrument]
+    async fn find_alt_lang_impls(
+        &self,
+        source_template: &SourceTemplateResult,
+    ) -> Result<Vec<SourceTemplateResult>> {
+        let results = sqlx::query_as::<_, SourceTemplateResult>(
+            r"
+            SELECT *
+            FROM source_template
+            WHERE
+                repo = ? AND
+                branch = ? AND
+                subdir = ? AND
+                lang != ?
+            ",
+        )
+        .bind(&source_template.repo)
+        .bind(&source_template.branch)
+        .bind(&source_template.subdir)
+        .bind(&source_template.lang)
+        .fetch_all(&self.pool)
+        .await?;
+
+        println!("-----------------> results:\n{results:#?}");
+
+        Ok(results)
     }
 
     //TODO: add regexs, fuzzy matching, predicates, etc
@@ -557,6 +590,7 @@ pub struct SourceTemplateResult {
     pub name: String,
     pub lang: String,
     pub repo: String,
+    pub config: String,
     pub branch: Option<String>,
     pub subdir: Option<String>,
     pub sha256_hash: Option<String>,
