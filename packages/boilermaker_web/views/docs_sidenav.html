@@ -5,10 +5,10 @@
   {%- for node in nodes -%}
     <li>
       {%- if node.Dir %}
-        <span class="text-sky-700 dark:text-neutral-400">{{ node.Dir.name }}/</span>
+        <span class="text-neutral-400 dark:text-neutral-400">{{ node.Dir.name }}/</span>
         {{ render_tree(node.Dir.children) }}
       {%- elif node.File -%}
-        <a href="{{ node.File.rel_url }}" class="text-neutral-600 dark:text-neutral-300">{{ node.File.name }}</a>
+    <a href="{{ node.File.rel_url }}" class="{{link_style}}">{{ node.File.name }}</a>
       {%- endif -%}
     </li>
   {%- endfor -%}

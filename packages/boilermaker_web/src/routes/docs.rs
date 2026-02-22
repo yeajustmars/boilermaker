@@ -7,11 +7,26 @@ use axum::{
 };
 use axum_template::TemplateEngine;
 use color_eyre::eyre::Result;
+use lazy_static::lazy_static;
 use minijinja::context;
 use pulldown_cmark::{html, Options, Parser};
 
 use crate::{make_context, WebAppState};
 use boilermaker_core::docs::{build_docs_tree, DocFiles};
+
+lazy_static! {
+    static ref MARKDOWN_OPTIONS: Options = {
+        let mut options = Options::empty();
+        options.insert(Options::ENABLE_TABLES);
+        options.insert(Options::ENABLE_FOOTNOTES);
+        options.insert(Options::ENABLE_STRIKETHROUGH);
+        options.insert(Options::ENABLE_TASKLISTS);
+        options.insert(Options::ENABLE_GFM);
+        options.insert(Options::ENABLE_SUPERSCRIPT);
+        options.insert(Options::ENABLE_SUBSCRIPT);
+        options
+    };
+}
 
 #[tracing::instrument]
 pub async fn docs(State(app): State<Arc<WebAppState>>) -> Result<Html<String>, StatusCode> {
@@ -52,8 +67,8 @@ pub async fn doc(
         }
         None => "File not found: {}".to_string(),
     };
-    let options = Options::empty();
-    let parser = Parser::new_ext(&content, options);
+
+    let parser = Parser::new_ext(&content, *MARKDOWN_OPTIONS);
     let doc_page = {
         let mut html_output = String::new();
         html::push_html(&mut html_output, parser);
