@@ -56,7 +56,7 @@ async fn load_templates(
         offset: None,
     });
 
-    let rows = cache.list_templates(list_opts).await?;
+    let rows = cache.list_templates(list_opts.as_ref()).await?;
     templates.set(rows);
     Ok(())
 }
