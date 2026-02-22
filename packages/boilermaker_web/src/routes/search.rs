@@ -91,7 +91,6 @@ pub async fn search(
                     .chain(doc_results.into_iter().map(WebSearchResult::Doc))
                     // TODO: sort results by common field
                     .collect();
-                println!("Search results:\n{:#?}", all_results);
 
                 context! { search_results => all_results }
             }
