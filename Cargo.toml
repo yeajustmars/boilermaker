@@ -9,6 +9,10 @@ members = [
     "packages/boilermaker_web",
 ]
 
+[workspace.package]
+version = "0.1.0-alpha7"
+edition = "2024"
+
 [workspace.dependencies]
 async-trait = "0.1.89"
 auth-git2 = "0.5.8"

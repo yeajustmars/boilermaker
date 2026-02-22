@@ -1,8 +1,8 @@
 [package]
 name = "boilermaker_desktop"
-version = "0.1.0"
-edition = "2021"
 repository = "https://github.com/yeajustmars/boilermaker.git"
+version.workspace = true
+edition.workspace = true
 
 [dependencies]
 boilermaker_core = { workspace = true }
