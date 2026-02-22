@@ -4,6 +4,12 @@ version = "0.1.0"
 edition = "2024"
 repository = "https://github.com/yeajustmars/boilermaker.git"
 
+[package.metadata.wix]
+upgrade-guid = "2C9A75B1-775D-4D7C-9C2C-AFD0067784F7"
+path-guid = "71C79E03-4504-4099-BFB1-8648C8ED649E"
+license = false
+eula = false
+
 [dependencies]
 boilermaker_core = { workspace = true }
 clap = { workspace = true }
