@@ -4,6 +4,9 @@ repository = "https://github.com/yeajustmars/boilermaker.git"
 version.workspace = true
 edition.workspace = true
 
+[package.metadata.dist]
+dist = false
+
 [dependencies]
 boilermaker_core = { workspace = true }
 boilermaker_ui = { workspace = true }
