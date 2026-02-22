@@ -173,25 +173,32 @@ impl SourceMethods for LocalCache {
         &self,
         source_template: &SourceTemplateResult,
     ) -> Result<Vec<SourceTemplateResult>> {
-        let results = sqlx::query_as::<_, SourceTemplateResult>(
-            r"
-            SELECT *
-            FROM source_template
-            WHERE
-                repo = ? AND
-                branch = ? AND
-                subdir = ? AND
-                lang != ?
-            ",
-        )
-        .bind(&source_template.repo)
-        .bind(&source_template.branch)
-        .bind(&source_template.subdir)
-        .bind(&source_template.lang)
-        .fetch_all(&self.pool)
-        .await?;
+        let mut qb = QueryBuilder::new("SELECT * FROM source_template WHERE 1=1");
 
-        println!("-----------------> results:\n{results:#?}");
+        qb.push(" AND repo = ");
+        qb.push_bind(&source_template.repo);
+
+        qb.push(" AND lang != ");
+        qb.push_bind(&source_template.lang);
+
+        if let Some(branch) = &source_template.branch {
+            qb.push(" AND branch = ");
+            qb.push_bind(branch);
+        } else {
+            qb.push(" AND branch IS NULL");
+        }
+
+        if let Some(subdir) = &source_template.subdir {
+            qb.push(" AND subdir = ");
+            qb.push_bind(subdir);
+        } else {
+            qb.push(" AND subdir IS NULL");
+        }
+
+        qb.push(" ORDER BY name ASC");
+
+        let q = qb.build_query_as::<SourceTemplateResult>();
+        let results = q.fetch_all(&self.pool).await?;
 
         Ok(results)
     }

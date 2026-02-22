@@ -6,7 +6,7 @@ use sqlx::QueryBuilder;
 use tabled::Tabled;
 
 use super::LocalCache;
-use crate::docs::DocFiles;
+use crate::{db::SearchOptions, docs::DocFiles};
 
 #[async_trait::async_trait]
 pub trait DocMethods: Send + Sync {
@@ -14,6 +14,7 @@ pub trait DocMethods: Send + Sync {
     async fn get_doc(&self, id: DocumentId) -> Result<DocRow>;
     async fn get_docs(&self) -> Result<Vec<DocRow>>;
     async fn find_docs(&self, query: DocFindParams) -> Result<Vec<DocRow>>;
+    async fn search_docs(&self, term: &str, opts: Option<SearchOptions>) -> Result<Vec<DocResult>>;
 }
 
 #[async_trait::async_trait]
@@ -107,6 +108,29 @@ impl DocMethods for LocalCache {
 
         Ok(results)
     }
+
+    #[tracing::instrument]
+    async fn search_docs(
+        &self,
+        term: &str,
+        _opts: Option<SearchOptions>,
+    ) -> Result<Vec<DocResult>> {
+        let results = sqlx::query_as::<_, DocResult>(
+            r#"
+            SELECT doc.*
+            FROM doc_fts
+                LEFT JOIN doc AS doc ON doc_fts.rowid = doc.id
+            WHERE
+                doc_fts MATCH ?
+            "#,
+        )
+        .bind(term)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| eyre!("Failed to search docs with term '{term}': {e}"))?;
+
+        Ok(results)
+    }
 }
 
 lazy_static! {
@@ -164,5 +188,14 @@ pub struct DocFindParams {
     pub content: Option<String>,
     pub created_at: Option<i32>,
     pub rel_path: Option<String>,
+    pub title: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
+pub struct DocResult {
+    pub id: DocumentId,
+    pub content: String,
+    pub created_at: i32,
+    pub rel_path: String,
     pub title: Option<String>,
 }

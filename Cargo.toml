@@ -30,6 +30,7 @@ indoc = "2.0.6"
 lazy_static = "1.5.0"
 minijinja = { version = "2.12.0", features = ["builtins", "deserialization", "loader", "speedups", "unstable_machinery", "debug", "urlencode", "json" ] }
 minijinja-autoreload = "2.11.0"
+minijinja-contrib = "2.12.0"
 nu-ansi-term = "0.50.1"
 once_cell = "1.21.3"
 pulldown-cmark = "0.13.0"

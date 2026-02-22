@@ -75,6 +75,7 @@ impl WebAppState {
         let template_dir = "views/";
         let reloader = AutoReloader::new(move |notifier| {
             let mut env = Environment::new();
+            minijinja_contrib::add_to_environment(&mut env);
             env.set_loader(path_loader(&template_dir));
             notifier.watch_path(template_dir, true);
             Ok(env)
@@ -111,7 +112,7 @@ impl WebApp {
         let router = Router::new()
             .route("/", get(routes::home))
             .route("/docs", get(routes::docs))
-            .route("/docs/{path}", get(routes::doc))
+            .route("/docs/{*path}", get(routes::doc))
             .route("/get-involved", get(routes::get_involved))
             .route("/search", post(routes::search))
             .route("/settings", get(routes::settings))

@@ -4,67 +4,86 @@
 
 {% block content %}
 <div class="p-4 text-neutral-800 dark:text-neutral-200">
-  <h1 class="text-2xl">Template Details: {{ template.name }} (id: {{ template.id }})</h1>
+  <h1 class="text-2xl">Template Details: {{ template.name }}</h1>
   <div class="tabs mt-4">
     <div class="tab-buttons flex border-b border-neutral-300 dark:border-neutral-700">
-      {% set btn_style = 'mr-2 p-1 border border-1 border-b-0 rounded-t-sm border-neutral-300 dark:border-neutral-700' %}
-      <div><button class="tab-button active {{btn_style}}" data-target="overview">Overview</button></div>
+      {% set btn_style = 'mr-2 p-1 border border-1 border-b-0 rounded-t-xs border-neutral-300 dark:border-neutral-700' %}
+      <div><button class="tab-button active {{btn_style}}" data-target="details">Details</button></div>
       <div><button class="tab-button {{btn_style}}" data-target="readme">README</button></div>
       <div><button class="tab-button {{btn_style}}" data-target="install">Install</button></div>
       <div><button class="tab-button {{btn_style}}" data-target="boilermaker">Config</button></div>
     </div>
     <div class="tab-panes">
-      <div data-tab="overview" class="tab active">
-        <table class="table-auto border-collapse mt-4">
-          {% set th_style = 'text-right p-2 pl-1 text-sm font-normal text-neutral-300 dark:text-neutral-500' %}
-          <tbody>
-            {% set td_style = 'p-2 border-b border-b-1 border-b-neutral-300 dark:border-b-neutral-700' %}
-            <tr>
-              <td class="{{th_style}}">Name</td>
-              <td class="{{td_style}}">{{ template.name }}</td>
-            </tr>
-            <tr>
-              <td class="{{th_style}}">Lang</td>
-              <td class="{{td_style}}">{{ template.lang }}</td>
-            </tr>
-            <tr>
-              <td class="{{th_style}}">Repo</td>
-              <td class="{{td_style}}">
-                <a href="{{ template.repo }}" class="{{ link_style }}" target="_blank" rel="noopener noreferrer">
-                  {{ template.repo }}
-                </a>
-              </td>
-            </tr>
-            <tr>
-              <td class="{{th_style}}">Branch</td>
-              <td class="{{td_style}}">{{ template.branch }}</td>
-            </tr>
-            <tr>
-              <td class="{{th_style}}">Subdir</td>
-              <td class="{{td_style}}">{{ template.subdir }}</td>
-            </tr>
-            <tr>
-              <td class="{{th_style}}">Source</td>
-              <td class="{{td_style}}">{{ template.source_id }}</td>
-            </tr>
-            <tr>
-              <td class="{{th_style}}">Template ID</td>
-              <td class="{{td_style}}">{{ template.id }}</td>
-            </tr>
-            <tr>
-              <td class="{{th_style}}">SHA Hash</td>
-              <td class="{{td_style}}">{{ template.sha256_hash }}</td>
-            </tr>
-            <tr>
-              <td class="{{th_style}}">Created</td>
-              <td class="{{td_style}}">{{ template.created_at }}</td>
-            </tr>
-            <tr>
-              <td class="{{th_style}}">Updated</td>
-              <td class="{{td_style}}">{{ template.updated_at }}</td>
-            </tr>
-          </tbody>
-        </table>
+      <div data-tab="details" class="tab active">
+        <div class="flex flex-col md:flex-row gap-8 mt-4">
+          <div class="">
+            <table class="table-auto border-collapse">
+              {% set th_style = 'text-right p-2 pl-1 text-sm font-normal text-neutral-300 dark:text-neutral-500' %}
+              <tbody>
+                {% set td_style = 'p-2 border-b border-b-1 border-b-neutral-300 dark:border-b-neutral-700' %}
+                <tr>
+                  <td class="{{th_style}}">Name</td>
+                  <td class="{{td_style}}">{{ template.name }}</td>
+                </tr>
+                <tr>
+                  <td class="{{th_style}}">Lang</td>
+                  <td class="{{td_style}}">{{ template.lang }}</td>
+                </tr>
+                <tr>
+                  <td class="{{th_style}}">Repo</td>
+                  <td class="{{td_style}}">
+                    <a href="{{ template.repo }}" class="{{ link_style }}" target="_blank" rel="noopener noreferrer">
+                      {{ template.repo }}
+                    </a>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="{{th_style}}">Branch</td>
+                  <td class="{{td_style}}">{{ template.branch }}</td>
+                </tr>
+                <tr>
+                  <td class="{{th_style}}">Subdir</td>
+                  <td class="{{td_style}}">{{ template.subdir }}</td>
+                </tr>
+                <tr>
+                  <td class="{{th_style}}">Source</td>
+                  <td class="{{td_style}}">{{ template.source_id }}</td>
+                </tr>
+                <tr>
+                  <td class="{{th_style}}">Template ID</td>
+                  <td class="{{td_style}}">{{ template.id }}</td>
+                </tr>
+                <tr>
+                  <td class="{{th_style}}">SHA Hash</td>
+                  <td class="{{td_style}}">{{ template.sha256_hash }}</td>
+                </tr>
+                <tr>
+                  <td class="{{th_style}}">Created</td>
+                  <td class="{{td_style}}">{{ template.created_at }}</td>
+                </tr>
+                <tr>
+                  <td class="{{th_style}}">Updated</td>
+                  <td class="{{td_style}}">{{ template.updated_at }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="">
+            <h2 class="text-xl">Other Languages</h2>
+            {% if related|length == 0 %}
+              <p class="text-sm text-neutral-500">No related templates found.</p>
+            {% else %}
+              <ol class="list-decimal list-inside mt-2">
+                {% for r in related %}
+                  <li>
+                    <a href="/template/{{ r.id }}" class="{{link_style}}">{{ r.name }}</a>
+                    <span class="text-xs text-neutral-500 dark:text-neutral-600">({{ r.lang }})</span>
+                  </li>
+                {% endfor %}
+              </ol>
+            {% endif %}
+          </div>
+        </div>
         <h2 class="text-xl mt-6">Raw</h2>
         <pre>
           <code class="text-sm">{{ template|tojson(indent=2) }}</code>

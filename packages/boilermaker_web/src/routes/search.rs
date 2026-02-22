@@ -15,7 +15,10 @@ use serde::{Deserialize, Serialize};
 use tracing::error;
 
 use crate::{make_context, WebAppState};
-use boilermaker_core::db::{SearchOptions, SearchResult, SearchResultKind};
+use boilermaker_core::{
+    db::{DocResult, SearchOptions, SearchResult, SearchResultKind},
+    docs::rel_url,
+};
 
 /*
 enum SearchError {
@@ -44,12 +47,14 @@ fn search_error(app: Arc<WebAppState>, cause: SearchError) -> Result<Html<String
 }
  */
 
+// TODO: implement source search
 #[derive(Deserialize, Serialize, Clone, Debug)]
 #[serde(rename_all = "lowercase")]
 pub enum SearchParamsCategory {
     All,
-    Template,
     Doc,
+    //Source,
+    Template,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -70,20 +75,50 @@ pub async fn search(
     let opts = SearchOptions { content: true };
 
     let search_results: JinjaValue = {
-        let db = app.db.clone();
         match params.category.unwrap_or(SearchParamsCategory::All) {
             SearchParamsCategory::All => {
-                let template_results = db
-                    .search_sources(None, &term, Some(opts))
+                let template_results = search_templates(&app, &term, opts.clone())
                     .await
-                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+                let doc_results = search_docs(&app, &term, opts.clone())
+                    .await
+                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+                let all_results: Vec<WebSearchResult> = template_results
                     .into_iter()
-                    .map(|res: SearchResult| WebSearchResult::to_context(res, &term))
-                    .collect::<Vec<WebSearchResult>>();
-                context! { search_results => template_results }
+                    .map(WebSearchResult::Template)
+                    .chain(doc_results.into_iter().map(WebSearchResult::Doc))
+                    // TODO: sort results by common field
+                    .collect();
+                println!("Search results:\n{:#?}", all_results);
+
+                context! { search_results => all_results }
             }
-            SearchParamsCategory::Template => context! {},
-            SearchParamsCategory::Doc => context! {},
+            SearchParamsCategory::Doc => {
+                let doc_results = search_docs(&app, &term, opts.clone())
+                    .await
+                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+                let all_results: Vec<WebSearchResult> =
+                    doc_results.into_iter().map(WebSearchResult::Doc).collect();
+
+                context! { search_results => all_results }
+            }
+            // TODO: implement source search
+            //SearchParamsCategory::Source => context! {},
+            SearchParamsCategory::Template => {
+                let template_results = search_templates(&app, &term, opts.clone())
+                    .await
+                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+                let all_results: Vec<WebSearchResult> = template_results
+                    .into_iter()
+                    .map(WebSearchResult::Template)
+                    .collect();
+
+                context! { search_results => all_results }
+            }
         }
     };
 
@@ -100,6 +135,45 @@ pub async fn search(
 
     Ok(Html(out))
 }
+
+async fn search_templates(
+    app: &Arc<WebAppState>,
+    term: &str,
+    opts: SearchOptions,
+) -> Result<Vec<WebSearchTemplateResult>> {
+    let db = app.db.clone();
+    let results = db
+        .search_sources(None, term, Some(opts))
+        .await?
+        .into_iter()
+        .map(|res: SearchResult| WebSearchTemplateResult::to_context(res, term))
+        .collect::<Vec<WebSearchTemplateResult>>();
+
+    Ok(results)
+}
+
+async fn search_docs(
+    app: &Arc<WebAppState>,
+    term: &str,
+    opts: SearchOptions,
+) -> Result<Vec<WebSearchDocResult>> {
+    let db = app.db.clone();
+    let results = db
+        .search_docs(term, Some(opts))
+        .await?
+        .into_iter()
+        .map(|res: DocResult| WebSearchDocResult::to_context(res, term))
+        .collect::<Vec<WebSearchDocResult>>();
+    Ok(results)
+}
+
+// async fn search_sources(
+//     _app: &Arc<WebAppState>,
+//     _term: &str,
+//     _opts: SearchOptions,
+// ) -> Result<Vec<WebSearchTemplateResult>> {
+//     Ok(vec![])
+// }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct HighlightedLine {
@@ -132,7 +206,14 @@ pub fn highlight_search_term(content: &str, term: &str) -> Vec<HighlightedLine> 
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct WebSearchResult {
+pub enum WebSearchResult {
+    Template(WebSearchTemplateResult),
+    Doc(WebSearchDocResult),
+    Source(WebSearchTemplateResult),
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct WebSearchTemplateResult {
     pub kind: String,
     pub id: i64,
     pub name: String,
@@ -143,7 +224,7 @@ pub struct WebSearchResult {
     pub highlighted_lines: Option<Vec<HighlightedLine>>,
 }
 
-impl WebSearchResult {
+impl WebSearchTemplateResult {
     pub fn to_context(res: SearchResult, term: &str) -> Self {
         let highlighted_lines = if (res.kind == SearchResultKind::Template
             || res.kind == SearchResultKind::Source)
@@ -163,6 +244,32 @@ impl WebSearchResult {
             branch: res.branch,
             subdir: res.subdir,
             highlighted_lines,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct WebSearchDocResult {
+    pub kind: String,
+    pub id: i64,
+    pub title: Option<String>,
+    pub rel_path: String,
+    pub rel_url: String,
+    pub highlighted_lines: Option<Vec<HighlightedLine>>,
+}
+
+impl WebSearchDocResult {
+    pub fn to_context(res: DocResult, term: &str) -> Self {
+        let rel_url = rel_url(&res.rel_path);
+        let highlighted_lines = highlight_search_term(&res.content, term);
+
+        Self {
+            kind: "doc".to_string(),
+            id: res.id,
+            title: res.title,
+            rel_path: res.rel_path,
+            rel_url,
+            highlighted_lines: Some(highlighted_lines),
         }
     }
 }

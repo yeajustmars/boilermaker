@@ -60,7 +60,7 @@ fn template_error(
                 title => "Template Details Error",
                 status => 500,
                 error_msg => "500 Internal Server Error",
-                error_details => "Oops! Something went wrong.",
+                error_details => "Internal server error while processing the request.",
             });
             let err_page = app
                 .template
@@ -97,8 +97,7 @@ pub async fn template(
             }
         };
 
-        let related = db.find_alt_lang_impls(&template).await;
-        match related {
+        let related = match db.find_alt_lang_impls(&template).await {
             Ok(r) => r,
             Err(e) => {
                 error!(
@@ -107,7 +106,7 @@ pub async fn template(
                 );
                 return template_error(app.clone(), TemplateDetailsError::InternalError);
             }
-        }
+        };
 
         // TODO: decide on pulling all of this. Maybe put it as an option?
         let files = db

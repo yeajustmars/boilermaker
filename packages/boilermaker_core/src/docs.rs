@@ -1,4 +1,7 @@
-use std::{cmp::Ordering, path::Path};
+use std::{
+    cmp::Ordering,
+    path::{Path, PathBuf},
+};
 
 use colored::Colorize;
 use rust_embed::RustEmbed;
@@ -16,6 +19,7 @@ pub enum DocTreeNode {
     File {
         name: String,
         filename: String,
+        rel_url: String,
         full_path: String,
     },
     Dir {
@@ -75,6 +79,7 @@ fn insert_doc_recursive(nodes: &mut Vec<DocTreeNode>, parts: &[&str], full_path:
                     .to_str()
                     .unwrap()
                     .to_string(),
+                rel_url: rel_url(&full_path),
                 filename: current_part.to_string(),
                 full_path,
             });
@@ -120,4 +125,14 @@ pub fn print_docs_tree(nodes: &[DocTreeNode], depth: usize) {
             }
         }
     }
+}
+
+#[tracing::instrument]
+pub fn rel_url(rel_path: &str) -> String {
+    let path = PathBuf::from(rel_path)
+        .with_extension("")
+        .to_str()
+        .unwrap()
+        .to_string();
+    format!("/docs/{}", path)
 }
