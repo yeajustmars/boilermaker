@@ -19,3 +19,4 @@ install-updater = false
 
 [dist.dependencies.apt]
 libgtk-3-dev = '*'
+libwebkit2gtk-4.1-dev = '*'
