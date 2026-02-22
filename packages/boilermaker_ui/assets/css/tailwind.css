@@ -21,6 +21,7 @@
     --color-green-700: oklch(52.7% 0.154 150.069);
     --color-sky-50: oklch(97.7% 0.013 236.62);
     --color-sky-100: oklch(95.1% 0.026 236.824);
+    --color-sky-200: oklch(90.1% 0.058 230.902);
     --color-sky-300: oklch(82.8% 0.111 230.318);
     --color-sky-400: oklch(74.6% 0.16 232.661);
     --color-sky-500: oklch(68.5% 0.169 237.323);
@@ -538,6 +539,10 @@
   .rounded-sm {
     border-radius: var(--radius-sm);
   }
+  .rounded-t-sm {
+    border-top-left-radius: var(--radius-sm);
+    border-top-right-radius: var(--radius-sm);
+  }
   .rounded-t-xs {
     border-top-left-radius: var(--radius-xs);
     border-top-right-radius: var(--radius-xs);
@@ -613,6 +618,9 @@
   }
   .bg-sky-100 {
     background-color: var(--color-sky-100);
+  }
+  .bg-sky-200 {
+    background-color: var(--color-sky-200);
   }
   .bg-sky-300 {
     background-color: var(--color-sky-300);

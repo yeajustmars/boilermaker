@@ -19,6 +19,7 @@ lazy_static = { workspace = true }
 minijinja = { workspace = true }
 minijinja-autoreload = { workspace = true }
 minijinja-contrib = { workspace = true }
+openssl = { workspace = true }
 pulldown-cmark = { workspace = true }
 regex = { workspace = true }
 rust-embed = { workspace = true }

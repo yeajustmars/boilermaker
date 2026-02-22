@@ -11,6 +11,7 @@ color-eyre = { workspace = true }
 dioxus = { workspace = true, features = ["router", "fullstack"] }
 git2 = { workspace = true }
 once_cell = { workspace = true }
+openssl = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
 
