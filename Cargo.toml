@@ -10,11 +10,8 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0-alpha8"
+version = "0.1.0-alpha9"
 edition = "2024"
-
-[workspace.metadata.dist]
-packages = ["boilermaker_cli", "boilermaker_web"]
 
 [workspace.dependencies]
 async-trait = "0.1.89"
