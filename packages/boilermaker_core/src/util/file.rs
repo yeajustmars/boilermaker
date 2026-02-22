@@ -4,6 +4,7 @@ use color_eyre::{Result, eyre::eyre};
 use fs_extra::{copy_items, dir::CopyOptions};
 use walkdir::WalkDir;
 
+// TODO: remove this function, it's redundant with fs::read_to_string and is only used in one place
 #[tracing::instrument]
 pub fn read_file_to_string(path: &PathBuf) -> Result<String> {
     let content = fs::read_to_string(path)?;

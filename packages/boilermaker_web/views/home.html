@@ -3,26 +3,26 @@
 {% block title %}Boilermaker | {{title}}{% endblock %}
 
 {% block content %}
-
 <div class="text-neutral-800 dark:text-neutral-200">
   <div class="flex items-center justify-center">
     <h1 class="mt-4 text-4xl">Welcome to Boilermaker!</h1>
   </div>
 
   <div class="flex items-center justify-center">
-    <p class="p-10 pt-6 text-2xl text-neutral-400">Making boilerplate more sane!</p>
+    <p class="p-10 pt-6 text-2xl text-neutral-400">Make. Boilerplate. Sane.</p>
   </div>
 
   <div class="p-4">
     <div class="p-6 border border-sky-50 dark:border-neutral-800 rounded-sm shadow-sm">
-      <h2 class="text-2xl text-sky-600 dark:text-sky-400">About</h2>
+      <h2 class="text-2xl text-sky-600 dark:text-sky-300">So, what is it?</h2>
       <p class="p-1 font-medium">Boilermaker is a language-agnostic project template system for getting code projects up-and-running fast.</p>
       <p class="p-1 pl-8 italic">
-        Yea, that's a mouthful. It just means you can build and use complex templates in any language you want!
+        In other words: it means you can build and use complex templates in any language you want!
       </p>
       <ul class="list-disc pl-6 mt-4text-neutral-700 dark:text-neutral-300">
         <li class="p-1">It comes with a CLI and a desktop UI, and both are 100% compatible user interfaces, so... dealer's choice.</li>
-        <li class="p-1">It's designed to be easy to create your own ready-to-run templates.</li>
+        <li class="p-1">It's designed to be easy to create your own reusable templates.</li>
+        <li class="p-1">It implements <a href="/docs/sources" class="{{link_style}}">Sources</a> so you can organize templates together categorically.</li>
         <li class="p-1">It's built in Rust so it's pretty fast, too.</li>
       </ul>
       <p class="p-1 font-medium">
@@ -34,13 +34,13 @@
 
   <div class="h-160 w-full p-4 flex sm:flex-col md:flex-row gap-8 text-neutral-700 dark:text-neutral-300">
     <div class="h-full sm:w-full md:w-1/2 p-6 border border-sky-50 dark:border-neutral-800 rounded-sm shadow-sm">
-      <h2 class="text-2xl text-sky-600 dark:text-sky-400">Getting Started</h2>
+      <h2 class="text-2xl text-sky-600 dark:text-sky-300">Getting Started</h2>
       <p class="p-1 mb-4 dark:text-neutral-200 font-medium">First things first, <a href="/docs/getting-started" class="{{link_style}}">install Boilermaker</a>.</p>
 
       <div class="collapsible">
-        <button class="collapsible-button text-xl text-sky-600 dark:text-sky-400">Hello World in Clojure</button>
+        <button class="collapsible-button text-xl text-sky-600 dark:text-sky-300">Hello World in Clojure</button>
         <pre class="collapsible-content collapsible-content hidden text-sm">
-          <code class="language-shell">
+          <code class="language-bash">
 boil install https://github.com/yeajustmars/boil-hello-world \
     --subdir clojure \
     --name hello-world-clj
@@ -52,9 +52,9 @@ bin/test
       </div>
 
       <div class="collapsible">
-        <button class="collapsible-button text-xl text-sky-600 dark:text-sky-400">Hello World in Python</button>
+        <button class="collapsible-button text-xl text-sky-600 dark:text-sky-300">Hello World in Python</button>
         <pre class="collapsible-content collapsible-content hidden text-sm">
-          <code class="language-shell">
+          <code class="language-bash">
 boil install https://github.com/yeajustmars/boil-hello-world \
     --subdir python \
     --name hello-world-py
@@ -66,9 +66,9 @@ python3 src/main.py
       </div>
 
       <div class="collapsible">
-        <button class="collapsible-button text-xl text-sky-600 dark:text-sky-400">Hello World in Rust</button>
+        <button class="collapsible-button text-xl text-sky-600 dark:text-sky-300">Hello World in Rust</button>
         <pre class="collapsible-content collapsible-content hidden text-sm">
-          <code class="language-shell">
+          <code class="language-bash">
 boil install https://github.com/yeajustmars/boil-hello-world \
     --subdir rust \
     --name hello-world-rs
@@ -83,10 +83,10 @@ cargo run
     </div>
 
     <div class="h-full sm:w-full md:w-1/2 p-6 border border-sky-50 dark:border-neutral-800 rounded-sm shadow-sm">
-      <h2 class="text-2xl text-sky-600 dark:text-sky-400">Get Involved!</h2>
+      <h2 class="text-2xl text-sky-600 dark:text-sky-300">Get Involved!</h2>
       <p class="p-1 font-medium">The Boilermaker Project is always looking for contributors and maintainers.</p>
       <p class="p-1">Let us know if you're interested in helping out with any of that.</p>
-      <p class="p-1">You can find us on <a href="{{project_github_url}} class="{{link_style}}>Github</a></p>
+      <p class="p-1">You can find us on <a href="{{github_discussions_url}}" class="{{link_style}}" target="_blank" rel="noopener noreferrer">Github Discussions</a>.</p>
       <p class="p-1 italic mt-6">
       <span class="font-medium">Note:</span> Boilermaker itself is written in Rust but official templates are written in a variety of languages.
         If you don't know Rust, don't worry! You can still be a maintainer or contributor in other roles!
@@ -95,5 +95,4 @@ cargo run
   </div>
   </div>
 </div>
-
 {% endblock %}

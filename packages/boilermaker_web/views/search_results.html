@@ -1,0 +1,61 @@
+
+{%- macro highlight(highlighted_lines) -%}
+  {% for hl in highlighted_lines %}
+    <div class="flex">
+      <div class="w-12 pr-4 text-right text-xs text-neutral-200 dark:text-neutral-500">{{ hl.line_number }}</div>
+      <div class="text-sm text-neutral-400 dark:text-neutral-400">{{ hl.line | safe }}</div>
+    </div>
+  {% endfor %}
+{%- endmacro -%}
+
+{%- macro close_btn() -%}
+  <div class="w-full flex justify-end mb-4 border-b-1 border-b-neutral-200 dark:border-b-neutral-700 pb-2">
+    <button _="on click hide #search-results"
+      class="h-full bg-sky-300 dark:bg-sky-600 text-white rounded-sm flex justify-center px-2">
+      <i class="fa fa-close"></i>
+      Close
+    </button>
+  </div>
+{%- endmacro -%}
+
+<div>
+  {{ close_btn() }}
+
+  {% for sr in search_results %}
+    <div class="search-result">
+      {% if sr.Template %}
+        {% set sr = sr.Template %}
+        <div class="flex justify-between">
+          <div>
+            <span class="text-xs text-grey-200">{{ loop.index }}</span>
+            <a href="/template/{{ sr.id }}" class="text-xl {{link_style}}">{{ sr.name }}</a>
+            <span class="text-xs ml-2">{{ sr.lang }}</span>
+          </div>
+          <div class="ml-4"><span class="bg-yellow-100 dark:bg-yellow-700 text-xs">Template</span></div>
+        </div>
+        <div class="ml-3 mb-1"><a href="{{ sr.repo }}" class="{{secondary_link_style}} text-sm" target="_blank" rel="noopener noreferrer">{{ sr.repo }}</a></div>
+        {% if sr.highlighted_lines|length > 0 %}
+          {{ highlight(sr.highlighted_lines) }}
+        {% endif %}
+      {% elif sr.Doc %}
+        {% set sr = sr.Doc %}
+        <div class="flex justify-between">
+          <div>
+            <span class="text-xs text-grey-200">{{ loop.index }}</span>
+            <a href="{{ sr.rel_url }}" class="text-xl {{link_style}}">{{ sr.title|truncate(length=35, killwords=false, end='..') }}</a>
+          </div>
+          <div class="ml-4"><span class="bg-sky-100 dark:bg-sky-700 text-xs">Doc</span></div>
+        </div>
+        {% if sr.highlighted_lines|length > 0 %}
+          {{ highlight(sr.highlighted_lines) }}
+        {% endif %}
+      {% endif %}
+    </div>
+  {% else %}
+    <p class="text-yellow-500 dark:text-yellow-300">No results found.</p>
+  {% endfor %}
+
+  {% if search_results|length > 3 %}
+    {{ close_btn() }}
+  {% endif %}
+</div>

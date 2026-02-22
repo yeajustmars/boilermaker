@@ -1,0 +1,7 @@
+name: projects/st-tier-nonprod/locations/us-central1/gateways/
+type: SECURE_WEB_GATEWAY
+addresses:
+- projects/st-tier-nonprod/regions/us-central1/subnetworks/st-proxy-subnet
+ports:
+- 443
+gatewaySecurityPolicy: projects/st-tier-nonprod/locations/us-central1/gatewaySecurityPolicies/st-static-egress-policy

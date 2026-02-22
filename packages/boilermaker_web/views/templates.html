@@ -1,0 +1,83 @@
+{% extends "layout.html" %}
+
+{% block title %}Boilermaker | {{title}}{% endblock %}
+
+{% block content %}
+<div class="p-4 text-neutral-800 dark:text-neutral-200">
+  <h1 class="hidden">Templates</h1>
+  <div class="tabs mt-4">
+    <div class="tab-buttons flex border-b border-neutral-300 dark:border-neutral-700">
+      {% set btn_style = 'mr-2 p-1 border border-1 border-b-0 border-neutral-300 dark:border-neutral-700' %}
+      <div><button class="tab-button active {{btn_style}}" data-target="templates">Templates</button></div>
+      <div><button class="tab-button {{btn_style}}" data-target="sources">Sources</button></div>
+    </div>
+    <div class="tab-panes">
+      <div data-tab="templates" class="tab active">
+        <div class="flex">
+        </div>
+        <table class="table-auto border-collapse">
+          <thead>
+            {% set th_style = 'text-left p-2 pl-1 text-sm font-normal text-neutral-300 dark:text-neutral-500' %}
+            {% set hover_style = 'hover:underline hover:text-neutral-600 dark:hover:text-neutral-200' %}
+            <tr>
+              <th class=""></th>
+              <th class="{{th_style}}">
+                <a href="/templates?sort_by=name&order={{ 'desc' if query.sort_by == 'name' and query.order == 'asc' else 'asc' }}" class="{{hover_style}}">
+                  Name  <span class="text-[0.6rem]">{% if query.sort_by == 'name' %}{{ '▲' if query.order == 'asc' else '▼' }}{% endif %}</span>
+                </a>
+              </th>
+              <th class="{{th_style}}">
+                <a href="/templates?sort_by=lang&order={{ 'desc' if query.sort_by == 'lang' and query.order == 'asc' else 'asc' }}" class="{{hover_style}}">
+                  Lang  <span class="text-[0.6rem]">{% if query.sort_by == 'lang' %}{{ '▲' if query.order == 'asc' else '▼' }}{% endif %}</span>
+                </a>
+              </th>
+              <th class="{{th_style}}">
+                <a href="/templates?sort_by=repo&order={{ 'desc' if query.sort_by == 'repo' and query.order == 'asc' else 'asc' }}" class="{{hover_style}}">
+                  Repo  <span class="text-[0.6rem]">{% if query.sort_by == 'repo' %}{{ '▲' if query.order == 'asc' else '▼' }}{% endif %}</span>
+                </a>
+              </th>
+              <th class="{{th_style}}">
+                <a href="/templates?sort_by=branch&order={{ 'desc' if query.sort_by == 'branch' and query.order == 'asc' else 'asc' }}" class="{{hover_style}}">
+                  Branch  <span class="text-[0.6rem]">{% if query.sort_by == 'branch' %}{{ '▲' if query.order == 'asc' else '▼' }}{% endif %}</span>
+                </a>
+              </th>
+              <th class="{{th_style}}">
+                <a href="/templates?sort_by=subdir&order={{ 'desc' if query.sort_by == 'subdir' and query.order == 'asc' else 'asc' }}" class="{{hover_style}}">
+                  Subdir  <span class="text-[0.6rem]">{% if query.sort_by == 'subdir' %}{{ '▲' if query.order == 'asc' else '▼' }}{% endif %}</span>
+                </a>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {% set td_style = 'p-2 border-b border-b-1 border-b-neutral-300 dark:border-b-neutral-700' %}
+            {% for template in templates %}
+            <tr>
+              <td class="class text-xs text-right text-neutral-200 dark:text-neutral-400">{{ loop.index }}.</td>
+              <td class="{{td_style}}">
+                <a href="/template/{{template.id}}" class="{{link_style}}">{{ template.name }}</a>
+              </td>
+              <td class="{{td_style}}">
+                <a href="/templates?lang={{ template.lang | urlencode }}" class="{{secondary_link_style}}">{{ template.lang }}</a>
+              </td>
+              <td class="{{td_style}}">
+                <a href="/templates?repo={{ template.repo | urlencode }}" class="{{secondary_link_style}}">{{ template.repo }}</a>
+              </td>
+              <td class="{{td_style}}">{% if template.branch %}{{ template.branch }}{% else %}-{% endif %}</td>
+              <td class="{{td_style}}">{% if template.subdir %}{{ template.subdir }}{% else %}-{% endif %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div data-tab="sources" class="tab">
+        <pre>
+          <code language="javascript" class="text-sm">
+{{sources}}
+          </code>
+        </pre>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

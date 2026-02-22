@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 boilermaker_api = { workspace = true }
+boilermaker_core = { workspace = true }
 dioxus = { workspace = true }
 pulldown-cmark = { workspace = true }
 

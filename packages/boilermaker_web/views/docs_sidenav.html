@@ -1,0 +1,18 @@
+<h1 class="mb-4 text-xl text-neutral-400 dark:text-neutral-400">Docs</h1>
+
+{%- macro render_tree(nodes) -%}
+<ul class="pl-2">
+  {%- for node in nodes -%}
+    <li>
+      {%- if node.Dir %}
+        <span class="text-neutral-400 dark:text-neutral-400">{{ node.Dir.name }}/</span>
+        {{ render_tree(node.Dir.children) }}
+      {%- elif node.File -%}
+    <a href="{{ node.File.rel_url }}" class="{{link_style}}">{{ node.File.name }}</a>
+      {%- endif -%}
+    </li>
+  {%- endfor -%}
+</ul>
+{%- endmacro -%}
+
+{{ render_tree(docs_tree) }}

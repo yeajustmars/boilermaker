@@ -109,19 +109,31 @@ pub fn make_boilermaker_local_cache_path() -> Result<PathBuf> {
 }
 
 #[tracing::instrument]
-pub fn get_template_config(template_path: &Path) -> Result<TemplateConfig> {
+pub fn get_template_config_text(template_path: &Path) -> Result<String> {
     let config_path = template_path.join("boilermaker.toml");
 
     if config_path.exists() {
         let config_content = fs::read_to_string(config_path)?;
-        let config: TemplateConfig = toml::from_str(&config_content)?;
-        Ok(config)
+        Ok(config_content)
     } else {
         Err(color_eyre::eyre::eyre!(
             "💥 Config file not found at `{}`.",
             config_path.display()
         ))
     }
+}
+
+#[tracing::instrument]
+pub fn template_config_text_to_config(text: &str) -> Result<TemplateConfig> {
+    Ok(toml::from_str(text)?)
+}
+
+#[tracing::instrument]
+pub fn get_template_config(template_path: &Path) -> Result<TemplateConfig> {
+    let text = get_template_config_text(template_path)?;
+    let config = template_config_text_to_config(&text)?;
+
+    Ok(config)
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

@@ -1,7 +1,7 @@
 use tabled::Tabled;
 
 use crate::{
-    db::{SourceResult, SourceTemplateResult, TemplateResult},
+    db::{DocRow, SourceResult, SourceTemplateResult, TemplateResult, doc::DocumentId},
     util::output::print_table_error,
 };
 
@@ -79,4 +79,26 @@ pub fn print_multiple_source_template_results_help(template_rows: &Vec<SourceTem
     }
 
     print_table_error(&help_rows, Some(help_line));
+}
+
+#[tracing::instrument]
+pub fn print_multiple_doc_results_help(doc_rows: &Vec<DocRow>) {
+    let help_line = "Multiple docs found matching name. Use ID instead.";
+    let mut help_rows = Vec::new();
+    for d in doc_rows {
+        help_rows.push(MultipleDocResultsRow {
+            id: d.id,
+            rel_path: d.rel_path.clone(),
+            title: d.title.clone().unwrap_or("".to_string()),
+        });
+    }
+
+    print_table_error(&help_rows, Some(help_line));
+}
+
+#[derive(Tabled)]
+pub struct MultipleDocResultsRow {
+    pub id: DocumentId,
+    pub rel_path: String,
+    pub title: String,
 }

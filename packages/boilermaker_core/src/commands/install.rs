@@ -1,4 +1,4 @@
-use std::{fs, path::PathBuf};
+use std::path::PathBuf;
 
 use clap::Parser;
 use color_eyre::{Result, eyre::eyre};
@@ -6,13 +6,13 @@ use git2::Repository;
 use tracing::{info, warn};
 
 use crate::{
-    db::{HashableTemplateValues, TemplateRow},
+    db::TemplateRow,
     state::AppState,
     template::{
-        CloneContext, clean_dir, clone_repo, get_lang, get_template_config, get_template_dir_path,
-        install_template, make_name_from_url, make_tmp_dir_from_url, open_repo,
+        CloneContext, InstallConfig, clean_dir, clone_repo, get_lang, get_template_config,
+        install_template, make_name_from_url, make_tmp_dir_from_url, open_repo, remove_other_langs,
     },
-    util::{crypto::sha256_hash_string, file::remove_git_dir},
+    util::file::remove_git_dir,
 };
 
 #[derive(Debug, Parser)]
@@ -176,6 +176,7 @@ pub async fn install(app_state: &AppState, cmd: &Install) -> Result<()> {
 
     if !cmd.local {
         remove_other_langs(&install)?;
+        // TODO: rm .gitignore from install dir
     }
 
     match install_template(&install.work_dir, &template_dir).await {
@@ -207,62 +208,4 @@ impl From<&Install> for CloneContext {
             dest: Some(make_tmp_dir_from_url(&cmd.template)),
         }
     }
-}
-
-#[derive(Debug, Clone)]
-struct InstallConfig {
-    name: String,
-    lang: String,
-    repo: String,
-    branch: String,
-    subdir: Option<String>,
-    work_dir: PathBuf,
-    sha256_hash: Option<String>,
-    template_dir: Option<PathBuf>,
-}
-
-impl InstallConfig {
-    #[tracing::instrument]
-    pub fn set_hash_string(&mut self) {
-        self.sha256_hash = Some(self.hash_values());
-    }
-
-    #[tracing::instrument]
-    pub fn set_template_dir(&mut self) {
-        let hash = self.sha256_hash.as_ref().unwrap();
-        let dir = get_template_dir_path(hash).expect("Failed to get template dir path");
-        self.template_dir = Some(dir);
-    }
-}
-
-impl HashableTemplateValues for InstallConfig {
-    fn hash_values(&self) -> String {
-        let input = format!(
-            "{}~~{}~~{}~~{}~~{}",
-            self.repo,
-            self.name,
-            self.lang,
-            self.branch,
-            self.subdir.as_deref().unwrap_or(""),
-        );
-        sha256_hash_string(&input)
-    }
-}
-
-#[tracing::instrument]
-fn remove_other_langs(install: &InstallConfig) -> Result<()> {
-    let keep = install.lang.as_str();
-    for entry in fs::read_dir(&install.work_dir)? {
-        let entry = entry?;
-        let path = entry.path();
-        if path.is_dir() {
-            let dir_name = path.file_name().unwrap().to_string_lossy();
-            if keep == dir_name.as_ref() {
-                continue;
-            }
-            std::fs::remove_dir_all(&path)?;
-        }
-    }
-
-    Ok(())
 }

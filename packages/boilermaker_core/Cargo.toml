@@ -22,10 +22,12 @@ pulldown-cmark = { workspace = true }
 rand = { workspace = true }
 regex = { workspace = true }
 reqwest = { workspace = true, features = ["json", "gzip", "stream"] }
+rust-embed = { workspace = true }
 serde = { workspace = true }
 sha2 = { workspace = true }
 sqlx = { workspace = true }
 tabled = { workspace = true }
+termimad = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 toml = { workspace = true }
 tracing = { workspace = true }

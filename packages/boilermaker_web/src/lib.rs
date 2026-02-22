@@ -1,7 +1,11 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{fmt, sync::Arc};
 
-use axum::{routing::get, serve::Serve, Router};
+use axum::{
+    routing::{get, post},
+    serve::Serve,
+    Router,
+};
 use axum_embed::ServeEmbed;
 use axum_template::engine::Engine;
 use color_eyre::eyre::Result;
@@ -17,13 +21,14 @@ use tracing::info;
 
 use boilermaker_core::{
     config::{DEFAULT_LOCAL_CACHE_PATH_STRING, DEFAULT_WEBSITE_DATABASE_PATH_STRING},
-    db::{LocalCache, TemplateDb, TemplateMethods},
+    db::{DocMethods, IndexDocsOptions, LocalCache, TemplateDb, TemplateMethods},
     state::TemplateDbType,
     util::env::is_dev_env,
 };
 use boilermaker_ui::constants::{
     DROPDOWN_LINK_STYLE, DROPDOWN_MENU_STYLE, FONT_AWESOME_URL, FONT_FIRA_CODE_URL,
     FONT_ROBOTO_URL, INDENTED_DROPDOWN_LINK_STYLE, LAYOUT_STYLE, LINK_STYLE, NAVBAR_STYLE,
+    SECONDARY_LINK_STYLE,
 };
 
 pub mod routes;
@@ -48,7 +53,9 @@ impl WebAppState {
         let log_level = 1;
 
         let db_path = if is_dev_env {
-            DEFAULT_LOCAL_CACHE_PATH_STRING.as_str()
+            let db_path = DEFAULT_LOCAL_CACHE_PATH_STRING.as_str();
+            info!("Running in dev mode, using db_path: {}", db_path);
+            db_path
         } else {
             DEFAULT_WEBSITE_DATABASE_PATH_STRING.as_str()
         };
@@ -58,6 +65,9 @@ impl WebAppState {
             let db = db.clone();
             if !db.template_table_exists().await? {
                 db.create_schema().await?;
+
+                let idx_docs_opts = Some(IndexDocsOptions { dev: is_dev_env });
+                db.index_docs(idx_docs_opts).await?;
             }
         }
 
@@ -65,6 +75,7 @@ impl WebAppState {
         let template_dir = "views/";
         let reloader = AutoReloader::new(move |notifier| {
             let mut env = Environment::new();
+            minijinja_contrib::add_to_environment(&mut env);
             env.set_loader(path_loader(&template_dir));
             notifier.watch_path(template_dir, true);
             Ok(env)
@@ -84,10 +95,6 @@ impl WebAppState {
 #[folder = "../../packages/boilermaker_ui/assets/"]
 struct Assets;
 
-#[derive(RustEmbed, Clone)]
-#[folder = "../../packages/boilermaker_ui/docs/"]
-struct Docs;
-
 pub struct WebApp {
     server: Serve<tokio::net::TcpListener, Router, Router>,
     pub address: String,
@@ -105,9 +112,11 @@ impl WebApp {
         let router = Router::new()
             .route("/", get(routes::home))
             .route("/docs", get(routes::docs))
-            .route("/docs/{path}", get(routes::doc))
+            .route("/docs/{*path}", get(routes::doc))
             .route("/get-involved", get(routes::get_involved))
+            .route("/search", post(routes::search))
             .route("/settings", get(routes::settings))
+            .route("/template/{template_id}", get(routes::template))
             .route("/templates", get(routes::templates))
             .nest_service("/assets", serve_assets)
             .with_state(app_state);
@@ -142,6 +151,7 @@ impl fmt::Debug for WebApp {
     }
 }
 
+// TODO: clean up repetitive context (3 blocks for a single context?)
 #[derive(Serialize, Debug, Clone)]
 pub struct BaseContext {
     layout_style: &'static str,
@@ -150,9 +160,12 @@ pub struct BaseContext {
     nav_dropdown_style: &'static str,
     nav_indented_dropdown_style: &'static str,
     link_style: &'static str,
+    secondary_link_style: &'static str,
     font_awesome_url: &'static str,
     font_roboto_url: &'static str,
     font_fira_code_url: &'static str,
+    github_project_url: &'static str,
+    github_discussions_url: &'static str,
 }
 
 pub const BASE_CONTEXT: BaseContext = BaseContext {
@@ -162,9 +175,12 @@ pub const BASE_CONTEXT: BaseContext = BaseContext {
     nav_dropdown_style: DROPDOWN_LINK_STYLE,
     nav_indented_dropdown_style: INDENTED_DROPDOWN_LINK_STYLE,
     link_style: LINK_STYLE,
+    secondary_link_style: SECONDARY_LINK_STYLE,
     font_awesome_url: FONT_AWESOME_URL,
     font_roboto_url: FONT_ROBOTO_URL,
     font_fira_code_url: FONT_FIRA_CODE_URL,
+    github_project_url: "https://github.com/yeajustmars/boilermaker",
+    github_discussions_url: "https://github.com/yeajustmars/boilermaker/discussions",
 };
 
 impl From<BaseContext> for JinjaContext {
@@ -176,9 +192,12 @@ impl From<BaseContext> for JinjaContext {
             nav_dropdown_style => ctx.nav_dropdown_style,
             nav_indented_dropdown_style => ctx.nav_indented_dropdown_style,
             link_style => ctx.link_style,
+            secondary_link_style => ctx.secondary_link_style,
             font_awesome_url => ctx.font_awesome_url,
             font_roboto_url => ctx.font_roboto_url,
             font_fira_code_url => ctx.font_fira_code_url,
+            github_project_url => ctx.github_project_url,
+            github_discussions_url => ctx.github_discussions_url,
         }
     }
 }

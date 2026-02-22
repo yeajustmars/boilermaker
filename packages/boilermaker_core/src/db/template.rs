@@ -1,11 +1,14 @@
 use std::path::PathBuf;
 
 use color_eyre::{Result, eyre::eyre};
+use serde::Deserialize;
 use sqlx::QueryBuilder;
 use tabled::Tabled;
 
 use super::LocalCache;
+use crate::db::{SearchOptions, SearchResult, SearchResultKind};
 use crate::template as tmpl;
+use crate::template::InstallableTemplate;
 use crate::util::crypto::sha256_hash_string;
 use crate::util::file::read_file_to_string;
 
@@ -20,15 +23,14 @@ pub trait TemplateMethods: Send + Sync {
     async fn index_template(&self, id: i64) -> Result<()>;
     async fn list_templates(
         &self,
-        opts: Option<ListTemplateOptions>,
+        opts: Option<&ListTemplateOptions>,
     ) -> Result<Vec<TemplateResult>>;
     async fn template_table_exists(&self) -> Result<bool>;
     async fn update_template(&self, id: i64, row: TemplateRow) -> Result<i64>;
-    async fn search_templates(&self, term: &str) -> Result<Vec<SearchResult>>;
-    async fn search_sources(
+    async fn search_templates(
         &self,
-        source_name: Option<String>,
         term: &str,
+        opts: Option<SearchOptions>,
     ) -> Result<Vec<SearchResult>>;
 }
 
@@ -184,7 +186,7 @@ impl TemplateMethods for LocalCache {
     #[tracing::instrument]
     async fn list_templates(
         &self,
-        _opts: Option<ListTemplateOptions>,
+        _opts: Option<&ListTemplateOptions>,
     ) -> Result<Vec<TemplateResult>> {
         let results =
             sqlx::query_as::<_, TemplateResult>("SELECT * FROM template ORDER BY created_at DESC;")
@@ -195,12 +197,17 @@ impl TemplateMethods for LocalCache {
     }
 
     #[tracing::instrument]
-    async fn search_templates(&self, term: &str) -> Result<Vec<SearchResult>> {
+    async fn search_templates(
+        &self,
+        term: &str,
+        _opts: Option<SearchOptions>,
+    ) -> Result<Vec<SearchResult>> {
         let term = term.trim();
         let results = sqlx::query_as::<_, SearchResult>(
             r#"
-            SELECT 'template' as kind,
-                    src.template_id as id,
+            SELECT 'template' AS kind,
+                    src.template_id AS id,
+                    src.content AS content,
                     t.name,
                     t.lang,
                     t.repo,
@@ -208,7 +215,7 @@ impl TemplateMethods for LocalCache {
                     t.subdir
             FROM template_content_fts AS ft_search
                 LEFT JOIN template_content AS src ON ft_search.rowid=src.id
-                LEFT JOIN template as t ON src.template_id = t.id
+                LEFT JOIN template AS t ON src.template_id = t.id
             WHERE template_content_fts MATCH ?
             GROUP BY t.id
             "#,
@@ -261,41 +268,6 @@ impl TemplateMethods for LocalCache {
         .await?;
 
         Ok(id)
-    }
-
-    // Search the content of all templates in source_name.
-    async fn search_sources(
-        &self,
-        source_name: Option<String>,
-        term: &str,
-    ) -> Result<Vec<SearchResult>> {
-        let term = term.trim();
-        let mut qb = QueryBuilder::new(
-            r#"
-                SELECT 'source' as kind,
-                       st.id,
-                       st.name,
-                       st.lang,
-                       st.repo,
-                       st.branch,
-                       st.subdir
-                FROM source_template_content_fts AS ft_search
-                    LEFT JOIN source_template_content AS stc ON ft_search.rowid = stc.id
-                    LEFT JOIN source_template as st ON stc.source_template_id = st.id
-                    LEFT JOIN source as s ON st.source_id = s.id
-                WHERE source_template_content_fts MATCH
-            "#,
-        );
-        qb.push_bind(term);
-
-        if let Some(name) = source_name {
-            qb.push(" AND s.name = ");
-            qb.push_bind(name);
-        }
-        qb.push(" GROUP BY st.id");
-
-        let q = qb.build_query_as::<SearchResult>();
-        Ok(q.fetch_all(&self.pool).await?)
     }
 }
 
@@ -366,6 +338,28 @@ pub struct TemplateResult {
     pub updated_at: Option<i32>,
 }
 
+impl InstallableTemplate for TemplateResult {
+    fn id(&self) -> i64 {
+        self.id
+    }
+
+    fn repo(&self) -> &str {
+        &self.repo
+    }
+
+    fn lang(&self) -> Option<&String> {
+        Some(&self.lang)
+    }
+
+    fn branch(&self) -> Option<&String> {
+        self.branch.as_ref()
+    }
+
+    fn subdir(&self) -> Option<&String> {
+        self.subdir.as_ref()
+    }
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct TemplateFindParams {
     pub ids: Option<Vec<i64>>,
@@ -377,38 +371,11 @@ pub struct TemplateFindParams {
     pub sha256_hash: Option<String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct ListTemplateOptions {
     pub order_by: Option<String>,
-    pub limit: Option<u64>,
-    pub offset: Option<u64>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, sqlx::Type)]
-#[sqlx(type_name = "TEXT", rename_all = "lowercase")]
-pub enum SearchResultKind {
-    Template,
-    Source,
-}
-
-impl std::fmt::Display for SearchResultKind {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            SearchResultKind::Template => write!(f, "template"),
-            SearchResultKind::Source => write!(f, "source"),
-        }
-    }
-}
-
-#[derive(Debug, Clone, sqlx::FromRow)]
-pub struct SearchResult {
-    pub kind: SearchResultKind,
-    pub id: i64,
-    pub name: String,
-    pub lang: String,
-    pub repo: String,
-    pub branch: Option<String>,
-    pub subdir: Option<String>,
+    pub offset: Option<u16>,
+    pub limit: Option<u16>,
 }
 
 #[derive(Debug, Tabled)]

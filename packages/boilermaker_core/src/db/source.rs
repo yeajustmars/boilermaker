@@ -1,17 +1,24 @@
-use std::collections::HashMap;
 use std::path::PathBuf;
 
-use color_eyre::{Result, eyre::eyre};
+use color_eyre::Result;
+use serde::Serialize;
 use sqlx::QueryBuilder;
 use tabled::Tabled;
 use unicode_truncate::{Alignment, UnicodeTruncateStr};
 
 use crate::{
-    db::template::ListTemplateOptions, template as tmpl, util::crypto::sha256_hash_string,
+    db::template::ListTemplateOptions,
+    db::{SearchOptions, SearchResult},
+    template as tmpl,
+    template::{InstallableTemplate, make_name_from_url},
+    util::crypto::sha256_hash_string,
     util::file::read_file_to_string,
 };
 
 use super::LocalCache;
+
+type SourceId = i64;
+type SourceTemplateId = i64;
 
 #[async_trait::async_trait]
 pub trait SourceMethods: Send + Sync {
@@ -20,18 +27,40 @@ pub trait SourceMethods: Send + Sync {
         source_row: SourceRow,
         partial_source_template_rows: Vec<(PathBuf, PartialSourceTemplateRow)>,
     ) -> Result<AddSourceResult>;
+    async fn find_alt_lang_impls(
+        &self,
+        source_template: &SourceTemplateResult,
+    ) -> Result<Vec<SourceTemplateResult>>;
     async fn find_sources(&self, query: SourceFindParams) -> Result<Vec<SourceResult>>;
     async fn find_source_templates(
         &self,
         query: SourceTemplateFindParams,
     ) -> Result<Vec<SourceTemplateResult>>;
-    async fn get_source_template(&self, id: i64) -> Result<Option<SourceTemplateResult>>;
+    async fn get_source_template(
+        &self,
+        source_template_id: SourceTemplateId,
+    ) -> Result<Option<SourceTemplateResult>>;
+    // TODO: add get_source_template_content for a single file's contents
+    async fn get_source_template_content_all(
+        &self,
+        source_id: SourceId,
+    ) -> Result<Vec<SourceTemplateContentResult>>;
+    async fn get_source_template_content_readme_boilermaker(
+        &self,
+        source_template_id: SourceTemplateId,
+    ) -> Result<SourceTemplateContentReadmeBoilermaker>;
     async fn list_sources(&self) -> Result<Vec<SourceResult>>;
     async fn list_source_templates(
         &self,
-        source_id: i64,
-        opts: Option<ListTemplateOptions>,
+        source_id: SourceId,
+        opts: Option<&ListTemplateOptions>,
     ) -> Result<Vec<SourceTemplateResult>>;
+    async fn search_sources(
+        &self,
+        source_name: Option<String>,
+        term: &str,
+        opts: Option<SearchOptions>,
+    ) -> Result<Vec<SearchResult>>;
 }
 
 #[async_trait::async_trait]
@@ -48,9 +77,9 @@ impl SourceMethods for LocalCache {
         let source_result = sqlx::query(
             r#"
             INSERT INTO source
-              (name, backend, coordinate, description, sha256_hash, created_at)
+              (name, backend, coordinate, description, sha256_hash, created_at, readme)
             VALUES
-              (?, ?, ?, ?, ?, strftime('%s','now'));
+              (?, ?, ?, ?, ?, strftime('%s','now'), ?);
             "#,
         )
         .bind(&source_row.name)
@@ -58,12 +87,13 @@ impl SourceMethods for LocalCache {
         .bind(&source_row.coordinate)
         .bind(&source_row.description)
         .bind(&source_row.sha256_hash)
+        .bind(&source_row.readme)
         .execute(&mut *tx)
         .await?;
 
         let source_id = source_result.last_insert_rowid();
 
-        let mut source_template_ids: Vec<i64> = Vec::new();
+        let mut source_template_ids: Vec<SourceTemplateId> = Vec::new();
         for (path, partial) in partial_source_template_rows.into_iter() {
             let source_template_row = SourceTemplateRow {
                 source_id,
@@ -72,6 +102,7 @@ impl SourceMethods for LocalCache {
                 name: partial.name,
                 branch: partial.branch,
                 subdir: partial.subdir,
+                config: partial.config,
                 sha256_hash: None,
             }
             .set_hash_string();
@@ -79,9 +110,9 @@ impl SourceMethods for LocalCache {
             let template_result = sqlx::query(
                 r#"
                 INSERT INTO source_template
-                  (source_id, repo, lang, name, branch, subdir, sha256_hash, created_at)
+                  (source_id, repo, lang, name, branch, subdir, sha256_hash, created_at, config)
                 VALUES
-                  (?, ?, ?, ?, ?, ?, ?, strftime('%s','now'));
+                  (?, ?, ?, ?, ?, ?, ?, strftime('%s','now'), ?);
                 "#,
             )
             .bind(source_id)
@@ -91,14 +122,25 @@ impl SourceMethods for LocalCache {
             .bind(&source_template_row.branch)
             .bind(&source_template_row.subdir)
             .bind(&source_template_row.sha256_hash)
+            .bind(&source_template_row.config)
             .execute(&mut *tx)
             .await?;
 
             let source_template_id = template_result.last_insert_rowid();
 
+            let repo_name_relative = make_name_from_url(&source_template_row.repo);
+
             let files = tmpl::list_template_files(&path).await?;
             for file in files {
+                let file_path = file.to_string_lossy().to_string();
+                let base_path_index = file_path.find(&repo_name_relative).unwrap();
+                let file_path = file_path
+                    .split_at(base_path_index)
+                    .1
+                    .replace(&repo_name_relative, "");
+
                 let content = read_file_to_string(&file)?;
+
                 let _ = sqlx::query(
                     r#"
                     INSERT INTO source_template_content
@@ -108,7 +150,7 @@ impl SourceMethods for LocalCache {
                     "#,
                 )
                 .bind(source_template_id)
-                .bind(file.to_string_lossy().to_string())
+                .bind(file_path)
                 .bind(content)
                 .execute(&mut *tx)
                 .await?;
@@ -123,6 +165,42 @@ impl SourceMethods for LocalCache {
             source_id,
             source_template_ids,
         })
+    }
+
+    /// Return Source Templates where repo/branch/subdir match but lang does not match lang.
+    #[tracing::instrument]
+    async fn find_alt_lang_impls(
+        &self,
+        source_template: &SourceTemplateResult,
+    ) -> Result<Vec<SourceTemplateResult>> {
+        let mut qb = QueryBuilder::new("SELECT * FROM source_template WHERE 1=1");
+
+        qb.push(" AND repo = ");
+        qb.push_bind(&source_template.repo);
+
+        qb.push(" AND lang != ");
+        qb.push_bind(&source_template.lang);
+
+        if let Some(branch) = &source_template.branch {
+            qb.push(" AND branch = ");
+            qb.push_bind(branch);
+        } else {
+            qb.push(" AND branch IS NULL");
+        }
+
+        if let Some(subdir) = &source_template.subdir {
+            qb.push(" AND subdir = ");
+            qb.push_bind(subdir);
+        } else {
+            qb.push(" AND subdir IS NULL");
+        }
+
+        qb.push(" ORDER BY name ASC");
+
+        let q = qb.build_query_as::<SourceTemplateResult>();
+        let results = q.fetch_all(&self.pool).await?;
+
+        Ok(results)
     }
 
     //TODO: add regexs, fuzzy matching, predicates, etc
@@ -217,15 +295,56 @@ impl SourceMethods for LocalCache {
     }
 
     #[tracing::instrument]
-    async fn get_source_template(&self, id: i64) -> Result<Option<SourceTemplateResult>> {
+    async fn get_source_template(
+        &self,
+        source_template_id: SourceTemplateId,
+    ) -> Result<Option<SourceTemplateResult>> {
         let result = sqlx::query_as::<_, SourceTemplateResult>(
             "SELECT * FROM source_template WHERE id = ?;",
         )
-        .bind(id)
+        .bind(source_template_id)
         .fetch_optional(&self.pool)
         .await?;
 
         Ok(result)
+    }
+
+    // TODO: set relative (or at least useful) paths for file.file_path (not /var/tmp/...) when
+    // inserting contents
+    #[tracing::instrument]
+    async fn get_source_template_content_all(
+        &self,
+        source_id: SourceId,
+    ) -> Result<Vec<SourceTemplateContentResult>> {
+        let results = sqlx::query_as::<_, SourceTemplateContentResult>(
+            "SELECT * FROM source_template_content WHERE source_template_id = ?;",
+        )
+        .bind(source_id)
+        .fetch_all(&self.pool)
+        .await?;
+        Ok(results)
+    }
+
+    #[tracing::instrument]
+    async fn get_source_template_content_readme_boilermaker(
+        &self,
+        source_template_id: SourceTemplateId,
+    ) -> Result<SourceTemplateContentReadmeBoilermaker> {
+        let results = sqlx::query_as::<_, SourceTemplateContentResult>(
+            r#"
+                SELECT *
+                FROM source_template_content
+                WHERE
+                    source_template_id = ?
+                    AND (file_path LIKE '%/README.%' OR file_path LIKE '/boilermaker.%')
+                COLLATE NOCASE
+            "#,
+        )
+        .bind(source_template_id)
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(SourceTemplateContentReadmeBoilermaker::from(results))
     }
 
     #[tracing::instrument]
@@ -247,26 +366,104 @@ impl SourceMethods for LocalCache {
         Ok(results)
     }
 
-    // TODO: add options for ordering, pagination, filtering, etc
     #[tracing::instrument]
     async fn list_source_templates(
         &self,
-        source_id: i64,
-        _opts: Option<ListTemplateOptions>,
+        source_id: SourceId,
+        options: Option<&ListTemplateOptions>,
     ) -> Result<Vec<SourceTemplateResult>> {
-        let results = sqlx::query_as::<_, SourceTemplateResult>(
-            r#"
-                SELECT *
-                FROM source_template
-                WHERE source_id = ?
-                ORDER BY name ASC;
-            "#,
-        )
-        .bind(source_id)
-        .fetch_all(&self.pool)
-        .await?;
+        let results = match options {
+            None => {
+                sqlx::query_as::<_, SourceTemplateResult>(
+                    "SELECT * FROM source_template WHERE source_id = ? ORDER BY name ASC LIMIT 50",
+                )
+                .bind(source_id)
+                .fetch_all(&self.pool)
+                .await?
+            }
+            Some(opts) => {
+                let mut qb = QueryBuilder::new("SELECT * FROM source_template WHERE source_id = ");
+                qb.push_bind(source_id);
+
+                if let Some(order_by) = &opts.order_by {
+                    qb.push(format!(" ORDER BY {order_by} "));
+                } else {
+                    qb.push(" ORDER BY name ASC");
+                }
+
+                if let Some(limit) = opts.limit {
+                    qb.push(" LIMIT ");
+                    qb.push_bind(limit);
+                } else {
+                    qb.push(" LIMIT 50");
+                }
+
+                if let Some(offset) = opts.offset {
+                    qb.push(" OFFSET ");
+                    qb.push_bind(offset);
+                }
+
+                let q = qb.build_query_as::<SourceTemplateResult>();
+                q.fetch_all(&self.pool).await?
+            }
+        };
 
         Ok(results)
+    }
+
+    // Search the content of all templates in source_name.
+    #[tracing::instrument]
+    async fn search_sources(
+        &self,
+        source_name: Option<String>,
+        term: &str,
+        opts: Option<SearchOptions>,
+    ) -> Result<Vec<SearchResult>> {
+        let term = term.trim();
+        let include_content = if let Some(opts) = opts {
+            opts.content
+        } else {
+            false
+        };
+
+        let select_stmt = if include_content {
+            r#"
+            SELECT
+                'source' AS kind,
+                st.id, st.name, st.lang, st.repo, st.branch, st.subdir,
+                ft_search.content
+            "#
+        } else {
+            r#"
+            SELECT
+                'source' AS kind,
+                st.id, st.name, st.lang, st.repo, st.branch, st.subdir,
+                '' AS content
+            "#
+        };
+
+        let mut qb = QueryBuilder::new(format!(
+            r#"
+            {select_stmt}
+            FROM source_template_content_fts AS ft_search
+                LEFT JOIN source_template_content AS stc ON ft_search.rowid = stc.id
+                LEFT JOIN source_template as st ON stc.source_template_id = st.id
+                LEFT JOIN source as s ON st.source_id = s.id
+            WHERE source_template_content_fts MATCH
+            "#
+        ));
+        qb.push_bind(term);
+
+        if let Some(name) = source_name {
+            qb.push(" AND s.name = ");
+            qb.push_bind(name);
+        }
+        qb.push(" GROUP BY st.id");
+
+        qb.push(" ORDER BY rank DESC");
+
+        let q = qb.build_query_as::<SearchResult>();
+        Ok(q.fetch_all(&self.pool).await?)
     }
 }
 
@@ -277,6 +474,7 @@ pub struct SourceRow {
     pub coordinate: String,
     pub description: Option<String>,
     pub sha256_hash: Option<String>,
+    pub readme: Option<String>,
 }
 
 impl SourceRow {
@@ -299,48 +497,21 @@ pub struct PartialSourceTemplateRow {
     pub repo: String,
     pub lang: String,
     pub name: String,
+    pub config: String,
     pub branch: Option<String>,
     pub subdir: Option<String>,
 }
 
 #[derive(Debug, Clone)]
 pub struct SourceTemplateRow {
-    pub source_id: i64,
+    pub source_id: SourceId,
     pub repo: String,
     pub lang: String,
     pub name: String,
+    pub config: String,
     pub branch: Option<String>,
     pub subdir: Option<String>,
     pub sha256_hash: Option<String>,
-}
-
-// TODO: increase validation
-pub fn hashmap_into_source_template_row(
-    source_id: i64,
-    m: &HashMap<String, String>,
-) -> Result<SourceTemplateRow> {
-    let repo = m
-        .get("repo")
-        .cloned()
-        .ok_or(eyre!("Template missing repo"))?;
-    let url = repo.clone();
-    let lang = m
-        .get("lang")
-        .cloned()
-        .ok_or(eyre!("Template missing lang"))?;
-
-    let mut row = SourceTemplateRow {
-        source_id,
-        repo,
-        lang,
-        name: tmpl::make_name_from_url(&url),
-        branch: m.get("branch").cloned(),
-        subdir: m.get("subdir").cloned(),
-        sha256_hash: None,
-    };
-    row = row.set_hash_string();
-
-    Ok(row)
 }
 
 impl SourceTemplateRow {
@@ -367,21 +538,21 @@ pub fn hash_source_template_row(row: &SourceTemplateRow) -> String {
 
 #[derive(Debug, Clone)]
 pub struct AddSourceResult {
-    pub source_id: i64,
-    pub source_template_ids: Vec<i64>,
+    pub source_id: SourceId,
+    pub source_template_ids: Vec<SourceTemplateId>,
 }
 
 #[derive(Debug, Tabled)]
 pub struct TabledSourceRow {
-    pub id: i64,
+    pub id: SourceId,
     pub name: String,
     pub coordinate: String,
     pub description: String,
 }
 
-#[derive(Debug, Clone, sqlx::FromRow)]
+#[derive(Debug, Clone, sqlx::FromRow, Serialize)]
 pub struct SourceResult {
-    pub id: i64,
+    pub id: SourceId,
     pub name: String,
     pub backend: String,
     pub coordinate: String,
@@ -419,13 +590,14 @@ impl TabledSourceRow {
     }
 }
 
-#[derive(Debug, Clone, sqlx::FromRow)]
+#[derive(Debug, Clone, sqlx::FromRow, Serialize)]
 pub struct SourceTemplateResult {
-    pub id: i64,
-    pub source_id: i64,
+    pub id: SourceTemplateId,
+    pub source_id: SourceId,
     pub name: String,
     pub lang: String,
     pub repo: String,
+    pub config: String,
     pub branch: Option<String>,
     pub subdir: Option<String>,
     pub sha256_hash: Option<String>,
@@ -433,9 +605,31 @@ pub struct SourceTemplateResult {
     pub updated_at: Option<i32>,
 }
 
+impl InstallableTemplate for SourceTemplateResult {
+    fn id(&self) -> i64 {
+        self.id
+    }
+
+    fn repo(&self) -> &str {
+        &self.repo
+    }
+
+    fn lang(&self) -> Option<&String> {
+        Some(&self.lang)
+    }
+
+    fn branch(&self) -> Option<&String> {
+        self.branch.as_ref()
+    }
+
+    fn subdir(&self) -> Option<&String> {
+        self.subdir.as_ref()
+    }
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct SourceFindParams {
-    pub ids: Option<Vec<i64>>,
+    pub ids: Option<Vec<SourceId>>,
     pub name: Option<String>,
     pub coordinate: Option<String>,
     pub description: Option<String>,
@@ -444,12 +638,48 @@ pub struct SourceFindParams {
 
 #[derive(Debug, Clone, Default)]
 pub struct SourceTemplateFindParams {
-    pub ids: Option<Vec<i64>>,
-    pub source_ids: Option<Vec<i64>>,
+    pub ids: Option<Vec<SourceTemplateId>>,
+    pub source_ids: Option<Vec<SourceId>>,
     pub name: Option<String>,
     pub lang: Option<String>,
     pub repo: Option<String>,
     pub branch: Option<String>,
     pub subdir: Option<String>,
     pub sha256_hash: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
+pub struct SourceTemplateContentResult {
+    pub id: SourceId,
+    pub source_template_id: SourceTemplateId,
+    pub file_path: String,
+    pub content: String,
+    pub created_at: Option<i32>,
+    pub updated_at: Option<i32>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct SourceTemplateContentReadmeBoilermaker {
+    pub readme: Option<SourceTemplateContentResult>,
+    pub boilermaker: Option<SourceTemplateContentResult>,
+}
+
+impl From<Vec<SourceTemplateContentResult>> for SourceTemplateContentReadmeBoilermaker {
+    fn from(results: Vec<SourceTemplateContentResult>) -> Self {
+        let mut readme: Option<SourceTemplateContentResult> = None;
+        let mut boilermaker: Option<SourceTemplateContentResult> = None;
+
+        for r in results.into_iter() {
+            if r.file_path.to_lowercase().contains("readme.") {
+                readme = Some(r);
+            } else if r.file_path.to_lowercase().starts_with("/boilermaker.") {
+                boilermaker = Some(r);
+            }
+        }
+
+        SourceTemplateContentReadmeBoilermaker {
+            readme,
+            boilermaker,
+        }
+    }
 }

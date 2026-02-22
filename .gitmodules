@@ -1,0 +1,3 @@
+[submodule "examples/hello-world/boil-hello-world"]
+	path = examples/hello-world/boil-hello-world
+	url = https://github.com/yeajustmars/boil-hello-world

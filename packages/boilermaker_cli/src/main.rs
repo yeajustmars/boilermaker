@@ -7,11 +7,12 @@ use tracing::info;
 
 use boilermaker_core::{
     commands,
-    commands::{Sources, sources, sources::templates::Templates as SourceTemplates},
+    commands::{Docs, Sources, docs, sources, sources::templates::Templates as SourceTemplates},
     config::{DEFAULT_LOCAL_CACHE_PATH_STRING, get_system_config},
-    db::LocalCache,
+    db::{IndexDocsOptions, LocalCache},
     logging,
     state::AppState,
+    util::env::is_dev_env,
 };
 
 #[derive(Parser)]
@@ -39,6 +40,8 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    #[command(subcommand, about = "Documentation")]
+    Docs(commands::Docs),
     #[command(about = "Install a template locally")]
     Install(commands::Install),
     #[command(about = "List all templates in the local cache")]
@@ -66,6 +69,8 @@ async fn main() -> Result<()> {
 
     logging::init_tracing(cli.debug)?;
 
+    let is_dev_env = is_dev_env();
+
     let cache_path = DEFAULT_LOCAL_CACHE_PATH_STRING.as_str();
 
     // TODO: decide where a remote db should be allowed vs just searching remote and installing
@@ -81,6 +86,9 @@ async fn main() -> Result<()> {
         let cache = app_state.local_db.clone();
         if !cache.template_table_exists().await? {
             cache.create_schema().await?;
+
+            let idx_docs_opts = Some(IndexDocsOptions { dev: is_dev_env });
+            cache.index_docs(idx_docs_opts).await?;
         }
     }
 
@@ -92,6 +100,10 @@ async fn main() -> Result<()> {
 
     // TODO: clean this up with aliases or direct imports.
     match command {
+        Commands::Docs(subcmd) => match subcmd {
+            Docs::List(cmd) => docs::list(&app_state, &cmd).await,
+            Docs::View(cmd) => docs::view(&app_state, &cmd).await,
+        },
         Commands::Install(cmd) => commands::install(&app_state, &cmd).await,
         Commands::List(cmd) => commands::list(&app_state, &cmd).await,
         Commands::New(cmd) => commands::new(&app_state, &cmd).await,
