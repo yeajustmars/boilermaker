@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use clap::Parser;
 use color_eyre::Result;
 use color_eyre::eyre::eyre;
@@ -27,9 +25,16 @@ pub async fn update(app_state: &AppState, cmd: &Update) -> Result<()> {
 
     info!("Updating template #{}: {}", templ.id, templ.name);
 
-    // TODO: fix template_dir to be new hash based path
-    let template_dir = PathBuf::from(templ.template_dir.clone());
+    let hash = templ
+        .sha256_hash
+        .as_deref()
+        .ok_or_else(|| eyre!("💥 Template #{} is missing a sha256_hash", templ.id))?;
+    let template_dir = crate::template::get_template_dir_path(hash)?;
     let tmp_clone_dir = make_tmp_dir_from_url(&templ.repo);
+
+    // Avoid clone dir collisions if update is run right after install. This won't be needed once we
+    // patch clone_repo's TODOs.
+    clean_dir(&tmp_clone_dir)?;
 
     let clone_ctx = CloneContext::new(
         &templ.repo,
