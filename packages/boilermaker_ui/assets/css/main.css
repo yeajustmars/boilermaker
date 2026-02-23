@@ -35,12 +35,23 @@ pre, code {
 
 .hidden { display: none; }
 
-.doc h1 { font-size: 2.0rem; }
-.doc h2 { font-size: 1.8rem; }
-.doc h3 { font-size: 1.5rem; }
-.doc h4 { font-size: 1.25rem; }
-.doc h5 { font-size: 1.1rem; }
-.doc p { padding: 1rem 0 1rem 0; }
+.doc h1 { font-size: 2.4rem; }
+.doc h2 { font-size: 1.8rem; margin-top: 1rem; }
+.doc h3 { font-size: 1.4rem; margin-top: 1rem; }
+.doc h4 { font-size: 1.25rem; margin-top: 1rem; }
+.doc h5 { font-size: 1.1rem; margin-top: 1rem; }
+.doc p { padding: 0.5rem 0 0.5rem 0; }
+.doc ul { list-style-type: disc; padding: 0.5rem; padding-left: 2rem; }
+.doc ol { list-style-type: decimal; padding: 0.5rem; padding-left: 2rem; }
+.doc pre>code { width: 90%; }
+.doc a:link, .doc a:visited { color: var(--link-style); }
+.doc a:hover { text-decoration: underline; }
+.doc blockquote {
+  margin-top: 0.6rem;
+  margin-left: 0;
+  border-left: var(--blockquote-border-left);
+  padding-left: 1rem;
+}
 
 .tabs .tab-button.active { font-weight: bold; }
 .tabs .tab-panes .tab { display: none; }

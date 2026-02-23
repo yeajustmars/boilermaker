@@ -1,7 +1,7 @@
-<h1 class="mb-4 text-xl text-neutral-400 dark:text-neutral-400">Docs</h1>
+<h1 class="mb-4 text-xl text-neutral-400 dark:text-neutral-400"><a class="{{link_style}}" href="/docs">Docs</a></h1>
 
 {%- macro render_tree(nodes) -%}
-<ul class="pl-2">
+<ol class="pl-2 list-decimal list-inside marker:text-neutral-300 dark:marker:text-neutral-500">
   {%- for node in nodes -%}
     <li>
       {%- if node.Dir %}
@@ -12,7 +12,15 @@
       {%- endif -%}
     </li>
   {%- endfor -%}
-</ul>
+</ol>
 {%- endmacro -%}
+
+<div class="p-2">
+  <h2 class="">Quick Links</h2>
+  <ol class="mb-4 pl-4 list-decimal marker:text-neutral-400 dark:marker:text-neutral-400">
+    <li><a href="/docs/install" class="{{link_style}}">Install</a></li>
+    <li><a href="/docs/getting-started" class="{{link_style}}">Getting Started</a></li>
+  </ol>
+</div>
 
 {{ render_tree(docs_tree) }}
