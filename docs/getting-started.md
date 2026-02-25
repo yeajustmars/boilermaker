@@ -4,9 +4,9 @@
 
 The best way to see how Boilermaker works is to try it out! If you haven't already, check out the [installation instructions](/docs/install) to get Boilermaker set up on your machine.
 
-## Install and run a template
-
 Next, let's install a template and run it. This will demonstrate the absolute basics of Boilermaker.
+
+## Install a template
 
 For this example, we'll use the [`boil-hello-world`](https://github.com/yeajustmars/boil-hello-world) template, which is a simple template that prints "Hello, World!".
 
@@ -51,7 +51,7 @@ There's a few things happening here worth pointing out:
 
 That's it for creating projects! The rest is up to you the template developer for what the project will do when you run it.
 
-### Run the project
+## Run the project
 
 To run our new BASH project, we can `cd` into the project directory and run it. These instructions will change depending on the template/language and Boilermaker does not make or enforce any assumptions or restrictions about how to run your projects. Most projects will likely have some kind of `main` function but this is not a requirement or a rule.
 
