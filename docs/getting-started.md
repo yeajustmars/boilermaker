@@ -8,9 +8,9 @@ The best way to see how Boilermaker works is to try it out! If you haven't alrea
 
 Next, let's install a template and run it. This will demonstrate the absolute basics of Boilermaker.
 
-For this example, we'll use the [`boil-hello-world`](https://github.com/yeajustmars/boil-hello-world) template, which is a simple template that prints "Hello, World!" to the console.
+For this example, we'll use the [`boil-hello-world`](https://github.com/yeajustmars/boil-hello-world) template, which is a simple template that prints "Hello, World!".
 
-This templates comes in a few languages and to run it you'll need the runtime/compiler for that language installed on your machine.
+> This template comes in a few languages and to run it you'll need the runtime/compiler for that language installed on your machine.
 
 Some common languages that you likely already have installed are:
 
@@ -35,9 +35,7 @@ boil install https://github.com/yeajustmars/boil-hello-world --lang=bash
 
 _The `--lang` option is used to specify which language of the template we want to install. Boilermaker templates can have as many language implementations as desired so this option is sometimes necessary to identify which version of the template to use._
 
-### Create a project from the template
-
-Then we will create a `project` from the `template`:
+## Create a project from the template
 
 ```bash
 boil new boil-hello-world -l bash -Od /tmp -n boil-bash

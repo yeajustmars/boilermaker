@@ -11,6 +11,14 @@
   <div class="doc p-2">
     {{doc_page|safe}}
   </div>
+  <div class="min-w-86 p-2">
+    <h3 class="text-lg mb-2 text-neutral-400 dark:text-neutral-500">On this Page</h3>
+    <ol id="doc-sections" class=""></ol>
+  </div>
 </div>
+
+<template id="doc-section-template">
+  <li><a class="doc-section-link" href="#"></a></li>
+</template>
 
 {% endblock %}

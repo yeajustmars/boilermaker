@@ -70,6 +70,64 @@
       });
     });
 
+    // ________________________________________ Docs
+    const docLinks = document.querySelectorAll(".doc a");
+
+    if (docLinks.length > 0) {
+      docLinks.forEach(link => {
+        let href = link.getAttribute("href");
+        if (href && !href.startsWith("/docs/") && !href.startsWith("#")) {
+          link.setAttribute('target', '_blank');
+        }
+      });
+    }
+
+    const docHeaders = document.querySelectorAll(".doc h1, .doc h2, .doc h3");
+
+    const docSectionStyle = {
+      'H1': "doc-link-h1",
+      'H2': "doc-link-h2",
+      'H3': "doc-link-h3"
+    };
+
+    if (docHeaders.length > 0) {
+      const docSectionNav = document.getElementById("doc-sections");
+      const template = document.getElementById("doc-section-template");
+
+      docHeaders.forEach((header, index) => {
+        header.id = `doc-section-${index}`;
+
+        let clone = document.importNode(template.content, true);
+
+        let link = clone.querySelector("li a");
+        link.href = `#${header.id}`;
+        link.classList.add(docSectionStyle[header.tagName]);
+        link.textContent = header.textContent;
+
+        docSectionNav.appendChild(clone);
+      });
+
+      const docSectionLinks = docSectionNav.querySelectorAll("a");
+
+      window.addEventListener('scroll', () => {
+        let currentSection = '';
+
+        docHeaders.forEach(section => {
+            const sectionTop = section.getBoundingClientRect().top;
+            if (sectionTop <= 100) {
+                currentSection = section.id;
+            }
+        });
+
+        docSectionLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === `#${currentSection}`) {
+                link.classList.add('active');
+            }
+        });
+      });
+    }
+
     // ________________________________________ Code
     hljs.highlightAll();
 

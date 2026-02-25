@@ -1,11 +1,18 @@
 html, body {
-    font-family: "Roboto", Tahoma, Geneva, Verdana, sans-serif;
-    font-optical-sizing: auto;
-    font-weight: 200;
-    font-style: normal;
-    font-variation-settings: "wdth" 100;
-    size: 1rem;
+  font-family: "Roboto", Tahoma, Geneva, Verdana, sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 200;
+  font-style: normal;
+  font-variation-settings: "wdth" 100;
+  size: 1rem;
+  background-image: url('/assets/img/logo-flame.png');
+  background-color: rgba(23, 23, 23, 0.9);
+  background-blend-mode: multiply;
+  background-size: 600px;
+  background-position: bottom right;
+  background-repeat: no-repeat;
 }
+
 
 @media (prefers-color-scheme: light) {
   :root {
@@ -13,6 +20,7 @@ html, body {
     --blockquote-border-left: 1px solid #ccc;
     --highlighted-bg: yellow;
     --highlighted-fg: black;
+    --code-background: rgba(255, 255, 255, 0.75);
   }
 }
 
@@ -22,15 +30,20 @@ html, body {
     --blockquote-border-left: 1px solid #ccc;
     --highlighted-bg: #ca8a04;
     --highlighted-fg: white;
+    --code-background: rgba(23, 23, 23, 0.75);
   }
 }
 
 pre, code {
-    font-family: "Fira Code", monospace;
-    font-optical-sizing: auto;
-    font-weight: 200;
-    font-style: normal;
-    size: 0.6rem;
+  font-family: "Fira Code", monospace;
+  font-optical-sizing: auto;
+  font-weight: 200;
+  font-style: normal;
+  size: 0.6rem;
+}
+
+code.hljs {
+  background-color: var(--code-background);
 }
 
 .hidden { display: none; }
@@ -52,6 +65,9 @@ pre, code {
   border-left: var(--blockquote-border-left);
   padding-left: 1rem;
 }
+a.doc-section-link.doc-link-h1 { font-size: 1.2rem; }
+a.doc-section-link.doc-link-h2 { font-size: 1.0rem; padding-left: 1rem; }
+a.doc-section-link.doc-link-h3 { font-size: 0.8rem; padding-left: 1.5rem; }
 
 .tabs .tab-button.active { font-weight: bold; }
 .tabs .tab-panes .tab { display: none; }

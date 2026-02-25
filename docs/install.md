@@ -5,7 +5,7 @@
 
 ## Boilermaker is available for Linux and macOS, x86_64 and aarch64.
 
-> _That should cover almost any Linux distro, Asahi and Intel Macs as well as Apple Silicon._
+> _That should cover almost any Linux distro, Asahi, Intel Macs, as well as Apple Silicon._
 
 As of writing (and during beta testing) the easiest way to install Boilermaker is to download
 the latest binary release from the [GitHub releases page](https://github.com/yeajustmars/boilermaker/releases)
