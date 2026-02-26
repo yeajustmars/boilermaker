@@ -4,7 +4,7 @@ Boilermaker is a fairly simple tool, but it does have a few moving parts. This p
 
 ## Template Files
 
-The core of Boilermaker. A template is made up of one or more files, which are used to generate the final output. These files are any text file that may, or may not, have variables and logic interpolated in them. Boilermaker uses [minijinja](https://github.com/mitsuhiko/minijinja) as its templating engine. This should be fairly familiar to anyone who has ever used Jinja2 in Python, Django, Selmer in Clojure, or any other templating engine that uses the same syntax. Of which, there's a lot of them out there!
+The core of Boilermaker. A template is made up of one or more files, which are used to generate the final output (the "project"). These files are any text file that may, or may not, have variables and logic interpolated in them. Boilermaker uses [minijinja](https://github.com/mitsuhiko/minijinja) as its templating engine. This should be fairly familiar to anyone who has ever used Jinja2 in Python, Django, Selmer in Clojure, or any other templating engine that uses the same syntax. Of which, there's a lot of them out there!
 
 Because of this choice in engines, Boilermaker templates can contain logic, variables and macros (functions). This allows for a lot of flexibility in how you can structure your templates, and how you can generate your output. You can have as many or as few template files as you need, and they can be organized in any way you see fit. You have the ability to `include` files based on logic or use `{% block %}`s to create resuable templates. The point is, it's pretty much up to you how you want to structure your templates. Boilermaker tries to stay out of your way, here.
 

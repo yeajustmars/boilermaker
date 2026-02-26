@@ -5,12 +5,6 @@ html, body {
   font-style: normal;
   font-variation-settings: "wdth" 100;
   size: 1rem;
-  background-image: url('/assets/img/logo-flame.png');
-  background-color: rgba(23, 23, 23, 0.9);
-  background-blend-mode: multiply;
-  background-size: 600px;
-  background-position: bottom right;
-  background-repeat: no-repeat;
 }
 
 
@@ -22,6 +16,15 @@ html, body {
     --highlighted-fg: black;
     --code-background: rgba(255, 255, 255, 0.75);
   }
+
+  body {
+    background-image: url('/assets/img/logo-flame.png');
+    background-color: rgba(255, 255, 255, 0.9);
+    background-blend-mode: screen;
+    background-size: 600px;
+    background-position: bottom right;
+    background-repeat: no-repeat;
+  }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -31,6 +34,15 @@ html, body {
     --highlighted-bg: #ca8a04;
     --highlighted-fg: white;
     --code-background: rgba(23, 23, 23, 0.75);
+  }
+
+  body {
+    background-image: url('/assets/img/logo-flame.png');
+    background-color: rgba(23, 23, 23, 0.9);
+    background-blend-mode: multiply;
+    background-size: 600px;
+    background-position: bottom right;
+    background-repeat: no-repeat;
   }
 }
 
