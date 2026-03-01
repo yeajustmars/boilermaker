@@ -83,13 +83,5 @@ _NOTE_: Unlike template files, Boilermaker does _not_ support logic in file path
 
 ## Configuration
 
-> _TIP_: For a more in-depth look at configuration, see the [Configuration](/docs/configuration) page._
+See the [Configuration](/docs/configuration) page.
 
-Configuration for Boilermaker is done is one of 4 places:
-
-1. The `boilermaker.toml` file in the template directory, which controls the behavior of that specific template.
-3. An imported file, which can be used to override any configuration options declared in the `boilermaker.
-2. The command line, when running the `boil` command, which can be used to override any configuration options declared in the `boilermaker.toml` files.
-4. The global `~/.boilermaker/boilermaker.toml` file, which controls Boilermaker's behavior.
-
-For the purposes of this doc, we'll focus on everything but `#4`, the global Boilermaker config, as that's for controlling Boilermaker itself, versus controlling the behavior of a specific template. For more information on the global config, see the [Configuration](/docs/configuration#global) page.
