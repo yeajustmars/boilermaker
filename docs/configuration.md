@@ -106,7 +106,7 @@ boil new my-template --profile python
 
 ## Extra Configuration Files
 
-Sometimes it can be useful, especially in larger templates, to split up your configuration into multiple files. While you can use variable profiles to accomplish a similar task, it might be cleaner to break up your configuration into separate files
+> _NOTE: feature coming soon in RC1_
 
 ## Command Line Configuration
 
@@ -127,5 +127,5 @@ boil new my-template --var app_name=awesome-app
 
 ## Global System Configuration
 
-> _TODO: Add docs_
+> _NOTE: feature coming soon in RC1_
 

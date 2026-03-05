@@ -42,44 +42,9 @@ Variables are declared in one of three places:
 
 Anything availabe in minijinja is at your disposal. Period.
 
-> _TIP_: For a more in-depth look at logic, see the [Logic](/docs/logic) page.
+## File Path Interpolation
 
-## File Paths and Variables
-
-Boilermaker also allows a special syntax for interpolating variables into file paths. This is done using the `___x___` (triple underscore delimiter) or `---x---` (triple dash delimiter) syntax. These two are interchangeable, and only exist for readability for the puposes of dash- or underscore-delimited filenames. This allows you to have dynamic file paths, which can be very useful for generating output that has a specific naming convention.
-
-For instance, let's say you have this in your `boilermaker.toml` file:
-
-```toml
-[variables]
-app_name = "my-app"
-```
-
-and this directory structure in your template:
-
-```
-my-template/
-├── python
-    ├── ___app_name___/
-    │   ├── main.py
-    │   └── utils.py
-├── boilermaker.toml
-```
-
-After rendering the template, your project would look like this:
-
-```
-my-project/
-├── my-app/
-│   ├── main.py
-│   └── utils.py
-```
-
-> _Note that `app_name` is interpolated directly into the file path._
-
-_NOTE_: Unlike template files, Boilermaker does _not_ support logic in file paths. This is a conscious decision, as it encourages users to think about their templates in terms of the output they want to generate, rather than the specific directory stuctures. However, since you have minijinja, you can always optionally include templates based on a predicate, therefore further controlling what files get generated in the output project.
-
-> _TIP_: For a more in-depth look at file path interpolation, see the [File Paths](/docs/file-paths) page._
+See the [File Paths](/docs/file-paths) page.
 
 ## Configuration
 
