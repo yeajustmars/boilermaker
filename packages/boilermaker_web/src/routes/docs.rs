@@ -9,10 +9,10 @@ use axum_template::TemplateEngine;
 use color_eyre::eyre::Result;
 use lazy_static::lazy_static;
 use minijinja::context;
-use pulldown_cmark::{html, Options, Parser};
+use pulldown_cmark::{Options, Parser, html};
 
-use crate::{make_context, WebAppState};
-use boilermaker_core::docs::{build_docs_tree, DocFiles};
+use crate::{WebAppState, make_context};
+use boilermaker_core::docs::{DocFiles, build_docs_tree};
 
 lazy_static! {
     static ref MARKDOWN_OPTIONS: Options = {
@@ -50,7 +50,7 @@ pub async fn docs(State(app): State<Arc<WebAppState>>) -> Result<Html<String>, S
 }
 
 // TODO: fix single doc request with HTMX, to not do full rerender of page (sidebar, etc).
-// NOTE: to get this out the door, whack-it-with-a-hammer ;)
+// TODO: pre-render markdown files to HTML, and store in DB, to avoid doing this on every request.
 #[tracing::instrument]
 pub async fn doc(
     State(app): State<Arc<WebAppState>>,

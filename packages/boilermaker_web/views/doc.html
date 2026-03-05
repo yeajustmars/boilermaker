@@ -3,12 +3,22 @@
 {% block title %}Boilermaker Docs | {{title}}{% endblock %}
 
 {% block content %}
+
 <div class="flex mt-4 gap-8">
-  <div class="p-2 pr-10 border-r-1 border-r-neutral-200 dark:border-r-neutral-700">
+  <div class="min-w-64 p-2 pr-10 border-r-1 border-r-neutral-200 dark:border-r-neutral-700">
     {% include 'docs_sidenav.html' %}
   </div>
-  <div class="doc p-3 pt-0">
+  <div class="doc p-2">
     {{doc_page|safe}}
   </div>
+  <div class="min-w-86 p-2">
+    <h3 class="text-lg mb-2 text-neutral-400 dark:text-neutral-500">On this Page</h3>
+    <ol id="doc-sections" class=""></ol>
+  </div>
 </div>
+
+<template id="doc-section-template">
+  <li><a class="doc-section-link" href="#"></a></li>
+</template>
+
 {% endblock %}
