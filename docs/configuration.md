@@ -106,13 +106,7 @@ boil new my-template --profile python
 
 ## Extra Configuration Files
 
-<<<<<<< HEAD
 Sometimes it can be useful, especially in larger templates, to split up your configuration into multiple files. While you can use variable profiles to accomplish a similar task, it might be cleaner to break up your configuration into separate files
-
-> _TODO: finish docs._
-=======
-> _TODO: finish impl and docs_
->>>>>>> 8fcbdb7 (web,docs: add missing route stubs, tweak docs)
 
 ## Command Line Configuration
 
