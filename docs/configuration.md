@@ -11,6 +11,8 @@ Configuration for Boilermaker is done is one of 4 places:
 
 The `boilermaker.toml` at the root of the template repository is the baseline configuration for a template. It has the following structure:
 
+### Basic Variables
+
 ```toml
 [project]
 VAR = VALUE
@@ -77,8 +79,36 @@ The variables can then be used in your template files using standard minijinja s
 
 > _Remember: we're using HTML as the template language here but Boilermaker is language-agnostic. This same syntax would work in a Python file, a BASH script or a Dockerfile. Anything!_
 
+### Variable Profiles
+
+Variable profiles are a way to group variables together for different use cases. For instance, you might have a set of variables that are only relevant for a specific language or framework. You can declare these variable profiles in your `boilermaker.toml` file as follows:
+
+```toml
+[variables]
+welcome_message = "Hello, World!"
+other_var = "This is a variable that is always available."
+
+[variables.profile.python]
+welcome_message = "Override, Python World!"
+
+[variables.profile.rust]
+welcome_message = "Override, Rusty World!"
+```
+
+- When running `boil new`, you can specify which profile to use with the `--profile` (or just `-p`) flag. For instance, if you wanted to use the Python profile, you would run the following command:
+
+```bash
+boil new my-template --profile python
+```
+
+> _NOTE: variable profiles only work for the `[variables]` section of the `boilermaker.toml` file. The `[project]` section is not affected. This is to ensure that a single template has a single project configuration._
+
 
 ## Extra Configuration Files
+
+Sometimes it can be useful, especially in larger templates, to split up your configuration into multiple files. While you can use variable profiles to accomplish a similar task, it might be cleaner to break up your configuration into separate files
+
+> _TODO: finish docs._
 
 ## Command Line Configuration
 

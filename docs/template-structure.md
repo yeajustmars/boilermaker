@@ -10,7 +10,7 @@ Because of this choice in engines, Boilermaker templates can contain logic, vari
 
 ## Languages
 
-Another core principal of Boilermaker is that it is language-agnostic. This means that you can use any programming language you want to write your templates in, as long as they can be parsed by the template engine. One rule of Boilermaker is that languages live as separate subdiredctories within the same Boilermaker Template. That will look something like this:
+Another core principal of Boilermaker is that it is language-agnostic. This means that you can use any programming language you want to write your templates in, as long as they can be parsed by the template engine. One rule of Boilermaker is that languages live as separate diredctories within the same Boilermaker Template. That will look something like this:
 
 ```
 my-template/

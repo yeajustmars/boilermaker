@@ -38,7 +38,7 @@ html, body {
 
   body {
     background-image: url('/assets/img/logo-flame.png');
-    background-color: rgba(23, 23, 23, 0.9);
+    background-color: rgba(7, 7, 7, 0.9);
     background-blend-mode: multiply;
     background-size: 600px;
     background-position: bottom right;
