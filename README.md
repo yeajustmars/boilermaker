@@ -1,28 +1,30 @@
 # Boilermaker
 
-Language-agnostic code templates for rapid project boilerplate setup
+Language-agnostic code templates for rapid project boilerplate setup.
 
-> _NOTE_: This README is `0.1.0-alpha*` and is highly likely to change.
+Boilermaker is currently in beta. For now, only the CLI is available, but the web interface is on the way. If you have any questions, suggestions, or want to contribute, please open an issue or a pull request.
 
-> _For now, just commenting it out until final API is settled._
+## Installation
 
-# Usage
+Go to the [releases](https://github.com/yeajustmars/boilermaker/releases) page and download the latest version for your platform. Then, add the downloaded binary to your system's PATH.
 
-## Development
+> _TIP: Or just use the `curl` install command provided in the specific release._
+
+## Usage
+
+Boilermaker is self-documenting. Once installed, you can access the command API, as well as the docs, from the command line.
+
+### Commands API
 
 ```
-git clone ...
+boil help
+boil --help
 
-cd /path/to/boilermaker
-
-./tailwind.sh
-
-cd packages/PLATFORM
-
-dx serve
-
-# or `dx serve -p boilermaker_PLATFORM` from root
 ```
+### Documentation
 
+```
+boil docs list
+boil docs view <id-or-name>
 
-
+```
