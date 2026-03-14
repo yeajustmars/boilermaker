@@ -2,17 +2,16 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use std::{fmt, sync::Arc};
 
 use axum::{
+    Router,
     routing::{get, post},
     serve::Serve,
-    Router,
 };
 use axum_embed::ServeEmbed;
-use axum_template::engine::Engine;
+use axum_template::{TemplateEngine, engine::Engine};
 use color_eyre::eyre::Result;
 use minijinja::{
-    context, path_loader,
-    value::{merge_maps, Value as JinjaContext},
-    Environment,
+    Environment, context, path_loader,
+    value::{Value as JinjaContext, merge_maps},
 };
 use minijinja_autoreload::AutoReloader;
 use rust_embed::RustEmbed;
@@ -33,9 +32,33 @@ use boilermaker_ui::constants::{
 
 pub mod routes;
 
+#[derive(RustEmbed, Clone)]
+#[folder = "../../packages/boilermaker_ui/assets/"]
+struct Assets;
+
+#[derive(RustEmbed, Clone)]
+#[folder = "views/"]
+struct TemplateAssets;
+
+pub enum AppTemplateEngine {
+    Dev(Engine<AutoReloader>),
+    Prod(Engine<Environment<'static>>),
+}
+
+impl TemplateEngine for AppTemplateEngine {
+    type Error = <Engine<Environment<'static>> as TemplateEngine>::Error;
+
+    fn render<S: serde::Serialize>(&self, name: &str, ctx: S) -> Result<String, Self::Error> {
+        match self {
+            Self::Dev(engine) => engine.render(name, ctx),
+            Self::Prod(engine) => engine.render(name, ctx),
+        }
+    }
+}
+
 pub struct WebAppState {
     pub db: TemplateDbType,
-    pub template: Engine<AutoReloader>,
+    pub template: AppTemplateEngine,
     pub is_dev_env: bool,
     pub log_level: u8,
 }
@@ -71,16 +94,33 @@ impl WebAppState {
             }
         }
 
-        // TODO: remove minijinja autoreloader in production
-        let template_dir = "views/";
-        let reloader = AutoReloader::new(move |notifier| {
+        let template = if is_dev_env {
+            // Development: Use AutoReloader and watch the file system
+            let template_dir = "views/";
+            let reloader = AutoReloader::new(move |notifier| {
+                let mut env = Environment::new();
+                minijinja_contrib::add_to_environment(&mut env);
+                env.set_loader(path_loader(template_dir));
+                notifier.watch_path(template_dir, true);
+                Ok(env)
+            });
+            AppTemplateEngine::Dev(Engine::from(reloader))
+        } else {
+            // Production: Use standard Environment and embedded files
             let mut env = Environment::new();
             minijinja_contrib::add_to_environment(&mut env);
-            env.set_loader(path_loader(&template_dir));
-            notifier.watch_path(template_dir, true);
-            Ok(env)
-        });
-        let template = Engine::from(reloader);
+
+            for file in TemplateAssets::iter() {
+                if let Some(content) = TemplateAssets::get(&file) {
+                    let template_str = std::str::from_utf8(content.data.as_ref())
+                        .unwrap()
+                        .to_string();
+                    env.add_template_owned(file.to_string(), template_str)
+                        .unwrap();
+                }
+            }
+            AppTemplateEngine::Prod(Engine::from(env))
+        };
 
         Ok(WebAppState {
             db,
@@ -90,10 +130,6 @@ impl WebAppState {
         })
     }
 }
-
-#[derive(RustEmbed, Clone)]
-#[folder = "../../packages/boilermaker_ui/assets/"]
-struct Assets;
 
 pub struct WebApp {
     server: Serve<tokio::net::TcpListener, Router, Router>,
