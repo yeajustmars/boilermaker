@@ -20,7 +20,7 @@ pub struct Search {
 
 pub async fn search(app_state: &AppState, cmd: &Search) -> Result<()> {
     let term = cmd.term.trim().to_owned();
-    let cache = app_state.local_db.clone();
+    let db = app_state.local_db.clone();
 
     if term.is_empty() {
         return Err(eyre!(
@@ -29,7 +29,7 @@ pub async fn search(app_state: &AppState, cmd: &Search) -> Result<()> {
     }
 
     let scope = SearchScope::from(cmd);
-    let search_results = search_templates(cache, &term, scope).await?;
+    let search_results = search_templates(db, &term, scope).await?;
     if search_results.is_empty() {
         info!("No results found for {term}.");
         return Ok(());
@@ -63,19 +63,19 @@ impl SearchScope {
 }
 
 pub async fn search_templates(
-    cache: Arc<dyn TemplateDb>,
+    db: Arc<dyn TemplateDb>,
     term: &str,
     scope: SearchScope,
 ) -> Result<Vec<SearchResult>> {
     match scope {
-        SearchScope::Local => Ok(cache.search_templates(term, None).await?),
-        SearchScope::Source(name) => Ok(cache.search_sources(Some(name), term, None).await?),
+        SearchScope::Local => Ok(db.search_templates(term, None).await?),
+        SearchScope::Source(name) => Ok(db.search_sources(Some(name), term, None).await?),
         SearchScope::All => {
             let mut all_results = Vec::new();
-            let local = cache.search_templates(term, None).await?;
+            let local = db.search_templates(term, None).await?;
             all_results.extend(local);
 
-            let sources = cache.search_sources(None, term, None).await?;
+            let sources = db.search_sources(None, term, None).await?;
             all_results.extend(sources);
             Ok(all_results)
         }

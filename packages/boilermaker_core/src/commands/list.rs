@@ -14,12 +14,12 @@ pub struct List {
 
 #[tracing::instrument]
 pub async fn list(app_state: &AppState, _cmd: &List) -> Result<()> {
-    let cache = app_state.local_db.clone();
-    let result = cache.list_templates(None).await?;
+    let db = app_state.local_db.clone();
+    let result = db.list_templates(None).await?;
     let rows = result.into_iter().map(ListResult::from).collect::<Vec<_>>();
 
     if rows.is_empty() {
-        info!("No templates found in the cache.");
+        info!("No templates found in the db.");
         info!("💡 Have a look at `boil install`");
         return Ok(());
     }

@@ -17,8 +17,8 @@ lazy_static! {
         "{}/.config/boilermaker/boilermaker.toml",
         home_dir().unwrap().to_str().unwrap()
     );
-    pub static ref DEFAULT_LOCAL_CACHE_PATH: PathBuf = make_boilermaker_local_cache_path().unwrap();
-    pub static ref DEFAULT_LOCAL_CACHE_PATH_STRING: String = DEFAULT_LOCAL_CACHE_PATH
+    pub static ref DEFAULT_LOCAL_DB_PATH: PathBuf = make_boilermaker_local_db_path().unwrap();
+    pub static ref DEFAULT_LOCAL_DB_PATH_STRING: String = DEFAULT_LOCAL_DB_PATH
         .as_path()
         .to_str()
         .unwrap()
@@ -84,23 +84,23 @@ pub fn get_system_config(config_path: Option<&Path>) -> Result<SysConfig> {
 }
 
 #[tracing::instrument]
-pub fn make_boilermaker_local_cache_path() -> Result<PathBuf> {
+pub fn make_boilermaker_local_db_path() -> Result<PathBuf> {
     let home_dir = dirs::home_dir().ok_or_else(|| eyre!("Can't find home directory"))?;
-    let local_cache_dir = home_dir.join(".boilermaker");
+    let local_db_dir = home_dir.join(".boilermaker");
 
-    fs::create_dir_all(local_cache_dir)?;
+    fs::create_dir_all(local_db_dir)?;
 
-    let local_cache_path = home_dir.join(".boilermaker").join("local_cache.db");
+    let local_db_path = home_dir.join(".boilermaker").join("local_db.db");
 
     match OpenOptions::new()
         .write(true)
         .create_new(true)
-        .open(&local_cache_path)
+        .open(&local_db_path)
     {
-        Ok(_) => Ok(local_cache_path),
+        Ok(_) => Ok(local_db_path),
         Err(e) => {
             if e.kind() == std::io::ErrorKind::AlreadyExists {
-                Ok(local_cache_path)
+                Ok(local_db_path)
             } else {
                 Err(eyre!("💥 Failed to create local cache file: {}", e))
             }

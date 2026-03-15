@@ -16,7 +16,7 @@ pub struct List {
 
 #[tracing::instrument]
 pub async fn get_source_id(app_state: &AppState, source_id_or_name: &String) -> Result<i64> {
-    let cache = app_state.local_db.clone();
+    let db = app_state.local_db.clone();
 
     if let Ok(id) = source_id_or_name.parse::<i64>() {
         Ok(id)
@@ -28,7 +28,7 @@ pub async fn get_source_id(app_state: &AppState, source_id_or_name: &String) -> 
             description: None,
             sha256_hash: None,
         };
-        let results = cache.find_sources(find_params).await?;
+        let results = db.find_sources(find_params).await?;
 
         let result = match results.len() {
             0 => return Err(eyre!("💥 Cannot find source: {}.", source_id_or_name))?,
@@ -53,8 +53,8 @@ pub async fn get_source_id(app_state: &AppState, source_id_or_name: &String) -> 
 pub async fn list(app_state: &AppState, cmd: &List) -> Result<()> {
     let source_id = get_source_id(app_state, &cmd.source_id_or_name).await?;
     let result = {
-        let cache = app_state.local_db.clone();
-        cache.list_source_templates(source_id, None).await?
+        let db = app_state.local_db.clone();
+        db.list_source_templates(source_id, None).await?
     };
     let rows = result
         .iter()

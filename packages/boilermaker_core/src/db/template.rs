@@ -5,7 +5,7 @@ use serde::Deserialize;
 use sqlx::QueryBuilder;
 use tabled::Tabled;
 
-use super::LocalCache;
+use super::LocalDb;
 use crate::db::{SearchOptions, SearchResult, SearchResultKind};
 use crate::template as tmpl;
 use crate::template::InstallableTemplate;
@@ -35,7 +35,7 @@ pub trait TemplateMethods: Send + Sync {
 }
 
 #[async_trait::async_trait]
-impl TemplateMethods for LocalCache {
+impl TemplateMethods for LocalDb {
     #[tracing::instrument]
     async fn check_unique(&self, row: &TemplateRow) -> Result<Option<TemplateResult>> {
         let result = sqlx::query_as::<_, TemplateResult>(

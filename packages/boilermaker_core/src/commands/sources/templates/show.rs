@@ -16,10 +16,10 @@ pub struct Show {
 
 #[tracing::instrument]
 async fn get_source_template(app_state: &AppState, cmd: &Show) -> Result<SourceTemplateResult> {
-    let cache = app_state.local_db.clone();
+    let db = app_state.local_db.clone();
 
     if let Ok(id) = cmd.id_or_name.parse::<i64>() {
-        Ok(cache
+        Ok(db
             .get_source_template(id)
             .await?
             .expect("Failed to unwrap source template result"))
@@ -34,7 +34,7 @@ async fn get_source_template(app_state: &AppState, cmd: &Show) -> Result<SourceT
             subdir: None,
             sha256_hash: None,
         };
-        let results = cache.find_source_templates(find_params).await?;
+        let results = db.find_source_templates(find_params).await?;
 
         match results.len() {
             0 => Err(eyre!("💥 Cannot find template: {}.", cmd.id_or_name))?,

@@ -4,8 +4,8 @@ use color_eyre::eyre::{eyre, Result};
 use once_cell::sync::OnceCell;
 
 use boilermaker_core::{
-    config::{get_system_config, DEFAULT_LOCAL_CACHE_PATH_STRING},
-    db::{LocalCache, TemplateDb, TemplateMethods},
+    config::{get_system_config, DEFAULT_LOCAL_DB_PATH_STRING},
+    db::{LocalDb, TemplateDb, TemplateMethods},
     state::AppState,
 };
 
@@ -18,8 +18,8 @@ pub fn init_app_state() -> Result<()> {
         .build()
         .unwrap()
         .block_on(async {
-            let db_path = DEFAULT_LOCAL_CACHE_PATH_STRING.as_str();
-            let cache = Arc::new(LocalCache::new(db_path).await.map_err(|err| {
+            let db_path = DEFAULT_LOCAL_DB_PATH_STRING.as_str();
+            let cache = Arc::new(LocalDb::new(db_path).await.map_err(|err| {
                 eyre!(
                     "Failed to initialize local cache at path '{}': {}",
                     db_path,

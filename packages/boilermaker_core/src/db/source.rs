@@ -15,7 +15,7 @@ use crate::{
     util::file::read_file_to_string,
 };
 
-use super::LocalCache;
+use super::LocalDb;
 
 type SourceId = i64;
 type SourceTemplateId = i64;
@@ -64,7 +64,7 @@ pub trait SourceMethods: Send + Sync {
 }
 
 #[async_trait::async_trait]
-impl SourceMethods for LocalCache {
+impl SourceMethods for LocalDb {
     // TODO: split up 3 types of queries into separate functions for readability
     #[tracing::instrument]
     async fn add_source(

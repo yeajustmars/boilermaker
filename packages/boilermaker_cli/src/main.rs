@@ -8,8 +8,8 @@ use tracing::info;
 use boilermaker_core::{
     commands,
     commands::{Docs, Sources, docs, sources, sources::templates::Templates as SourceTemplates},
-    config::{DEFAULT_LOCAL_CACHE_PATH_STRING, get_system_config},
-    db::{IndexDocsOptions, LocalCache},
+    config::{DEFAULT_LOCAL_DB_PATH_STRING, get_system_config},
+    db::{IndexDocsOptions, LocalDb},
     logging,
     state::AppState,
     util::env::is_dev_env,
@@ -44,11 +44,11 @@ enum Commands {
     Docs(commands::Docs),
     #[command(about = "Install a template locally")]
     Install(commands::Install),
-    #[command(about = "List all templates in the local cache")]
+    #[command(about = "List all templates in the local DB")]
     List(commands::List),
     #[command(about = "Create a new project from a template")]
     New(commands::New),
-    #[command(name = "rm", about = "Remove templates or local cache itself")]
+    #[command(name = "rm", about = "Remove templates or local DB itself")]
     Remove(commands::Remove),
     #[command(about = "Search for templates")]
     Search(commands::Search),
@@ -71,7 +71,7 @@ async fn main() -> Result<()> {
 
     let is_dev_env = is_dev_env();
 
-    let cache_path = DEFAULT_LOCAL_CACHE_PATH_STRING.as_str();
+    let db_path = DEFAULT_LOCAL_DB_PATH_STRING.as_str();
 
     // TODO: decide where a remote db should be allowed vs just searching remote and installing
     // locally
@@ -79,16 +79,16 @@ async fn main() -> Result<()> {
     let app_state = AppState {
         sys_config: get_system_config(cli.config.as_deref())?,
         log_level: cli.debug,
-        local_db: Arc::new(LocalCache::new(cache_path).await?),
+        local_db: Arc::new(LocalDb::new(db_path).await?),
     };
 
     {
-        let cache = app_state.local_db.clone();
-        if !cache.template_table_exists().await? {
-            cache.create_schema().await?;
+        let db = app_state.local_db.clone();
+        if !db.template_table_exists().await? {
+            db.create_schema().await?;
 
             let idx_docs_opts = Some(IndexDocsOptions { dev: is_dev_env });
-            cache.index_docs(idx_docs_opts).await?;
+            db.index_docs(idx_docs_opts).await?;
         }
     }
 

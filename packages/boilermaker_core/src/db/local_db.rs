@@ -18,12 +18,12 @@ pub trait TemplateDb: TemplateMethods + SourceMethods + DocMethods + Send + Sync
 }
 
 #[derive(Debug)]
-pub struct LocalCache {
+pub struct LocalDb {
     pub pool: SqlitePool,
     pub path: String,
 }
 
-impl LocalCache {
+impl LocalDb {
     #[tracing::instrument]
     pub async fn new(db_path: &str) -> Result<Self> {
         let options = SqliteConnectOptions::new()
@@ -38,7 +38,7 @@ impl LocalCache {
 }
 
 #[async_trait::async_trait]
-impl TemplateDb for LocalCache {
+impl TemplateDb for LocalDb {
     #[tracing::instrument]
     async fn create_schema(&self) -> Result<()> {
         MIGRATOR.run(&self.pool).await?;
