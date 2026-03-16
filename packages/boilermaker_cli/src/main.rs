@@ -7,7 +7,10 @@ use tracing::info;
 
 use boilermaker_core::{
     commands,
-    commands::{Docs, Sources, docs, sources, sources::templates::Templates as SourceTemplates},
+    commands::{
+        Config, Docs, Sources, config, docs, sources,
+        sources::templates::Templates as SourceTemplates,
+    },
     config::{DEFAULT_LOCAL_DB_PATH_STRING, get_system_config},
     db::{IndexDocsOptions, LocalDb},
     logging,
@@ -40,6 +43,8 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    #[command(subcommand, about = "Get and set system config")]
+    Config(commands::Config),
     #[command(subcommand, about = "Documentation")]
     Docs(commands::Docs),
     #[command(about = "Install a template locally")]
@@ -100,6 +105,9 @@ async fn main() -> Result<()> {
 
     // TODO: clean this up with aliases or direct imports.
     match command {
+        Commands::Config(subcmd) => match subcmd {
+            Config::Get(cmd) => config::get(&app_state, &cmd).await,
+        },
         Commands::Docs(subcmd) => match subcmd {
             Docs::List(cmd) => docs::list(&app_state, &cmd).await,
             Docs::View(cmd) => docs::view(&app_state, &cmd).await,

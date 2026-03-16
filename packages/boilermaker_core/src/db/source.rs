@@ -546,7 +546,7 @@ pub struct AddSourceResult {
 pub struct TabledSourceRow {
     pub id: SourceId,
     pub name: String,
-    pub coordinate: String,
+    //pub coordinate: String,
     pub description: String,
 }
 
@@ -562,14 +562,6 @@ pub struct SourceResult {
 
 impl TabledSourceRow {
     pub fn from(row: SourceResult) -> Self {
-        let mut coordinate = row
-            .coordinate
-            .unicode_pad(77, Alignment::Left, true)
-            .to_string();
-        if coordinate.len() >= 77 {
-            coordinate.push_str("...");
-        }
-
         let description = match row.description {
             None => "-".to_string(),
             Some(s) => {
@@ -584,7 +576,6 @@ impl TabledSourceRow {
         Self {
             id: row.id,
             name: row.name,
-            coordinate,
             description,
         }
     }
