@@ -36,6 +36,7 @@ pub trait SourceMethods: Send + Sync {
         &self,
         query: SourceTemplateFindParams,
     ) -> Result<Vec<SourceTemplateResult>>;
+    async fn get_source(&self, id: i64) -> Result<Option<SourceResult>>;
     async fn get_source_template(
         &self,
         source_template_id: SourceTemplateId,
@@ -65,6 +66,16 @@ pub trait SourceMethods: Send + Sync {
 
 #[async_trait::async_trait]
 impl SourceMethods for LocalDb {
+    #[tracing::instrument]
+    async fn get_source(&self, id: i64) -> Result<Option<SourceResult>> {
+        let result = sqlx::query_as::<_, SourceResult>("SELECT * FROM source WHERE id = ?;")
+            .bind(id)
+            .fetch_optional(&self.pool)
+            .await?;
+
+        Ok(result)
+    }
+
     // TODO: split up 3 types of queries into separate functions for readability
     #[tracing::instrument]
     async fn add_source(
