@@ -70,7 +70,27 @@ pub fn get_system_config_path(config_path: Option<&Path>) -> Result<Option<&Path
 pub fn get_system_config(config_path: Option<&Path>) -> Result<SysConfig> {
     if let Some(path) = get_system_config_path(config_path)? {
         let config_content = fs::read_to_string(path)?;
-        let config: SysConfig = toml::from_str(&config_content)?;
+        let mut config: SysConfig = toml::from_str(&config_content)?;
+        config.db_path = expand_tilde(&config.db_path)
+            .ok_or_else(|| {
+                eyre!(
+                    "💥 Failed to expand db_path in config: `{}`",
+                    config.db_path
+                )
+            })?
+            .to_str()
+            .unwrap()
+            .to_string();
+        config.template_dir = expand_tilde(&config.template_dir)
+            .ok_or_else(|| {
+                eyre!(
+                    "💥 Failed to expand template_dir in config: `{}`",
+                    config.template_dir
+                )
+            })?
+            .to_str()
+            .unwrap()
+            .to_string();
         Ok(config)
     } else {
         Ok(make_default_config())
@@ -220,4 +240,17 @@ pub struct TemplateConfigProject {
     pub license: Option<String>,
     pub keywords: Option<Vec<String>>,
     pub website: Option<String>,
+}
+
+pub fn expand_tilde(path: &str) -> Option<PathBuf> {
+    if let Some(stripped) = path.strip_prefix("~/") {
+        dirs::home_dir().map(|mut home| {
+            home.push(stripped);
+            home
+        })
+    } else if path == "~" {
+        dirs::home_dir()
+    } else {
+        Some(PathBuf::from(path))
+    }
 }

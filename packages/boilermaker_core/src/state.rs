@@ -8,6 +8,8 @@ pub type TemplateDbType = Arc<dyn TemplateDb + Send + Sync>;
 
 pub struct AppState {
     pub log_level: u8,
+    pub config_path: Option<String>,
+    pub db_path: String,
     pub sys_config: SysConfig,
     pub local_db: TemplateDbType,
 }

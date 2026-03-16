@@ -2,6 +2,7 @@ use clap::Subcommand;
 
 pub mod add;
 pub mod list;
+pub mod show;
 pub mod templates;
 
 pub use add::{Add, add};
@@ -14,6 +15,8 @@ pub enum Sources {
     Add(Add),
     #[command(about = "List sources")]
     List(List),
+    #[command(about = "Show source details")]
+    Show(show::Show),
     #[command(subcommand, about = "Manage source templates")]
     Templates(Templates),
 }
