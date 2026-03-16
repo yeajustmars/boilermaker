@@ -1,5 +1,6 @@
 use clap::Parser;
 use color_eyre::Result;
+use tabled::Tabled;
 
 use crate::{state::AppState, util::output::print_table};
 
@@ -18,8 +19,17 @@ pub async fn get(app_state: &AppState, cmd: &Get) -> Result<()> {
             None => println!("Key `{}` not found in system config.", key),
         }
     } else {
-        print_table(m.into_iter());
+        let rows = m.into_iter().map(|(key, value)| ConfigRow { key, value });
+        print_table(rows);
     }
 
     Ok(())
+}
+
+#[derive(Tabled)]
+pub struct ConfigRow {
+    #[tabled(rename = "Key")]
+    pub key: String,
+    #[tabled(rename = "Value")]
+    pub value: String,
 }
