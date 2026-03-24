@@ -21,10 +21,10 @@ pub struct View {
 #[tracing::instrument]
 pub async fn view(app_state: &AppState, cmd: &View) -> Result<()> {
     let doc = {
-        let cache = app_state.local_db.clone();
+        let db = app_state.local_db.clone();
         match cmd.id_or_name.parse::<i64>() {
-            Ok(id) => cache.get_doc(id).await?,
-            Err(_) => get_existing_docs(cache, &cmd.id_or_name).await?,
+            Ok(id) => db.get_doc(id).await?,
+            Err(_) => get_existing_docs(db, &cmd.id_or_name).await?,
         }
     };
 
@@ -35,7 +35,7 @@ pub async fn view(app_state: &AppState, cmd: &View) -> Result<()> {
     Ok(())
 }
 
-async fn get_existing_docs(cache: Arc<dyn TemplateDb>, id_or_name: &str) -> Result<DocRow> {
+async fn get_existing_docs(db: Arc<dyn TemplateDb>, id_or_name: &str) -> Result<DocRow> {
     let mut name = id_or_name.to_string();
     if !name.ends_with(".md") {
         name.push_str(".md");
@@ -49,7 +49,7 @@ async fn get_existing_docs(cache: Arc<dyn TemplateDb>, id_or_name: &str) -> Resu
         created_at: None,
     };
 
-    let existing_docs = cache.find_docs(query).await?;
+    let existing_docs = db.find_docs(query).await?;
 
     match existing_docs.len() {
         0 => Err(eyre!("💥 Cannot find doc: {}.", name))?,

@@ -145,13 +145,13 @@ pub async fn install(app_state: &AppState, cmd: &Install) -> Result<()> {
             .unwrap(),
     };
 
-    let cache = app_state.local_db.clone();
+    let db = app_state.local_db.clone();
 
-    if !cache.template_table_exists().await? {
-        cache.create_schema().await?;
+    if !db.template_table_exists().await? {
+        db.create_schema().await?;
     }
 
-    let existing_db_entry = cache.check_unique(&row).await?;
+    let existing_db_entry = db.check_unique(&row).await?;
 
     if let Some(t) = existing_db_entry {
         if template_dir.exists() {
@@ -166,13 +166,13 @@ pub async fn install(app_state: &AppState, cmd: &Install) -> Result<()> {
                 "Template entry exists in DB but directory is missing. Reininstalling: {}.",
                 t.name
             );
-            cache.delete_template(t.id).await?;
+            db.delete_template(t.id).await?;
         }
     }
 
-    let new_id = cache.create_template(row).await?;
+    let new_id = db.create_template(row).await?;
 
-    info!("Template added to cache with ID: {}", new_id);
+    info!("Template added to db with ID: {}", new_id);
 
     if !cmd.local {
         remove_other_langs(&install)?;
@@ -189,7 +189,7 @@ pub async fn install(app_state: &AppState, cmd: &Install) -> Result<()> {
         }
     }
 
-    cache.index_template(new_id).await?;
+    db.index_template(new_id).await?;
 
     if !cmd.local {
         let path = install.work_dir.clone();

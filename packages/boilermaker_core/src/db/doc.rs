@@ -5,7 +5,7 @@ use serde::Serialize;
 use sqlx::QueryBuilder;
 use tabled::Tabled;
 
-use super::LocalCache;
+use super::LocalDb;
 use crate::{db::SearchOptions, docs::DocFiles};
 
 #[async_trait::async_trait]
@@ -18,7 +18,7 @@ pub trait DocMethods: Send + Sync {
 }
 
 #[async_trait::async_trait]
-impl DocMethods for LocalCache {
+impl DocMethods for LocalDb {
     #[tracing::instrument]
     async fn index_docs(&self, _opts: Option<IndexDocsOptions>) -> Result<()> {
         let doc_rows = DocFiles::iter()

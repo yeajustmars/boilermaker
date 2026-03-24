@@ -2,7 +2,6 @@ use std::{env, fs, path::PathBuf};
 
 use auth_git2::GitAuthenticator;
 use color_eyre::{Result, eyre::eyre};
-use dirs;
 use fs_extra::dir::{CopyOptions, copy};
 use git2::{Config, FetchOptions, RemoteCallbacks, Repository, build::RepoBuilder};
 use minijinja::{Environment as JinjaEnv, value::Value as JinjaValue};
@@ -13,7 +12,7 @@ pub use crate::config::{
     get_template_config, get_template_config_text, template_config_text_to_config,
 };
 use crate::{
-    config::TemplateConfig,
+    config::{TemplateConfig, get_template_base_dir},
     constants::TEMPLATE_FILEPATH_VAR_PATTERN as FILEPATH_VARS,
     db::HashableTemplateValues,
     util::{
@@ -167,9 +166,8 @@ pub fn create_work_dir_clean(name: &str) -> Result<PathBuf> {
 
 #[tracing::instrument]
 pub fn get_template_dir_path(name: &str) -> Result<PathBuf> {
-    let home_dir = dirs::home_dir().ok_or_else(|| eyre!("💥 Can't find home directory"))?;
-    let templates_dir = home_dir.join(".boilermaker").join("templates").join(name);
-    Ok(templates_dir)
+    let base_dir = get_template_base_dir(None)?;
+    Ok(base_dir.join(name))
 }
 
 #[tracing::instrument]

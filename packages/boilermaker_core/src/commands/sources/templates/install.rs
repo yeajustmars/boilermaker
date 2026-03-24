@@ -18,10 +18,10 @@ pub struct Install {
 
 #[tracing::instrument]
 async fn get_source_template(app_state: &AppState, cmd: &Install) -> Result<SourceTemplateResult> {
-    let cache = app_state.local_db.clone();
+    let db = app_state.local_db.clone();
 
     if let Ok(id) = cmd.id_or_name.parse::<i64>() {
-        Ok(cache
+        Ok(db
             .get_source_template(id)
             .await?
             .expect("Failed to unwrap template result"))
@@ -36,7 +36,7 @@ async fn get_source_template(app_state: &AppState, cmd: &Install) -> Result<Sour
             subdir: None,
             sha256_hash: None,
         };
-        let results = cache.find_source_templates(find_params).await?;
+        let results = db.find_source_templates(find_params).await?;
 
         match results.len() {
             0 => Err(eyre!("💥 Cannot find source template: {}.", cmd.id_or_name))?,

@@ -15,7 +15,7 @@ use crate::{
     util::file::read_file_to_string,
 };
 
-use super::LocalCache;
+use super::LocalDb;
 
 type SourceId = i64;
 type SourceTemplateId = i64;
@@ -36,6 +36,7 @@ pub trait SourceMethods: Send + Sync {
         &self,
         query: SourceTemplateFindParams,
     ) -> Result<Vec<SourceTemplateResult>>;
+    async fn get_source(&self, id: i64) -> Result<Option<SourceResult>>;
     async fn get_source_template(
         &self,
         source_template_id: SourceTemplateId,
@@ -64,7 +65,17 @@ pub trait SourceMethods: Send + Sync {
 }
 
 #[async_trait::async_trait]
-impl SourceMethods for LocalCache {
+impl SourceMethods for LocalDb {
+    #[tracing::instrument]
+    async fn get_source(&self, id: i64) -> Result<Option<SourceResult>> {
+        let result = sqlx::query_as::<_, SourceResult>("SELECT * FROM source WHERE id = ?;")
+            .bind(id)
+            .fetch_optional(&self.pool)
+            .await?;
+
+        Ok(result)
+    }
+
     // TODO: split up 3 types of queries into separate functions for readability
     #[tracing::instrument]
     async fn add_source(
@@ -546,7 +557,7 @@ pub struct AddSourceResult {
 pub struct TabledSourceRow {
     pub id: SourceId,
     pub name: String,
-    pub coordinate: String,
+    //pub coordinate: String,
     pub description: String,
 }
 
@@ -562,14 +573,6 @@ pub struct SourceResult {
 
 impl TabledSourceRow {
     pub fn from(row: SourceResult) -> Self {
-        let mut coordinate = row
-            .coordinate
-            .unicode_pad(77, Alignment::Left, true)
-            .to_string();
-        if coordinate.len() >= 77 {
-            coordinate.push_str("...");
-        }
-
         let description = match row.description {
             None => "-".to_string(),
             Some(s) => {
@@ -584,7 +587,6 @@ impl TabledSourceRow {
         Self {
             id: row.id,
             name: row.name,
-            coordinate,
             description,
         }
     }

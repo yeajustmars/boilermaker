@@ -5,7 +5,7 @@ use color_eyre::{Result, eyre::eyre};
 use tracing::info;
 
 use crate::{
-    config::DEFAULT_LOCAL_CACHE_PATH,
+    constants::DEFAULT_LOCAL_DB_PATH,
     state::AppState,
     template::remove_dir_if_exists,
     util::{io::prompt_confirm, math::rand_i32_between},
@@ -36,9 +36,9 @@ async fn remove_one(app_state: &AppState, cmd: &Remove) -> Result<()> {
         }
     };
 
-    let cache = app_state.local_db.clone();
+    let db = app_state.local_db.clone();
 
-    let template = match cache.get_template(id).await? {
+    let template = match db.get_template(id).await? {
         Some(template) => template,
         None => {
             return Err(eyre!("💥 No template found with ID: {}", id));
@@ -51,7 +51,7 @@ async fn remove_one(app_state: &AppState, cmd: &Remove) -> Result<()> {
         return Err(eyre!("💥 Failed to remove template directory: {}", err));
     }
 
-    let removed_id = cache.delete_template(id).await?;
+    let removed_id = db.delete_template(id).await?;
 
     info!("Removed template: {} ({})", removed_id, template.name);
 
@@ -61,7 +61,7 @@ async fn remove_one(app_state: &AppState, cmd: &Remove) -> Result<()> {
 #[tracing::instrument]
 async fn remove_all(app_state: &AppState, cmd: &Remove, confirm_action: bool) -> Result<()> {
     if confirm_action {
-        tracing::warn!("About to remove **ALL** templates from local cache and filesystem!");
+        tracing::warn!("About to remove **ALL** templates from local db and filesystem!");
         if !confirm()? {
             info!("Aborting removal of all templates.");
             return Ok(());
@@ -69,14 +69,14 @@ async fn remove_all(app_state: &AppState, cmd: &Remove, confirm_action: bool) ->
     }
 
     let templates = {
-        let cache = app_state.local_db.clone();
-        let templates = match cache.list_templates(None).await {
+        let db = app_state.local_db.clone();
+        let templates = match db.list_templates(None).await {
             Ok(templates) => templates,
             Err(err) => {
                 return Err(eyre!("💥 Failed to list templates: {}", err));
             }
         };
-        cache.delete_templates_all().await?;
+        db.delete_templates_all().await?;
         templates
     };
 
@@ -103,13 +103,13 @@ async fn remove_all(app_state: &AppState, cmd: &Remove, confirm_action: bool) ->
     Ok(())
 }
 
-// TODO: check for custom DB path vs DEFAULT_LOCAL_CACHE_PATH
+// TODO: check for custom DB path vs DEFAULT_LOCAL_DB_PATH
 #[tracing::instrument]
 async fn destroy_local_db(app_state: &AppState, cmd: &Remove) -> Result<()> {
-    if !DEFAULT_LOCAL_CACHE_PATH.exists() {
+    if !DEFAULT_LOCAL_DB_PATH.exists() {
         info!(
             "Local DB file does not exist at {:?}, nothing to destroy.",
-            DEFAULT_LOCAL_CACHE_PATH.display()
+            DEFAULT_LOCAL_DB_PATH.display()
         );
         return Ok(());
     }
@@ -122,17 +122,17 @@ async fn destroy_local_db(app_state: &AppState, cmd: &Remove) -> Result<()> {
 
     remove_all(app_state, cmd, false).await?;
 
-    match fs::remove_file(DEFAULT_LOCAL_CACHE_PATH.as_path()) {
+    match fs::remove_file(DEFAULT_LOCAL_DB_PATH.as_path()) {
         Ok(_) => {
             info!(
                 "Successfully destroyed local DB at {:?}",
-                DEFAULT_LOCAL_CACHE_PATH.display()
+                DEFAULT_LOCAL_DB_PATH.display()
             );
         }
         Err(err) => {
             return Err(eyre!(
                 "💥 Failed to destroy local DB at {:?}: {}",
-                DEFAULT_LOCAL_CACHE_PATH.display(),
+                DEFAULT_LOCAL_DB_PATH.display(),
                 err
             ));
         }

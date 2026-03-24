@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
-use color_eyre::eyre::{eyre, Result};
+use color_eyre::eyre::{Result, eyre};
 use once_cell::sync::OnceCell;
 
 use boilermaker_core::{
-    config::{get_system_config, DEFAULT_LOCAL_CACHE_PATH_STRING},
-    db::{LocalCache, TemplateDb, TemplateMethods},
+    config::{DEFAULT_LOCAL_DB_PATH_STRING, get_system_config},
+    db::{LocalDb, TemplateDb, TemplateMethods},
     state::AppState,
 };
 
@@ -18,24 +18,23 @@ pub fn init_app_state() -> Result<()> {
         .build()
         .unwrap()
         .block_on(async {
-            let db_path = DEFAULT_LOCAL_CACHE_PATH_STRING.as_str();
-            let cache = Arc::new(LocalCache::new(db_path).await.map_err(|err| {
+            let db_path = DEFAULT_LOCAL_DB_PATH_STRING.as_str();
+            let db = Arc::new(LocalDb::new(db_path).await.map_err(|err| {
                 eyre!(
-                    "Failed to initialize local cache at path '{}': {}",
+                    "Failed to initialize local db at path '{}': {}",
                     db_path,
                     err
                 )
             })?);
-            if !cache.template_table_exists().await.unwrap_or(false) {
-                cache
-                    .create_schema()
+            if !db.template_table_exists().await.unwrap_or(false) {
+                db.create_schema()
                     .await
-                    .map_err(|e| eyre!("Failed to initialize local cache: {}", e))?;
+                    .map_err(|e| eyre!("Failed to initialize local db: {}", e))?;
             }
             // App state
             let sys_config = get_system_config(None).expect("Failed to load system config");
             let app_state = AppState {
-                local_db: cache,
+                local_db: db,
                 sys_config,
                 log_level: 1,
             };

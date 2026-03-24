@@ -5,3 +5,7 @@
 **.DS_store
 /boil/hello-world/
 /boil/my-hello-world/
+.!*
+assets/.!*
+**assets/\.!*
+**assets/\.!*/**

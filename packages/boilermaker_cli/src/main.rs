@@ -7,9 +7,12 @@ use tracing::info;
 
 use boilermaker_core::{
     commands,
-    commands::{Docs, Sources, docs, sources, sources::templates::Templates as SourceTemplates},
-    config::{DEFAULT_LOCAL_CACHE_PATH_STRING, get_system_config},
-    db::{IndexDocsOptions, LocalCache},
+    commands::{
+        Config, Docs, Sources, config, docs, sources,
+        sources::templates::Templates as SourceTemplates,
+    },
+    config::{get_system_config, get_system_config_path},
+    db::{IndexDocsOptions, LocalDb},
     logging,
     state::AppState,
     util::env::is_dev_env,
@@ -40,15 +43,17 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    #[command(subcommand, about = "Get and set system config")]
+    Config(commands::Config),
     #[command(subcommand, about = "Documentation")]
     Docs(commands::Docs),
     #[command(about = "Install a template locally")]
     Install(commands::Install),
-    #[command(about = "List all templates in the local cache")]
+    #[command(about = "List all templates in the local DB")]
     List(commands::List),
     #[command(about = "Create a new project from a template")]
     New(commands::New),
-    #[command(name = "rm", about = "Remove templates or local cache itself")]
+    #[command(name = "rm", about = "Remove templates or local DB itself")]
     Remove(commands::Remove),
     #[command(about = "Search for templates")]
     Search(commands::Search),
@@ -69,37 +74,44 @@ async fn main() -> Result<()> {
 
     logging::init_tracing(cli.debug)?;
 
-    let is_dev_env = is_dev_env();
-
-    let cache_path = DEFAULT_LOCAL_CACHE_PATH_STRING.as_str();
-
     // TODO: decide where a remote db should be allowed vs just searching remote and installing
     // locally
     // TODO: If yes, check global boilermaker config for local vs remote db option
+
+    let is_dev_env = is_dev_env();
+    let config_path = cli.config.map(|p| p.as_path().to_owned());
+    let sys_config = get_system_config(config_path.as_deref())?;
     let app_state = AppState {
-        sys_config: get_system_config(cli.config.as_deref())?,
+        config_path: get_system_config_path(config_path.as_deref())?
+            .map(|p| p.to_string_lossy().into_owned()),
+        db_path: sys_config.db_path.clone(),
         log_level: cli.debug,
-        local_db: Arc::new(LocalCache::new(cache_path).await?),
+        local_db: Arc::new(LocalDb::new(&sys_config.db_path).await?),
+        sys_config,
     };
 
     {
-        let cache = app_state.local_db.clone();
-        if !cache.template_table_exists().await? {
-            cache.create_schema().await?;
+        let db = app_state.local_db.clone();
+        if !db.template_table_exists().await? {
+            db.create_schema().await?;
 
             let idx_docs_opts = Some(IndexDocsOptions { dev: is_dev_env });
-            cache.index_docs(idx_docs_opts).await?;
+            db.index_docs(idx_docs_opts).await?;
         }
     }
 
     let Some(command) = cli.command else {
-        println!("🔨 Boilermaker - Making boilerplate more sane!");
+        println!("🔨 Boilermaker - Make. Boilerplate. Sane!");
         info!("No command provided. Use --help for usage.");
         return Ok(());
     };
 
     // TODO: clean this up with aliases or direct imports.
     match command {
+        Commands::Config(subcmd) => match subcmd {
+            Config::Get(cmd) => config::get(&app_state, &cmd).await,
+            Config::Set(cmd) => config::set(&app_state, &cmd).await,
+        },
         Commands::Docs(subcmd) => match subcmd {
             Docs::List(cmd) => docs::list(&app_state, &cmd).await,
             Docs::View(cmd) => docs::view(&app_state, &cmd).await,
@@ -113,12 +125,15 @@ async fn main() -> Result<()> {
         Commands::Sources(subcmd) => match subcmd {
             Sources::Add(cmd) => sources::add(&app_state, &cmd).await,
             Sources::List(cmd) => sources::list(&app_state, &cmd).await,
+            Sources::Show(cmd) => sources::show::show(&app_state, &cmd).await,
             Sources::Templates(subcmd) => match subcmd {
                 SourceTemplates::Install(cmd) => {
                     sources::templates::install(&app_state, &cmd).await
                 }
                 SourceTemplates::List(cmd) => sources::templates::list(&app_state, &cmd).await,
-                SourceTemplates::Show(cmd) => sources::templates::show(&app_state, &cmd).await,
+                SourceTemplates::Show(cmd) => {
+                    sources::templates::show::show(&app_state, &cmd).await
+                }
             },
         },
         Commands::Update(cmd) => commands::update(&app_state, &cmd).await,
