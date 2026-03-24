@@ -3,4 +3,5 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 cd $SCRIPT_DIR
 
-dx serve --package boilermaker_desktop "$@"
+#dx serve --package boilermaker_desktop "$@"
+echo -e "\n\nDesktop package removed for now\n\n"

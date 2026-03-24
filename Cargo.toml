@@ -4,13 +4,12 @@ members = [
     "packages/boilermaker_api",
     "packages/boilermaker_cli",
     "packages/boilermaker_core",
-    "packages/boilermaker_desktop",
     "packages/boilermaker_ui",
     "packages/boilermaker_web",
 ]
 
 [workspace.package]
-version = "0.1.0-beta4"
+version = "0.1.0-beta5"
 edition = "2024"
 
 [workspace.dependencies]
@@ -69,7 +68,6 @@ walkdir = "2.5.0"
 boilermaker_api = { path = "packages/boilermaker_api" }
 boilermaker_cli = { path = "packages/boilermaker_cli" }
 boilermaker_core = { path = "packages/boilermaker_core" }
-boilermaker_desktop = { path = "packages/boilermaker_desktop" }
 boilermaker_ui = { path = "packages/boilermaker_ui" }
 
 # The profile that 'dist' will build with
