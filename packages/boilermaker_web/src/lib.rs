@@ -19,7 +19,7 @@ use serde::Serialize;
 use tracing::info;
 
 use boilermaker_core::{
-    config::{DEFAULT_ETC_DB_PATH_STRING, DEFAULT_LOCAL_DB_PATH_STRING},
+    constants::{DEFAULT_ETC_DB_PATH_STRING, DEFAULT_LOCAL_DB_PATH_STRING},
     db::{DocMethods, IndexDocsOptions, LocalDb, TemplateDb, TemplateMethods},
     state::TemplateDbType,
     util::env::is_dev_env,
