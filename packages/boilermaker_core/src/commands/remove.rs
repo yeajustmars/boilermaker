@@ -5,7 +5,7 @@ use color_eyre::{Result, eyre::eyre};
 use tracing::info;
 
 use crate::{
-    config::DEFAULT_LOCAL_DB_PATH,
+    constants::DEFAULT_LOCAL_DB_PATH,
     state::AppState,
     template::remove_dir_if_exists,
     util::{io::prompt_confirm, math::rand_i32_between},
