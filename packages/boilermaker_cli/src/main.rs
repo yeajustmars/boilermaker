@@ -110,7 +110,7 @@ async fn main() -> Result<()> {
     match command {
         Commands::Config(subcmd) => match subcmd {
             Config::Get(cmd) => config::get(&app_state, &cmd).await,
-            Config::Set(cmd) => config::set(&app_state, &cmd).await,
+            //Config::Set(cmd) => config::set(&app_state, &cmd).await,
         },
         Commands::Docs(subcmd) => match subcmd {
             Docs::List(cmd) => docs::list(&app_state, &cmd).await,
