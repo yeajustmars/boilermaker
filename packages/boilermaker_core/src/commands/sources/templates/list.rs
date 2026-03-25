@@ -5,7 +5,10 @@ use crate::{
     commands::ListResult,
     db::{SourceFindParams, SourceTemplateResult},
     state::AppState,
-    util::{help, output::print_table},
+    util::{
+        help,
+        output::{print_table, strip_url_prefix},
+    },
 };
 
 #[derive(Debug, Parser)]
@@ -72,7 +75,7 @@ impl From<&SourceTemplateResult> for ListResult {
             id: row.id,
             name: row.name.clone(),
             lang: row.lang.clone(),
-            repo: row.repo.clone(),
+            repo: strip_url_prefix(&row.repo),
             branch: row.branch.clone().unwrap_or("-".to_string()),
             subdir: row.subdir.clone().unwrap_or("-".to_string()),
         }

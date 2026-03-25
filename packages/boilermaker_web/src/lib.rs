@@ -19,7 +19,7 @@ use serde::Serialize;
 use tracing::info;
 
 use boilermaker_core::{
-    constants::{DEFAULT_ETC_DB_PATH_STRING, DEFAULT_LOCAL_DB_PATH_STRING},
+    constants::{DEFAULT_LOCAL_DB_PATH_STRING, DEFAULT_VAR_LIB_DB_PATH_STRING},
     db::{DocMethods, IndexDocsOptions, LocalDb, TemplateDb, TemplateMethods},
     state::TemplateDbType,
     util::env::is_dev_env,
@@ -80,10 +80,11 @@ impl WebAppState {
             info!("Running in dev mode, using db_path: {}", db_path);
             db_path
         } else {
-            DEFAULT_ETC_DB_PATH_STRING.as_str()
+            DEFAULT_VAR_LIB_DB_PATH_STRING.as_str()
         };
 
         let db = Arc::new(LocalDb::new(db_path).await?);
+
         {
             let db = db.clone();
             if !db.template_table_exists().await? {

@@ -2,7 +2,12 @@ use clap::Parser;
 use color_eyre::Result;
 use tracing::info;
 
-use crate::{commands::ListResult, db::TemplateResult, state::AppState, util::output::print_table};
+use crate::{
+    commands::ListResult,
+    db::TemplateResult,
+    state::AppState,
+    util::output::{print_table, strip_url_prefix},
+};
 
 #[derive(Parser, Debug)]
 pub struct List {
@@ -35,7 +40,7 @@ impl From<TemplateResult> for ListResult {
             id: row.id,
             name: row.name,
             lang: row.lang,
-            repo: row.repo,
+            repo: strip_url_prefix(&row.repo),
             branch: row.branch.unwrap_or("-".to_string()),
             subdir: row.subdir.unwrap_or("-".to_string()),
         }

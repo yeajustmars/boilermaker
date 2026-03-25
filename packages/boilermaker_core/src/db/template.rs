@@ -11,6 +11,7 @@ use crate::template as tmpl;
 use crate::template::InstallableTemplate;
 use crate::util::crypto::sha256_hash_string;
 use crate::util::file::read_file_to_string;
+use crate::util::output::strip_url_prefix;
 
 #[async_trait::async_trait]
 pub trait TemplateMethods: Send + Sync {
@@ -395,7 +396,7 @@ impl TabledSearchResult {
             id: sr.id,
             name: sr.name,
             lang: sr.lang,
-            repo: sr.repo,
+            repo: strip_url_prefix(&sr.repo),
             branch: sr.branch.unwrap_or_else(|| "-".to_owned()),
             subdir: sr.subdir.unwrap_or_else(|| "-".to_owned()),
             kind: sr.kind,
