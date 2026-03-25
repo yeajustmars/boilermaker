@@ -21,10 +21,13 @@ lazy_static! {
     pub static ref DEFAULT_ETC_SYS_CONFIG_FILE: String =
         "/etc/boilermaker/boilermaker.toml".to_string();
     pub static ref DEFAULT_LOG_LEVEL: String = "INFO".to_string();
-    pub static ref DEFAULT_ETC_DB_PATH: PathBuf =
+    pub static ref DEFAULT_VAR_LIB_DB_PATH: PathBuf =
         PathBuf::from("/var/lib/boilermaker/boilermaker.db");
-    pub static ref DEFAULT_ETC_DB_PATH_STRING: String =
-        DEFAULT_ETC_DB_PATH.as_path().to_str().unwrap().to_string();
+    pub static ref DEFAULT_VAR_LIB_DB_PATH_STRING: String = DEFAULT_VAR_LIB_DB_PATH
+        .as_path()
+        .to_str()
+        .unwrap()
+        .to_string();
     pub static ref DEFAULT_LOCAL_DB_PATH: PathBuf = make_local_db_path(None).unwrap();
     pub static ref DEFAULT_LOCAL_DB_PATH_STRING: String = DEFAULT_LOCAL_DB_PATH
         .as_path()
