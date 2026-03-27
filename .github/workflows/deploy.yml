@@ -1,0 +1,45 @@
+name: Deploy to DigitalOcean
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    name: Deploy to Droplet
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Release Binary
+        uses: robinraju/release-downloader@v1.10
+        with:
+          # This automatically grabs the tag name from the release that just published
+          tag: ${{ github.event.release.tag_name }}
+          fileName: "*x86_64-unknown-linux-gnu.tar.xz"
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract & Prepare Binary
+        run: |
+          tar -xJf *x86_64-unknown-linux-gnu.tar.xz
+          # Find the binary in the extracted folder and move it to the root of our workspace
+          find . -type f -name "boilermaker_web" -exec mv {} ./app-bin \;
+
+      - name: Upload Binary to Server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.BOILERMAKER_DEV_IP_ADDRESS }}
+          username: ${{ secrets.BOILERMAKER_USER_USERNAME }}
+          key: ${{ secrets.BOILERMAKER_USER_SSH_KEY }}
+          source: "./app-bin"
+          target: "/home/boilermaker/"
+
+      - name: Atomic Swap and Restart Service
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.BOILERMAKER_DEV_IP_ADDRESS }}
+          username: ${{ secrets.BOILERMAKER_USER_USERNAME }}
+          key: ${{ secrets.BOILERMAKER_USER_SSH_KEY }}
+          script: |
+            # Move the binary into the final directory, make it executable, and restart
+            mv /home/boilermaker/app-bin /opt/boilermaker/boilermaker_web
+            chmod +x /opt/boilermaker/boilermaker_web
+            systemctl --user restart boilermaker_web

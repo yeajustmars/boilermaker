@@ -165,47 +165,6 @@ jobs:
           echo "${{ fromJson(steps.host.outputs.manifest).announcement_github_body }}" > notes.txt
           gh release create "${{ needs.plan.outputs.tag }}" --target "${{ github.sha }}" --title "${{ fromJson(steps.host.outputs.manifest).announcement_title }}" --notes-file notes.txt target/distrib/*
 
-  deploy:
-    name: Deploy to Droplet
-    needs: [plan, host]
-    runs-on: ubuntu-latest
-    if: ${{ needs.plan.outputs.publishing == 'true' }}
-    steps:
-      - name: Download Release Binary
-        uses: robinraju/release-downloader@v1.10
-        with:
-          tag: ${{ needs.plan.outputs.tag }}
-          fileName: "*x86_64-unknown-linux-gnu.tar.xz"
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract & Prepare Binary
-        run: |
-          tar -xJf *x86_64-unknown-linux-gnu.tar.xz
-          # cargo-dist extracts into a directory. We use find to grab the specific binary
-          # and rename it to 'app-bin' in our current working directory.
-          find . -type f -name "boilermaker_web" -exec mv {} ./app-bin \;
-
-      - name: Upload Binary to Server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.BOILERMAKER_DEV_IP_ADDRESS }}
-          username: ${{ secrets.BOILERMAKER_USER_USERNAME }}
-          key: ${{ secrets.BOILERMAKER_USER_SSH_KEY }}
-          source: "./app-bin"
-          target: "/home/boilermaker/"
-
-      - name: Atomic Swap and Restart Service
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.BOILERMAKER_DEV_IP_ADDRESS }}
-          username: ${{ secrets.BOILERMAKER_USER_USERNAME }}
-          key: ${{ secrets.BOILERMAKER_USER_SSH_KEY }}
-          script: |
-            # No sudo required!
-            mv /home/boilermaker/app-bin /opt/boilermaker/boilermaker_web
-            chmod +x /opt/boilermaker/boilermaker_web
-            systemctl --user restart boilermaker_web
-
   announce:
     needs: [plan, host]
     if: ${{ always() && needs.host.result == 'success' }}

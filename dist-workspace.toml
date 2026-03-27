@@ -1,9 +1,6 @@
 [workspace]
 members = ["cargo:."]
 
-[workspace.metadata.dist]
-allow-dirty = ["ci"]
-
 # Config for 'dist'
 [dist]
 packages = ["boilermaker_cli", "boilermaker_web"]
