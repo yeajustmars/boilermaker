@@ -9,7 +9,6 @@ on:
   push:
     tags:
       - '**[0-9]+.[0-9]+.[0-9]+*'
-
 jobs:
   plan:
     runs-on: "ubuntu-22.04"
@@ -181,12 +180,12 @@ jobs:
 
       - name: Extract & Prepare Binary
         run: |
-          # Use 'J' flag for .xz archives
           tar -xJf *x86_64-unknown-linux-gnu.tar.xz
-          # Look for the binary (boilermaker_web) inside the extracted folders
-          find . -maxdepth 2 -type f -executable -not -name "*.sh" -exec mv {} ./app-bin \;
+          # cargo-dist extracts into a directory. We use find to grab the specific binary
+          # and rename it to 'app-bin' in our current working directory.
+          find . -type f -name "boilermaker_web" -exec mv {} ./app-bin \;
 
-      - name: Upload Binary to Temp
+      - name: Upload Binary to Server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.BOILERMAKER_DEV_IP_ADDRESS }}
@@ -202,10 +201,10 @@ jobs:
           username: ${{ secrets.BOILERMAKER_USER_USERNAME }}
           key: ${{ secrets.BOILERMAKER_USER_SSH_KEY }}
           script: |
-            sudo mkdir -p /opt/boilermaker
-            sudo mv /home/boilermaker/app-bin /opt/boilermaker/boilermaker_web
-            sudo chmod +x /opt/boilermaker/boilermaker_web
-            sudo systemctl restart boilermaker_web
+            # No sudo required!
+            mv /home/boilermaker/app-bin /opt/boilermaker/boilermaker_web
+            chmod +x /opt/boilermaker/boilermaker_web
+            systemctl --user restart boilermaker_web
 
   announce:
     needs: [plan, host]
