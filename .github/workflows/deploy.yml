@@ -1,19 +1,22 @@
 name: Deploy to DigitalOcean
 
 on:
-  release:
-    types: [published]
+  workflow_run:
+    workflows: ["Release"] # This must exactly match the 'name:' at the top of release.yml
+    types: [completed]
 
 jobs:
   deploy:
     name: Deploy to Droplet
     runs-on: ubuntu-latest
+    # Only run the deploy if the cargo-dist build actually succeeded
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Download Release Binary
         uses: robinraju/release-downloader@v1.10
         with:
-          # This automatically grabs the tag name from the release that just published
-          tag: ${{ github.event.release.tag_name }}
+          # In a workflow_run triggered by a tag, 'head_branch' contains the tag name
+          tag: ${{ github.event.workflow_run.head_branch }}
           fileName: "*x86_64-unknown-linux-gnu.tar.xz"
           token: ${{ secrets.GITHUB_TOKEN }}
 
