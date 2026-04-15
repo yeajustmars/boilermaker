@@ -74,7 +74,7 @@ walkdir = "2.5.0"
 # workspace
 boilermaker_api = { path = "packages/boilermaker_api" }
 boilermaker_cli = { path = "packages/boilermaker_cli" }
-boilermaker_core = { path = "packages/boilermaker_core", version = "0.1.0-beta13" }
+boilermaker_core = { package = "boilermaker-core", path = "packages/boilermaker_core", version = "0.1.0-beta13" }
 boilermaker_ui = { path = "packages/boilermaker_ui" }
 
 # The profile that 'dist' will build with

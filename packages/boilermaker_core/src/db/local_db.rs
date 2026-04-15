@@ -8,7 +8,7 @@ use sqlx::{
 
 use super::{DocMethods, SourceMethods, TemplateMethods};
 
-static MIGRATOR: Migrator = sqlx::migrate!("../../migrations");
+static MIGRATOR: Migrator = sqlx::migrate!("./migrations");
 
 //pub const DOCS_DIR: &str = "../../packages/boilermaker_ui/docs/";
 

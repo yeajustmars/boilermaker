@@ -1,5 +1,5 @@
 [package]
-name = "boilermaker_cli"
+name = "boilermaker"
 version.workspace = true
 edition.workspace = true
 description.workspace = true

@@ -1,5 +1,5 @@
 [package]
-name = "boilermaker_core"
+name = "boilermaker-core"
 version.workspace = true
 edition.workspace = true
 description.workspace = true
