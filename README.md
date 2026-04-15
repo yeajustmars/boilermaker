@@ -1,16 +1,34 @@
 # Boilermaker
 
-Boilermaker is a language-agnostic code template system for rapid project boilerplate setup. It's goal is to provide a simple and efficient way to generate project scaffolding, allowing developers to move quickly from common boilerplate setup.
+Boilermaker is a language-agnostic code template system for rapid boilerplate project setup. It's goal is to provide a simple and efficient way to generate project scaffolding, allowing developers to move quickly from common boilerplate setup.
 
 > _NOTE_: Boilermaker is currently in beta. For now, only the CLI and website are available. If you have any questions, suggestions, or want to contribute, please open an issue or a pull request.
 
 ## Installation
 
-> Rustaceans: `cargo install boilermaker --version 0.1.0-beta14`
+### Rustaceans
 
-For anyone else, go to the [releases](https://github.com/yeajustmars/boilermaker/releases) page and download the latest version for your platform. Then, add the downloaded binary to your system's PATH.
+```
+cargo install boilermaker --version 0.1.0-beta14
+```
 
-> _TIP: Or just use the `curl` install command provided in the specific release in `~/.cargo/bin`._
+### Package Managers
+
+#### macOS
+
+```
+brew install boilermaker
+```
+
+#### Linux
+
+Coming soon! We're working on getting Boilermaker into popular package managers for Linux. If you'd like to help, please see our [Contributing Guidelines](https://github.com/yeajustmars/boilermaker/blob/main/CONTRIBUTING.md) .
+
+### Binaries
+
+Go to the [releases](https://github.com/yeajustmars/boilermaker/releases) page and download the latest version for your platform. Then, add the downloaded binary to your system's PATH.
+
+> _TIP: Or just use the `curl` install command provided in the specific release in `~/.cargo/bin`. (Note: make sure this directory is no your path.)_
 
 ## Usage
 
@@ -43,3 +61,7 @@ Another way to contribute, even (or maybe especially) if you're not a coder, is 
 - **Template Idea:** [A short, descriptive name for the template]
 - **Description:** [A brief description of the template and its purpose]
 - **Use Cases:** (optional) [Examples of when this template would be useful]
+
+## License
+
+Boilermaker is licensed under the MIT License. See the [LICENSE]()
