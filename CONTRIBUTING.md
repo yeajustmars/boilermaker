@@ -22,7 +22,7 @@ While we may review and accept contributions from non-contributors, we ask that 
 
 ## Pull Requests
 
-Please do not submit a Pull Request until you have been approved as a contributor and assigned to an Issue. Unsolicited PRs may be politely closed. This is to ensure a level of code quality and consistency across the project, as well as to continue to guarantee that official templates are ready to run, out of the box.
+Please do not submit a Pull Request until you have been approved as a contributor and assigned to an Issue. We don't do this to be draconian but instead to ensure the continued quality of the codebase and to make sure that contributions are aligned with the project's goals and standards. Unsolicited PRs may be politely closed. This is to ensure a level of code quality and consistency across the project, as well as to continue to guarantee that official templates are ready to run, out of the box!
 
 ### Creating Pull Requests
 
