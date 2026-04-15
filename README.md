@@ -2,7 +2,7 @@
 
 Boilermaker is a language-agnostic code template system for rapid boilerplate project setup. It's goal is to provide a simple and efficient way to generate project scaffolding, allowing developers to move quickly from common boilerplate setup.
 
-> _NOTE_: Boilermaker is currently in beta. For now, only the CLI and website are available. If you have any questions, suggestions, or want to contribute, please open an issue or a pull request.
+> _NOTE_: Boilermaker is currently in beta. For now, only the CLI and website are available. If you have any questions, suggestions, or want to contribute, please open a discussion, an issue or a pull request. For the latter, please read our [Contributing Guidelines](https://github.com/yeajustmars/boilermaker/blob/main/CONTRIBUTING.md).
 
 ## Installation
 
