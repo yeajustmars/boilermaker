@@ -9,11 +9,15 @@ members = [
 ]
 
 [workspace.package]
+description = "Language-agnostic code templates for rapid project boilerplate setup"
+repository = "https://github.com/yeajustmars/boilermaker"
+readme = "README.md"
 # NOTE:
 #To upgrade this version make sure to get all instances w/in this TOML file.
 version = "0.1.0-beta13"
 # /NOTE
 edition = "2024"
+license = "MIT"
 
 [workspace.dependencies]
 async-trait = "0.1.89"

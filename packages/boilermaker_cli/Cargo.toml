@@ -1,8 +1,11 @@
 [package]
 name = "boilermaker_cli"
-repository = "https://github.com/yeajustmars/boilermaker.git"
 version.workspace = true
 edition.workspace = true
+description.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
 
 [package.metadata.wix]
 upgrade-guid = "2C9A75B1-775D-4D7C-9C2C-AFD0067784F7"
