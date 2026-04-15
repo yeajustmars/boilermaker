@@ -476,7 +476,7 @@ dependencies = [
 
 [[package]]
 name = "boilermaker"
-version = "0.1.0-beta13"
+version = "0.1.0-beta14"
 dependencies = [
  "boilermaker-core",
  "clap",
@@ -501,7 +501,7 @@ dependencies = [
 
 [[package]]
 name = "boilermaker-core"
-version = "0.1.0-beta13"
+version = "0.1.0-beta14"
 dependencies = [
  "async-trait",
  "auth-git2",
@@ -538,14 +538,14 @@ dependencies = [
 
 [[package]]
 name = "boilermaker_api"
-version = "0.1.0-beta13"
+version = "0.1.0-beta14"
 dependencies = [
  "dioxus",
 ]
 
 [[package]]
 name = "boilermaker_ui"
-version = "0.1.0-beta13"
+version = "0.1.0-beta14"
 dependencies = [
  "boilermaker-core",
  "boilermaker_api",
@@ -555,7 +555,7 @@ dependencies = [
 
 [[package]]
 name = "boilermaker_web"
-version = "0.1.0-beta13"
+version = "0.1.0-beta14"
 dependencies = [
  "axum",
  "axum-embed",
