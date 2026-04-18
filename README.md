@@ -24,7 +24,7 @@ brew install boilermaker
 
 Coming soon! We're working on getting Boilermaker into popular package managers for Linux. If you'd like to help, please see our [Contributing Guidelines](https://github.com/yeajustmars/boilermaker/blob/main/CONTRIBUTING.md) .
 
-#### Binaries
+### Binaries
 
 Go to the [releases](https://github.com/yeajustmars/boilermaker/releases) page and download the latest version for your platform. Then, add the downloaded binary to your system's PATH.
 
