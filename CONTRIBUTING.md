@@ -1,10 +1,10 @@
 # Contributing to Boilermaker
 
-This document is for people wanting to contribute to the Boilermaker project. We welcome contributions of any kind, including bug fixes, new features, documentation improvements, and more. If you're interested in contributing, please read the guidelines below to get started.
+This document is for people wanting to contribute to the Boilermaker project. We welcome contributions of all kinds, including bug fixes, new features, documentation improvements, and more. If you're interested in contributing, please read the guidelines below to get started.
 
 ## Getting Started
 
-First things, first, please have the following:
+First things, first, please have the following in-hand:
 
 - A Github account
 - A willingness to learn and contribute to an open-source project for the betterment of the project and the community.
