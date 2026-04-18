@@ -9,7 +9,7 @@ Boilermaker is a language-agnostic, structured, multi-file, code template system
 ### Rustaceans
 
 ```
-cargo install boilermaker --version 0.1.0-beta14
+cargo install boilermaker --version 0.1.0-beta15
 ```
 
 ### Package Managers
