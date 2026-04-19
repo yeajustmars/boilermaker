@@ -121,6 +121,7 @@ The following list shows the name of the language, along with how the directory 
 | Clipper | Clipper | `.prg` |
 | CLIST | CLIST | `.clist` |
 | Clojure | Clojure | `.clj`, `.cljs`, `.cljc`, `.edn` |
+| ClojureScript | ClojureScript | `.cljs`, `.cljjc`, `.edn` |
 | CLU | CLU | `.clu` |
 | CMS-2 | CMS-2 | N/A |
 | COBOL | COBOL | `.cob`, `.cbl`, `.cobol` |
