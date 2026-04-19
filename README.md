@@ -15,7 +15,7 @@ Boilermaker is available for Linux and macOS, x86_64 and aarch64.
 ### Rustaceans
 
 ```
-cargo install boilermaker --version 0.1.0-beta16
+cargo install boilermaker --version 0.1.0-beta17
 ```
 
 ### Package Managers
