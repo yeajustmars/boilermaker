@@ -17,7 +17,7 @@ cargo install boilermaker --version 0.1.0-beta16
 ## macOS
 
 ```
-brew tap yeajustmars/tap
+brew tap yeajustmars/boilermaker
 brew install boilermaker
 ```
 
