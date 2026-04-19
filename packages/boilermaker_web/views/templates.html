@@ -31,7 +31,7 @@
                   Lang  <span class="text-[0.6rem]">{% if query.sort_by == 'lang' %}{{ '▲' if query.order == 'asc' else '▼' }}{% endif %}</span>
                 </a>
               </th>
-              <th class="{{th_style}}">
+              <th class="{{th_style}} hidden md:table-cell">
                 <a href="/templates?sort_by=repo&order={{ 'desc' if query.sort_by == 'repo' and query.order == 'asc' else 'asc' }}" class="{{hover_style}}">
                   Repo  <span class="text-[0.6rem]">{% if query.sort_by == 'repo' %}{{ '▲' if query.order == 'asc' else '▼' }}{% endif %}</span>
                 </a>
@@ -59,7 +59,7 @@
               <td class="{{td_style}}">
                 <a href="/templates?lang={{ template.lang | urlencode }}" class="{{secondary_link_style}}">{{ template.lang }}</a>
               </td>
-              <td class="{{td_style}}">
+              <td class="{{td_style}} hidden md:table-cell">
                 <a href="/templates?repo={{ template.repo | urlencode }}" class="{{secondary_link_style}}">{{ template.repo }}</a>
               </td>
               <td class="{{td_style}}">{% if template.branch %}{{ template.branch }}{% else %}-{% endif %}</td>

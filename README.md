@@ -6,21 +6,28 @@ Boilermaker is a language-agnostic, structured, multi-file, code template system
 
 ## Installation
 
+### Supported Platforms
+
+Boilermaker is available for Linux and macOS, x86_64 and aarch64.
+
+> _That should cover almost any Linux distro, including Asahi, plus Intel Macs, as well as Apple Silicon._
+
 ### Rustaceans
 
 ```
-cargo install boilermaker --version 0.1.0-beta14
+cargo install boilermaker --version 0.1.0-beta16
 ```
 
 ### Package Managers
 
-#### macOS
+### macOS
 
 ```
+brew tap yeajustmars/boilermaker
 brew install boilermaker
 ```
 
-#### Linux
+### Linux
 
 Coming soon! We're working on getting Boilermaker into popular package managers for Linux. If you'd like to help, please see our [Contributing Guidelines](https://github.com/yeajustmars/boilermaker/blob/main/CONTRIBUTING.md) .
 
@@ -28,7 +35,7 @@ Coming soon! We're working on getting Boilermaker into popular package managers 
 
 Go to the [releases](https://github.com/yeajustmars/boilermaker/releases) page and download the latest version for your platform. Then, add the downloaded binary to your system's PATH.
 
-> _TIP: Or just use the `curl` install command provided in the specific release in to install to `~/.cargo/bin`. (Note: make sure this directory is no your path.)_
+> _TIP: Or just use the `curl` install command provided in the specific release to install to `~/.cargo/bin`. (Note: make sure this directory is on your path.)_
 
 ## Usage
 
@@ -58,9 +65,9 @@ Boilermaker is actively looking for developers, maintainers and template creator
 Another way to contribute, even (or maybe especially) if you're not a coder, is to help us know what templates to build! If you have an idea for a template, please [create a poll](https://github.com/yeajustmars/boilermaker/discussions) in the following format:
 
 - **Discussion Type:** Poll. This allows others to vote on the template idea, and the contributors to focus on the most requested templates first.
-- **Template Idea:** [A short, descriptive name for the template]
-- **Description:** [A brief description of the template and its purpose]
-- **Use Cases:** (optional) [Examples of when this template would be useful]
+- **Template Idea:** A short, descriptive name for the template
+- **Description:** A brief description of the template and its purpose
+- **Use Cases:** (optional) Examples of when this template would be useful
 
 ## License
 
