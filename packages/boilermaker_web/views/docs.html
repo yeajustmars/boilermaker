@@ -4,11 +4,11 @@
 
 {% block content %}
 
-<div class="flex mt-4 gap-8">
+<div class="flex flex-col md:flex-row mt-4 gap-8">
   <div class="min-w-64 p-2 pr-10 border-r-1 border-r-neutral-200 dark:border-r-neutral-700">
     {% include 'docs_sidenav.html' %}
   </div>
-  <div class="p-2">
+  <div class="p-2 hidden md:block">
     <h1 class="text-2xl">Welcome to the official Boilermaker documentation.</h1>
 
     <p class="p-2">Here you will find guides, references, and examples. Let's. Make. Boilerplate. Sane!</p>

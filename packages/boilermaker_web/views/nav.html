@@ -1,5 +1,5 @@
-<nav id="navbar" class="{{nav_style}} h-12">
-  <div class="w-1/4">
+<nav id="navbar" class="{{nav_style}} flex flex-wrap items-center justify-between h-auto py-2 md:py-0 md:h-12">
+  <div class="w-auto md:w-1/4">
     <div class="flex justify-start">
       <div class="dropdown-container text-2xl">
         <div class="dropdown-button inline-block align-middle">
@@ -46,11 +46,11 @@
     </div>
   </div>
 
-  <div id="nav-main-search" class="w-1/2">
+  <div id="nav-main-search" class="w-full order-last mt-3 md:mt-0 md:order-none md:w-1/2">
     {% include 'search.html' %}
   </div>
 
-  <div id="nav-main-settings" class="w-1/4 text-right">
+  <div id="nav-main-settings" class="w-auto md:w-1/4 text-right pr-4 md:pr-0">
     <a href="/settings" class="text-xl">
       <i class="fa-solid fa-gear"></i>
     </a>

@@ -4,13 +4,19 @@
 
 {% block content %}
 <div class="text-neutral-800 dark:text-neutral-200">
-  <div class="flex items-center justify-center">
-    <h1 class="mt-4 text-4xl">Get Involved with the Boilermaker project!</h1>
-  </div>
-  <div class="flex items-center justify-center">
-    <p class="text-xl mt-4">
-      For now, hit us up on <a href="https://github.com/yeajustmars/boilermaker/discussions" class="{{link_style}}" target="_blank"><span class="pl-1">Github</span></a>.
-    </p>
-  </div>
+  <h1 class="mt-4 mb-4 text-4xl p-2">Get Involved with the project!</h1>
+
+  <p class="p-2">Boilermaker is actively looking for developers, maintainers and template creators to join our team!</p>
+
+  <p class="p-2">It is a young project, and we're excited to get it off the ground and build a strong community around it. If you're interested in contributing, please read our <a class="{{link_style}}" href="https://github.com/yeajustmars/boilermaker/blob/main/CONTRIBUTING.md">Contributing Guidelines</a> to see how to request access and get started!</p>
+
+  <p class="p-2">Another way to contribute, even (or maybe especially) if you're not a coder, is to help us know what templates to build! If you have an idea for a template, please <a class="{{link_style}}" href="https://github.com/yeajustmars/boilermaker/discussions">create a poll</a> in the following format:</p>
+
+  <ul class="list-disc list-inside p-2">
+    <li>Discussion Type: Poll. This allows others to vote on the template idea, and the contributors to focus on the most requested templates first.</li>
+    <li>Template Idea: [A short, descriptive name for the template]</li>
+    <li>Description: [A brief description of the template and its purpose]</li>
+    <li>Use Cases: (optional) [Examples of when this template would be useful]</li>
+  </ul>
 </div>
 {% endblock %}
