@@ -27,6 +27,7 @@ axum-embed = "0.1.0"
 axum-template = { version = "3.0", features = ["minijinja", "minijinja-autoreload"] }
 chrono = { version = "0.4.42", features = ["serde"] }
 clap = { version = "4.5.48", features = ["derive"] }
+clap_complete = { version = "4.6.2" }
 color-eyre = "0.6.5"
 colored = "3.0.0" # TODO: pick one of colored or nu-ansi-term
 dioxus = { version = "0.7.2", features = ["desktop", "html", "fullstack", "lib", "router", "ssr" ] }
