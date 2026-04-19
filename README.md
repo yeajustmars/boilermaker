@@ -65,9 +65,9 @@ Boilermaker is actively looking for developers, maintainers and template creator
 Another way to contribute, even (or maybe especially) if you're not a coder, is to help us know what templates to build! If you have an idea for a template, please [create a poll](https://github.com/yeajustmars/boilermaker/discussions) in the following format:
 
 - **Discussion Type:** Poll. This allows others to vote on the template idea, and the contributors to focus on the most requested templates first.
-- **Template Idea:** [A short, descriptive name for the template]
-- **Description:** [A brief description of the template and its purpose]
-- **Use Cases:** (optional) [Examples of when this template would be useful]
+- **Template Idea:** A short, descriptive name for the template
+- **Description:** A brief description of the template and its purpose
+- **Use Cases:** (optional) Examples of when this template would be useful
 
 ## License
 
