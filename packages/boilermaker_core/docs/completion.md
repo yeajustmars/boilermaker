@@ -21,7 +21,7 @@ boil completion gen-bash --file ~/.config/boilermaker/completion.bash
 Then in your `~/.bashrc` file, add the following:
 
 ```bash
-BOILERMAKER_COMPLETION_FILE="~/.config/boilermaker/completion.bash"
+BOILERMAKER_COMPLETION_FILE="${HOME}/.config/boilermaker/completion.bash"
 if [ -f "$BOILERMAKER_COMPLETION_FILE" ]; then
   source "$BOILERMAKER_COMPLETION_FILE"
 fi

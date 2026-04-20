@@ -120,9 +120,9 @@ async fn main() -> Result<()> {
             Docs::View(cmd) => docs::view(&app_state, &cmd).await,
         },
         Commands::Completion(subcmd) => match subcmd {
-            Completion::GenBash(cmd) => {
+            Completion::Generate(cmd) => {
                 let mut clap_cli = Cli::command();
-                completion::gen_bash(&app_state, &cmd, &mut clap_cli).await
+                completion::generate(&app_state, &cmd, &mut clap_cli).await
             }
         },
         Commands::Generate(subcmd) => match subcmd {

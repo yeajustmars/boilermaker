@@ -1,7 +1,7 @@
 use clap::Subcommand;
 
-pub mod template;
-pub use template::{Blank, blank};
+pub mod blank;
+pub use blank::{Blank, blank};
 
 const BLANK_HELP: &str = "
 Examples:
