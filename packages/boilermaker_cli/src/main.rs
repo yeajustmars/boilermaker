@@ -8,7 +8,7 @@ use tracing::info;
 use boilermaker_core::{
     commands,
     commands::{
-        Completion, Config, Docs, Sources, completion, config, docs, sources,
+        Completion, Config, Docs, Generate, Sources, completion, config, docs, generate, sources,
         sources::templates::Templates as SourceTemplates,
     },
     config::{get_system_config, get_system_config_path},
@@ -49,6 +49,8 @@ enum Commands {
     Docs(commands::Docs),
     #[command(subcommand, about = "Manage CLI completion")]
     Completion(commands::Completion),
+    #[command(subcommand, about = "Generate scaffolding, templates")]
+    Generate(commands::Generate),
     #[command(about = "Install a template locally")]
     Install(commands::Install),
     #[command(about = "List all templates in the local DB")]
@@ -122,6 +124,9 @@ async fn main() -> Result<()> {
                 let mut clap_cli = Cli::command();
                 completion::gen_bash(&app_state, &cmd, &mut clap_cli).await
             }
+        },
+        Commands::Generate(subcmd) => match subcmd {
+            Generate::Blank(cmd) => generate::blank(&app_state, &cmd).await,
         },
         Commands::Install(cmd) => commands::install(&app_state, &cmd).await,
         Commands::List(cmd) => commands::list(&app_state, &cmd).await,
