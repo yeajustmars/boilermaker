@@ -99,7 +99,7 @@ sed -i.bak -E "s/^(boilermaker_core[[:space:]]*=.*version[[:space:]]*=[[:space:]
 rm Cargo.toml.bak
 
 # Update Cargo.lock to reflect the new version
-echo -e "$INFO 2. ${BOLD}Cargo.lock${NC} syncing with Cargo.toml"
+echo -e "$INFO 2. ${BOLD}Cargo.lock:${NC} syncing with Cargo.toml"
 cargo check --quiet
 
 
