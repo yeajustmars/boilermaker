@@ -1,14 +1,14 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use clap::{Parser, Subcommand};
+use clap::{CommandFactory, Parser, Subcommand};
 use color_eyre::eyre::Result;
 use tracing::info;
 
 use boilermaker_core::{
     commands,
     commands::{
-        Config, Docs, Sources, config, docs, sources,
+        Completion, Config, Docs, Generate, Sources, completion, config, docs, generate, sources,
         sources::templates::Templates as SourceTemplates,
     },
     config::{get_system_config, get_system_config_path},
@@ -47,6 +47,10 @@ enum Commands {
     Config(commands::Config),
     #[command(subcommand, about = "Documentation")]
     Docs(commands::Docs),
+    #[command(subcommand, about = "Manage CLI completion")]
+    Completion(commands::Completion),
+    #[command(subcommand, about = "Generate scaffolding, templates")]
+    Generate(commands::Generate),
     #[command(about = "Install a template locally")]
     Install(commands::Install),
     #[command(about = "List all templates in the local DB")]
@@ -110,11 +114,19 @@ async fn main() -> Result<()> {
     match command {
         Commands::Config(subcmd) => match subcmd {
             Config::Get(cmd) => config::get(&app_state, &cmd).await,
-            //Config::Set(cmd) => config::set(&app_state, &cmd).await,
         },
         Commands::Docs(subcmd) => match subcmd {
             Docs::List(cmd) => docs::list(&app_state, &cmd).await,
             Docs::View(cmd) => docs::view(&app_state, &cmd).await,
+        },
+        Commands::Completion(subcmd) => match subcmd {
+            Completion::Generate(cmd) => {
+                let mut clap_cli = Cli::command();
+                completion::generate(&app_state, &cmd, &mut clap_cli).await
+            }
+        },
+        Commands::Generate(subcmd) => match subcmd {
+            Generate::Blank(cmd) => generate::blank(&app_state, &cmd).await,
         },
         Commands::Install(cmd) => commands::install(&app_state, &cmd).await,
         Commands::List(cmd) => commands::list(&app_state, &cmd).await,

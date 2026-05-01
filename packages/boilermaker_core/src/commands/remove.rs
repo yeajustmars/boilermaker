@@ -5,10 +5,9 @@ use color_eyre::{Result, eyre::eyre};
 use tracing::info;
 
 use crate::{
-    constants::DEFAULT_LOCAL_DB_PATH,
+    constants::{DEFAULT_LOCAL_DB_PATH, DEFAULT_TEMPLATE_DIR},
     state::AppState,
-    template::remove_dir_if_exists,
-    util::{io::prompt_confirm, math::rand_i32_between},
+    util::{file::remove_dir_if_exists, io::prompt_confirm, math::rand_i32_between},
 };
 
 #[derive(Parser, Debug, Clone)]
@@ -20,9 +19,9 @@ pub struct Remove {
     #[arg(
         short = 'A',
         long = "apocalyptic",
-        help = "Removes all installed templates then destroys local Sqlite DB file"
+        help = "Remove all installed templates then destroy local Sqlite DB file"
     )]
-    pub destroy_db: bool,
+    pub apocalyptic: bool,
 }
 
 #[tracing::instrument]
@@ -143,7 +142,9 @@ async fn destroy_local_db(app_state: &AppState, cmd: &Remove) -> Result<()> {
 
 #[tracing::instrument]
 pub async fn remove(app_state: &AppState, cmd: &Remove) -> Result<()> {
-    if cmd.destroy_db {
+    if cmd.apocalyptic {
+        remove_dir_if_exists(&DEFAULT_TEMPLATE_DIR)?;
+        fs::create_dir_all(DEFAULT_TEMPLATE_DIR.as_path())?;
         destroy_local_db(app_state, cmd).await
     } else if cmd.all {
         remove_all(app_state, cmd, true).await

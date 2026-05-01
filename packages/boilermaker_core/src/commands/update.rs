@@ -5,10 +5,11 @@ use tracing::info;
 
 use crate::db::TemplateRow;
 use crate::state::AppState;
-use crate::template::{
-    CloneContext, clean_dir, clone_repo, install_template, make_tmp_dir_from_url,
-};
 use crate::util::file::remove_git_dir;
+use crate::{
+    template::{CloneContext, clone_repo, install_template, make_tmp_dir_from_url},
+    util::file::clean_dir,
+};
 
 #[derive(Debug, Parser)]
 pub struct Update {
@@ -18,8 +19,8 @@ pub struct Update {
 
 #[tracing::instrument]
 pub async fn update(app_state: &AppState, cmd: &Update) -> Result<()> {
-    let db = app_state.local_db.clone();
-    let Some(templ) = db.get_template(cmd.id as i64).await? else {
+    let cache = app_state.local_db.clone();
+    let Some(templ) = cache.get_template(cmd.id as i64).await? else {
         return Err(eyre!("💥 Cannot find template: {}.", cmd.id));
     };
 
@@ -47,7 +48,7 @@ pub async fn update(app_state: &AppState, cmd: &Update) -> Result<()> {
     remove_git_dir(&template_dir)?;
 
     let row = TemplateRow::from(templ.clone());
-    db.update_template(templ.id, row).await?;
+    cache.update_template(templ.id, row).await?;
 
     info!("✅ Template updated!");
     Ok(())

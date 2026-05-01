@@ -17,7 +17,7 @@ use crate::{
     db::HashableTemplateValues,
     util::{
         crypto::sha256_hash_string,
-        file::{list_dir, move_file},
+        file::{clean_dir, list_dir, move_file},
     },
 };
 
@@ -42,15 +42,22 @@ impl CloneContext {
 // TODO: check if repo exists locally, and if so, just update it
 #[tracing::instrument]
 pub async fn clone_repo(ctx: &CloneContext) -> Result<Repository> {
+    let is_local = !ctx.url.contains("://");
+
+    if is_local && !PathBuf::from(&ctx.url).exists() {
+        return Err(eyre!("💥 Local repository not found at path: {}", ctx.url));
+    }
+
     let auth = GitAuthenticator::default();
     let git_config = Config::open_default()?;
     let mut repo_builder = RepoBuilder::new();
     let mut fetch_opts = FetchOptions::new();
     let mut remote_callbacks = RemoteCallbacks::new();
-
     remote_callbacks.credentials(auth.credentials(&git_config));
     fetch_opts.remote_callbacks(remote_callbacks);
-    fetch_opts.depth(1);
+    if !is_local {
+        fetch_opts.depth(1);
+    }
     repo_builder.fetch_options(fetch_opts);
 
     if let Some(branch) = &ctx.branch {
@@ -118,50 +125,6 @@ pub fn get_lang(tpl_cnf: &TemplateConfig, option: &Option<String>) -> Result<Str
     Err(eyre!(
         "💥 Can't find language. Pass `--lang` option or add `default_lang` to `boilermaker.toml`."
     ))
-}
-
-#[tracing::instrument]
-pub fn dir_exists(dir: &PathBuf) -> bool {
-    dir.as_path().exists()
-}
-
-#[tracing::instrument]
-pub fn remove_dir_if_exists(dir: &PathBuf) -> Result<()> {
-    if dir.as_path().exists() {
-        fs::remove_dir_all(dir)?;
-    }
-    Ok(())
-}
-
-#[tracing::instrument]
-pub fn clean_dir(dir: &PathBuf) -> Result<()> {
-    remove_dir_if_exists(dir)?;
-    Ok(())
-}
-
-#[tracing::instrument]
-pub fn make_work_dir_path(name: &str) -> Result<PathBuf> {
-    let work_dir = env::temp_dir().join("boilermaker").join(name);
-    Ok(work_dir)
-}
-
-#[tracing::instrument]
-pub fn create_work_dir(name: &str) -> Result<PathBuf> {
-    let work_dir = make_work_dir_path(name)?;
-    if !work_dir.exists() {
-        fs::create_dir_all(&work_dir)?;
-    }
-    Ok(work_dir)
-}
-
-#[tracing::instrument]
-pub fn create_work_dir_clean(name: &str) -> Result<PathBuf> {
-    let work_dir = make_work_dir_path(name)?;
-    if work_dir.exists() {
-        fs::remove_dir_all(&work_dir)?;
-    }
-    fs::create_dir_all(&work_dir)?;
-    Ok(work_dir)
 }
 
 #[tracing::instrument]
