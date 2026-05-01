@@ -8,7 +8,7 @@ The following list shows the name of the language, along with how the directory 
 
 
 | Original Name | Boilermaker Directory Name | Extensions |
-|---|---|---|
+| :------------ | :------------------------- | :--------- |
 | A# .NET | ASharp_DotNet | N/A |
 | A# (Axiom) | ASharp_Axiom | N/A |
 | A-0 System | A-0_System | N/A |
