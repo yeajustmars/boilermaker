@@ -1,6 +1,6 @@
 # Supported Languages
 
-This doc lists all the programming languages that Boilermaker supports. This is not an exhaustive list of all programming languages, but it is a comprehensive list of best we could come up with.
+This doc lists all the programming languages that Boilermaker supports. This is not an exhaustive list of all programming languages, but it is a comprehensive list of the best we could come up with.
 
 To keep things consistent, Boilermaker imposes a naming scheme for how code directories should be named inside a template. Many programming languages are supported but if yours is not, please open an Issue on our GitHub page.
 
