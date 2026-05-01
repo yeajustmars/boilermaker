@@ -20,7 +20,7 @@ Any of the following are valid variable interpolations:
 
 Both `boilermaker.toml` and any [`extra vars file`](/docs/configuration#doc-section-4) allow nested vars. As of writing the command line `--var` option **does not** but that may change in the future.
 
-### Merging Ruls
+### Merging Rules
 
 Due to how Boilermaker works with minijinja, merges of any variables are **shallow**.
 
