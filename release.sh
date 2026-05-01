@@ -40,6 +40,34 @@ SUCCESS="${GREEN}[OK]${NC}"
 
 echo -e "${BLUE}${BT_LOGO}${NC}\n"
 
+show_spinner() {
+    local pid=$1
+    local msg=$2
+    local delay=0.1
+    local spinstr='|/-\'
+
+    # Hide the terminal cursor
+    tput civis
+
+    # Ensure the cursor is restored if the user aborts via Ctrl+C
+    trap "tput cnorm; echo; exit 1" INT TERM
+
+    # kill -0 checks if the process is still alive without sending a real kill signal
+    while kill -0 "$pid" 2>/dev/null; do
+        local temp=${spinstr#?}
+        # \r returns to start of line, %b evaluates color codes in the message
+        printf "\r ${BLUE}[%c]${NC} %b" "$spinstr" "$msg"
+        local spinstr=$temp${spinstr%"$temp"}
+        sleep $delay
+    done
+
+    # \r goes to start of line, \033[K clears from cursor to end of line
+    printf "\r\033[K"
+    tput cnorm
+
+    # Reset the trap
+    trap - INT TERM
+}
 
 
 
@@ -116,39 +144,44 @@ CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 git push origin "$CURRENT_BRANCH"
 git push origin "$TAG"
 
-echo -e "$INFO 6a. ${BOLD}boilermaker-core (crate):${NC} Dry run "
+echo -e "$INFO 6. ${BOLD}boilermaker-core (crate):${NC} Dry run: boilermaker-core "
 cargo publish -p boilermaker-core --dry-run
-echo -e "$INFO 6b. ${BOLD}boilermaker-core (crate):${NC} Publishing "
-#cargo publish -p boilermaker-core
+echo -e "$INFO 7. ${BOLD}boilermaker-core (crate):${NC} Publishing "
+cargo publish -p boilermaker-core
 
-# echo -e "$INFO 7. Waiting for 'boilermaker-core' to be ready on crates.io "
-# # We poll the crates.io API until the new version returns a 200 OK status.
-# MAX_RETRIES=30
-# for ((i=1; i<=MAX_RETRIES; i++)); do
-#     HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "https://crates.io/api/v1/crates/boilermaker-core/$NEW_VERSION")
-#     if [ "$HTTP_CODE" -eq 200 ]; then
-#         echo -e "--> boilermaker-core v$NEW_VERSION is live on crates.io!"
-#         break
-#     fi
-#     echo -e "--> Not found yet (Status $HTTP_CODE). Retrying in 10s... ($i/$MAX_RETRIES)"
-#     sleep 10
-#
-#     if [ "$i" -eq "$MAX_RETRIES" ]; then
-#         echo -e "Error: Timed out waiting for crates.io to index boilermaker-core."
-#         exit 1
-#     fi
-# done
-#
-# # Force Cargo to update its local registry index so the next step can find the core crate
-# echo -e "--> Syncing local Cargo registry..."
-# cargo update -p boilermaker-core || cargo search boilermaker-core --limit 1 > /dev/null
-#
-# echo -e "$INFO 8. Publishing 'boilermaker' "
-# # The dry run here will now succeed because boilermaker-core is available in the index.
-# echo -e "--> Dry run: boilermaker..."
-# cargo publish -p boilermaker --dry-run
-# echo -e "--> Actual publish: boilermaker..."
-# cargo publish -p boilermaker
-#
-# echo -e "$INFO 9. Success "
-# echo -e "Successfully deployed and published version $NEW_VERSION!"
+echo -e "$INFO 8. Waiting for 'boilermaker-core' to be ready on crates.io "
+# We poll the crates.io API until the new version returns a 200 OK status.
+MAX_RETRIES=30
+for ((i=1; i<=MAX_RETRIES; i++)); do
+    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "https://crates.io/api/v1/crates/boilermaker-core/$NEW_VERSION")
+
+    if [ "$HTTP_CODE" -eq 200 ]; then
+        echo -e "    ${SUCCESS} boilermaker-core v$NEW_VERSION is live! (Found on attempt $i/$MAX_RETRIES)"
+        break
+    fi
+
+    # Format a message string with colors to pass to the spinner
+    STATUS_MSG="Attempt ${BOLD}${i}/${MAX_RETRIES}${NC} | Status: ${RED}${HTTP_CODE} (Not found)${NC} | Waiting 10s..."
+
+    # Run sleep in the background (&) and pass its Process ID ($!) and message to the spinner
+    sleep 10 &
+    show_spinner $! "$STATUS_MSG"
+
+    if [ "$i" -eq "$MAX_RETRIES" ]; then
+        echo -e "\n$ERROR Timed out waiting for crates.io to index boilermaker-core."
+        exit 1
+    fi
+done
+
+# Force Cargo to update its local registry index so the next step can find the core crate
+echo -e "$INFO 9. Syncing local Cargo registry"
+cargo update -p boilermaker-core || cargo search boilermaker-core --limit 1 > /dev/null
+
+echo -e "$INFO 10. Publishing 'boilermaker' "
+# The dry run here will now succeed because boilermaker-core is available in the index.
+echo -e "$INFO Dry run: boilermaker"
+cargo publish -p boilermaker --dry-run
+echo -e "$INFO 11. Actual publish: boilermaker..."
+cargo publish -p boilermaker
+
+echo -e "$INFO [done] Successfully deployed and published version $NEW_VERSION!"
