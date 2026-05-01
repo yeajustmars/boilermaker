@@ -42,15 +42,18 @@ impl CloneContext {
 // TODO: check if repo exists locally, and if so, just update it
 #[tracing::instrument]
 pub async fn clone_repo(ctx: &CloneContext) -> Result<Repository> {
+    let is_local = !ctx.url.contains("://") && PathBuf::from(&ctx.url).exists();
+
     let auth = GitAuthenticator::default();
     let git_config = Config::open_default()?;
     let mut repo_builder = RepoBuilder::new();
     let mut fetch_opts = FetchOptions::new();
     let mut remote_callbacks = RemoteCallbacks::new();
-
     remote_callbacks.credentials(auth.credentials(&git_config));
     fetch_opts.remote_callbacks(remote_callbacks);
-    fetch_opts.depth(1);
+    if !is_local {
+        fetch_opts.depth(1);
+    }
     repo_builder.fetch_options(fetch_opts);
 
     if let Some(branch) = &ctx.branch {

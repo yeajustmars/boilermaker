@@ -10,7 +10,7 @@ use crate::{
     state::AppState,
     template::{
         CloneContext, InstallConfig, clean_dir, clone_repo, get_lang, get_template_config,
-        install_template, make_name_from_url, make_tmp_dir_from_url, open_repo, remove_other_langs,
+        install_template, make_name_from_url, make_tmp_dir_from_url, remove_other_langs,
     },
     util::file::remove_git_dir,
 };
@@ -32,29 +32,6 @@ pub struct Install {
 }
 
 #[tracing::instrument]
-async fn get_local_work_dir(
-    repo_ctx: &CloneContext,
-    cmd: &Install,
-) -> Result<(Repository, PathBuf)> {
-    let dir = if let Some(subdir) = &cmd.subdir {
-        PathBuf::from(&cmd.template).join(subdir)
-    } else {
-        PathBuf::from(&cmd.template)
-    };
-
-    if !dir.exists() {
-        return Err(eyre!(
-            "💥 Local template path does not exist: {}",
-            dir.display()
-        ));
-    }
-
-    let repo = open_repo(repo_ctx).await?;
-
-    Ok((repo, dir))
-}
-
-#[tracing::instrument]
 async fn clone_remote_to_local_work_dir(
     repo_ctx: &CloneContext,
     cmd: &Install,
@@ -69,7 +46,7 @@ async fn clone_remote_to_local_work_dir(
     let repo = match clone_repo(repo_ctx).await {
         Ok(repo) => repo,
         Err(err) => {
-            return Err(eyre!("💥 Failed to clone template: {}", err));
+            return Err(eyre!("💥 Failed to clone remote template: {}", err));
         }
     };
 
@@ -91,11 +68,7 @@ async fn configure_install(cmd: &Install) -> Result<InstallConfig> {
     };
 
     let repo_ctx = CloneContext::from(cmd);
-    let (repo, work_dir) = if cmd.local {
-        get_local_work_dir(&repo_ctx, cmd).await?
-    } else {
-        clone_remote_to_local_work_dir(&repo_ctx, cmd).await?
-    };
+    let (repo, work_dir) = clone_remote_to_local_work_dir(&repo_ctx, cmd).await?;
 
     let cnf = get_template_config(work_dir.as_path())?;
     let lang = get_lang(&cnf, &cmd.lang)?;
@@ -120,6 +93,7 @@ async fn configure_install(cmd: &Install) -> Result<InstallConfig> {
     };
     install.set_hash_string();
     install.set_template_dir();
+
     Ok(install)
 }
 
