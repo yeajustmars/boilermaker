@@ -530,8 +530,7 @@ The following list shows the name of the language, along with how the directory 
 | Pro*C | ProStarC | `.pc` |
 | Pure | Pure | `.pure` |
 | Python | Python | `.py`, `.pyc`, `.pyd`, `.pyw`, `.ipynb` |
-| Q (equational programming language) | Q_equational_programming_language | `.q` |
-| Q (programming language from Kx Systems) | Q_programming_language_from_Kx_Systems | `.q` |
+| Q | Q | `.q` |
 | Qalb | Qalb | `.qlb` |
 | QtScript | QtScript | `.qs` |
 | QuakeC | QuakeC | `.qc` |
@@ -624,8 +623,7 @@ The following list shows the name of the language, along with how the directory 
 | Subtext | Subtext | N/A |
 | SuperCollider | SuperCollider | `.sc`, `.scd` |
 | SuperTalk | SuperTalk | N/A |
-| Swift (Apple programming language) | Swift_Apple_programming_language | `.swift` |
-| Swift (parallel scripting language) | Swift_parallel_scripting_language | `.swift` |
+| Swift | Swift | `.swift` |
 | SYMPL | SYMPL | N/A |
 | SyncCharts | SyncCharts | N/A |
 | SystemVerilog | SystemVerilog | `.sv`, `.svh` |
