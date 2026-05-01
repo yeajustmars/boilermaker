@@ -116,12 +116,11 @@ CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 git push origin "$CURRENT_BRANCH"
 git push origin "$TAG"
 
-# echo -e "$INFO 6. Publishing 'boilermaker-core' "
-# echo -e "--> Dry run: boilermaker-core..."
-# cargo publish -p boilermaker-core --dry-run
-# echo -e "--> Actual publish: boilermaker-core..."
-# cargo publish -p boilermaker-core
-#
+echo -e "$INFO 6a. ${BOLD}boilermaker-core (crate):${NC} Dry run "
+cargo publish -p boilermaker-core --dry-run
+echo -e "$INFO 6b. ${BOLD}boilermaker-core (crate):${NC} Publishing "
+#cargo publish -p boilermaker-core
+
 # echo -e "$INFO 7. Waiting for 'boilermaker-core' to be ready on crates.io "
 # # We poll the crates.io API until the new version returns a 200 OK status.
 # MAX_RETRIES=30
