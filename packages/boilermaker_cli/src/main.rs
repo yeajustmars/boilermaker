@@ -23,21 +23,21 @@ use boilermaker_core::{
     version,
     about,
     long_about = "
-\x1b[32m+-------------------------------------------------------------------------------
+\x1b[34m+-------------------------------------------------------------------------------
 | The Boilermaker CLI - Make. Boilerplate. Sane!
 +-------------------------------------------------------------------------------\x1b[0m
 
   This CLI allows you to manage and use project templates, as well as Sources
-  (remote repositories of templates). You can install templates locally, search
+  (collections of templates). You can install templates locally, search
   for new ones, and generate new projects from them. The CLI also provides
   commands for managing your configuration and viewing documentation.
 
-  A good place to start is \x1b[32m`boil completion generate`\x1b[0m to generate autocomplete
-  to make it easier to explore the command tree. After that, you can try
-  \x1b[32m`boil docs list`\x1b[0m and \x1b[32m`boil docs view`\x1b[0m to read the documentation right in your
-  terminal. You can also search for templates at https://boilermaker.dev.
+  A good place to start is \x1b[34m`boil docs view completion`\x1b[0m to generate
+  autocomplete to make it easier to explore the command tree. After that, you can try
+  \x1b[34m`boil docs list`\x1b[0m and \x1b[34m`boil docs view`\x1b[0m to read the documentation right in your
+  terminal. You can also search for templates at \x1b[34mhttps://boilermaker.dev\x1b[0m.
 
-  Once you know your way around, check out \x1b[32m`boil docs view getting-started`\x1b[0m to
+  Once you know your way around, check out \x1b[34m`boil docs view getting-started`\x1b[0m to
   work through the basics.
 "
 )]
