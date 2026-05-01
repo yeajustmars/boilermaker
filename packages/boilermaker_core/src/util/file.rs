@@ -1,4 +1,4 @@
-use std::{fs, path::PathBuf};
+use std::{env, fs, path::PathBuf};
 
 use color_eyre::{Result, eyre::eyre};
 use fs_extra::{copy_items, dir::CopyOptions};
@@ -78,4 +78,48 @@ pub fn get_docs_dir() -> Result<PathBuf> {
         ));
     }
     Ok(docs_dir)
+}
+
+#[tracing::instrument]
+pub fn dir_exists(dir: &PathBuf) -> bool {
+    dir.as_path().exists()
+}
+
+#[tracing::instrument]
+pub fn remove_dir_if_exists(dir: &PathBuf) -> Result<()> {
+    if dir.as_path().exists() {
+        fs::remove_dir_all(dir)?;
+    }
+    Ok(())
+}
+
+#[tracing::instrument]
+pub fn clean_dir(dir: &PathBuf) -> Result<()> {
+    remove_dir_if_exists(dir)?;
+    Ok(())
+}
+
+#[tracing::instrument]
+pub fn make_work_dir_path(name: &str) -> Result<PathBuf> {
+    let work_dir = env::temp_dir().join("boilermaker").join(name);
+    Ok(work_dir)
+}
+
+#[tracing::instrument]
+pub fn create_work_dir(name: &str) -> Result<PathBuf> {
+    let work_dir = make_work_dir_path(name)?;
+    if !work_dir.exists() {
+        fs::create_dir_all(&work_dir)?;
+    }
+    Ok(work_dir)
+}
+
+#[tracing::instrument]
+pub fn create_work_dir_clean(name: &str) -> Result<PathBuf> {
+    let work_dir = make_work_dir_path(name)?;
+    if work_dir.exists() {
+        fs::remove_dir_all(&work_dir)?;
+    }
+    fs::create_dir_all(&work_dir)?;
+    Ok(work_dir)
 }

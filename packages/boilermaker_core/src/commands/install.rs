@@ -9,10 +9,10 @@ use crate::{
     db::TemplateRow,
     state::AppState,
     template::{
-        CloneContext, InstallConfig, clean_dir, clone_repo, get_lang, get_template_config,
-        install_template, make_name_from_url, make_tmp_dir_from_url, remove_other_langs,
+        CloneContext, InstallConfig, clone_repo, get_lang, get_template_config, install_template,
+        make_name_from_url, make_tmp_dir_from_url, remove_other_langs,
     },
-    util::file::remove_git_dir,
+    util::file::{clean_dir, remove_git_dir},
 };
 
 #[derive(Debug, Parser)]

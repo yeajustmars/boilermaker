@@ -17,7 +17,7 @@ use crate::{
     state::AppState,
     template as tpl,
     util::{
-        file::{copy_dir, move_file},
+        file::{copy_dir, create_work_dir_clean, move_file},
         help,
     },
 };
@@ -90,14 +90,15 @@ pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
     let tpl_dir = tpl_base_dir.join(&t.lang);
     let tpl_config = tpl::get_template_config(&tpl_base_dir)?;
 
-    let tmp_work_dir = tpl::create_work_dir_clean(t.sha256_hash.as_ref().unwrap())?;
+    let tmp_work_dir = create_work_dir_clean(t.sha256_hash.as_ref().unwrap())?;
     copy_dir(&tpl_dir, &tmp_work_dir).await?;
 
-    let mut ctx = if tpl_config.variables.is_none() {
-        context! {}
+    let mut ctx = if let Some(vars) = &tpl_config.variables {
+        vars.clone()
     } else {
-        tpl_config.variables.unwrap()
+        context! {}
     };
+
     if let Some(profile_name) = &cmd.use_profile {
         let Ok(profile_ctx) = ctx.get_attr("profiles") else {
             return Err(eyre!("Cannot find profiles key in template context"));
@@ -108,6 +109,7 @@ pub async fn new(app_state: &AppState, cmd: &New) -> Result<()> {
         // TODO: discuss deep merge (not initially obvious in minijinja)
         ctx = merge_maps(vec![ctx, profile_ctx]);
     }
+
     if let Some(user_ctx) = cmdline_vars_to_hashmap(&cmd.vars)? {
         let from_paths = tpl::get_template_paths(&tpl_dir).await?;
         ctx = extend_template_context(vec![ctx, user_ctx], &from_paths, cmd)?;

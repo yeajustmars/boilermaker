@@ -11,9 +11,10 @@ use crate::{
     db::source::{PartialSourceTemplateRow, SourceRow},
     state::AppState,
     template::{
-        CloneContext, clean_dir, clone_repo, get_lang, get_template_config_text,
-        make_name_from_url, make_tmp_dir_from_url, template_config_text_to_config,
+        CloneContext, clone_repo, get_lang, get_template_config_text, make_name_from_url,
+        make_tmp_dir_from_url, template_config_text_to_config,
     },
+    util::file::clean_dir,
 };
 
 #[derive(Debug, Parser)]

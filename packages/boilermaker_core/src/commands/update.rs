@@ -5,10 +5,11 @@ use tracing::info;
 
 use crate::db::TemplateRow;
 use crate::state::AppState;
-use crate::template::{
-    CloneContext, clean_dir, clone_repo, install_template, make_tmp_dir_from_url,
-};
 use crate::util::file::remove_git_dir;
+use crate::{
+    template::{CloneContext, clone_repo, install_template, make_tmp_dir_from_url},
+    util::file::clean_dir,
+};
 
 #[derive(Debug, Parser)]
 pub struct Update {
