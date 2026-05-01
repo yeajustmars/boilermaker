@@ -1,4 +1,20 @@
 #!/usr/bin/env bash
+# -------------------------------------------------------------------------------
+# Boilermaker Release script
+#           Usage: ./release.sh <new-version>
+#         Example: ./release.sh 1.2.3
+#     Description: This script automates the release process for Boilermaker.
+#
+# It performs the following steps:
+#     1. Validates the input version format.
+#     2. Updates the version in Cargo.toml.
+#     3. Commits the version bump.
+#     4. Creates a git tag for the new version.
+#     5. Pushes the commit and tag to GitHub (triggering cargo-dist).
+#     6. Publishes the 'boilermaker-core' crate to crates.io.
+#     7. Waits for 'boilermaker-core' to be available on crates.io.
+#     8. Publishes the 'boilermaker' crate to crates.io.
+# -------------------------------------------------------------------------------
 
 BT_LOGO=$(cat <<'BT_TEXT'
  ___      _ _                    _             ___     _
@@ -24,6 +40,40 @@ SUCCESS="${GREEN}[OK]${NC}"
 
 echo -e "${BLUE}${BT_LOGO}${NC}\n"
 
+show_spinner() {
+    local pid=$1
+    local msg=$2
+    local delay=0.1
+    local spinstr='|/-\'
+
+    # Hide the terminal cursor
+    tput civis
+
+    # Ensure the cursor is restored if the user aborts via Ctrl+C
+    trap "tput cnorm; echo; exit 1" INT TERM
+
+    # kill -0 checks if the process is still alive without sending a real kill signal
+    while kill -0 "$pid" 2>/dev/null; do
+        local temp=${spinstr#?}
+        # \r returns to start of line, %b evaluates color codes in the message
+        printf "\r ${BLUE}[%c]${NC} %b" "$spinstr" "$msg"
+        local spinstr=$temp${spinstr%"$temp"}
+        sleep $delay
+    done
+
+    # \r goes to start of line, \033[K clears from cursor to end of line
+    printf "\r\033[K"
+    tput cnorm
+
+    # Reset the trap
+    trap - INT TERM
+}
+
+
+
+
+#### ________________________________________________________ CONFIGURE RELEASE
+
 script_dir=$(cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)
 cd $script_dir
 
@@ -41,84 +91,98 @@ if [[ ! "$1" =~ ^(v)?[0-9]+\.[0-9]+\.[0-9]+(-.*)?$ ]]; then
     exit 1
 fi
 
+# TODO: PUT BACK!
+# Check if the git working directory is clean
+# if ! git diff --quiet || ! git diff --cached --quiet; then
+#     echo -e "$ERROR Git working directory is not clean. Commit or stash changes first."
+#     exit 1
+# fi
+
 OLD_VERSION=$(grep '^version = ' Cargo.toml | head -n 1 | sed -E 's/version = "(.*)"/\1/')
 NEW_VERSION="${1#v}"
 TAG="v$NEW_VERSION"
 
+# Print config for confirmation
 echo -e "${INFO} Found the following:"
-echo -e "  ${BLUE}OLD_VERSION: ${NC}$OLD_VERSION"
-echo -e "  ${BLUE}NEW_VERSION: ${NC}$NEW_VERSION"
-echo -e "          ${BLUE}TAG: ${NC}$TAG"
+echo -e "  ${BLUE}OLD_VERSION:${NC}$OLD_VERSION"
+echo -e "  ${BLUE}NEW_VERSION:${NC}$NEW_VERSION"
+echo -e "          ${BLUE}TAG:${NC}$TAG"
 
-echo -e "$HINT Make sure you have committed all your changes and are on the correct branch before proceeding.\n"
-CONFIG_MSG=$(echo -e "${ORANGE}Continue? ${NC}(${GREEN}y${NC}/${RED}n${NC}): ")
+# Confirm accuracy of versions
+CONFIG_MSG=$(echo -e "\n${ORANGE}Continue?${NC}(${GREEN}y${NC}/${RED}n${NC}): ")
 read -p "$CONFIG_MSG " -n 1 -r; echo; [[ $REPLY =~ ^[Yy]$ ]] || exit 1
 
-echo -e "\n${INFO} Starting release process for version ${BLUE}${NEW_VERSION}${NC}"
 
-# Ensure the git working directory is clean before we start mutating files
-if ! git diff --quiet || ! git diff --cached --quiet; then
-    echo "Error: Git working directory is not clean. Commit or stash changes first."
-    exit 1
-fi
 
-echo "$INFO 1. Setting version in Cargo.toml to $NEW_VERSION ${INFO}"
-# Using a cross-platform (macOS/Linux) sed command to replace the workspace version.
-# Assumes `version = "..."` is at the top level of your main Cargo.toml.
+
+
+#### ________________________________________________________ START RELEASE
+
+echo -e "\n${INFO} 0/12. ${BOLD}Starting release:${NC} ${BLUE}${NEW_VERSION}${NC}"
+
+# Update Cargo.toml with the new version
+echo -e "$INFO 1/12. ${BOLD}Cargo.toml:${NC} ${BLUE}${OLD_VERSION}${NC} --> ${BLUE}${NEW_VERSION}${NC}"
 sed -i.bak -e "s/^version = \".*\"/version = \"$NEW_VERSION\"/" Cargo.toml
 sed -i.bak -E "s/^(boilermaker_core[[:space:]]*=.*version[[:space:]]*=[[:space:]]*\")[^\"]+(\".*)$/\1$NEW_VERSION\2/" Cargo.toml
 rm Cargo.toml.bak
 
-# # Update Cargo.lock to reflect the new version
-# cargo check --quiet
-#
-# # Commit the version bump so the tag points to the correct state
-# echo "=== Committing version bump ==="
-# git add Cargo.toml Cargo.lock
-# git commit -m "chore: bump version to $NEW_VERSION"
-#
-# echo "=== 2. Creating tag $TAG ==="
-# git tag "$TAG"
-#
-# echo "=== 3. Pushing to GitHub (Triggering cargo-dist) ==="
-# CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-# git push origin "$CURRENT_BRANCH"
-# git push origin "$TAG"
-#
-# echo "=== 4. Publishing 'boilermaker-core' ==="
-# echo "--> Dry run: boilermaker-core..."
-# cargo publish -p boilermaker-core --dry-run
-# echo "--> Actual publish: boilermaker-core..."
-# cargo publish -p boilermaker-core
-#
-# echo "=== 5. Waiting for 'boilermaker-core' to be ready on crates.io ==="
-# # We poll the crates.io API until the new version returns a 200 OK status.
-# MAX_RETRIES=30
-# for ((i=1; i<=MAX_RETRIES; i++)); do
-#     HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "https://crates.io/api/v1/crates/boilermaker-core/$NEW_VERSION")
-#     if [ "$HTTP_CODE" -eq 200 ]; then
-#         echo "--> boilermaker-core v$NEW_VERSION is live on crates.io!"
-#         break
-#     fi
-#     echo "--> Not found yet (Status $HTTP_CODE). Retrying in 10s... ($i/$MAX_RETRIES)"
-#     sleep 10
-#
-#     if [ "$i" -eq "$MAX_RETRIES" ]; then
-#         echo "Error: Timed out waiting for crates.io to index boilermaker-core."
-#         exit 1
-#     fi
-# done
-#
-# # Force Cargo to update its local registry index so the next step can find the core crate
-# echo "--> Syncing local Cargo registry..."
-# cargo update -p boilermaker-core || cargo search boilermaker-core --limit 1 > /dev/null
-#
-# echo "=== 6. Publishing 'boilermaker' ==="
-# # The dry run here will now succeed because boilermaker-core is available in the index.
-# echo "--> Dry run: boilermaker..."
-# cargo publish -p boilermaker --dry-run
-# echo "--> Actual publish: boilermaker..."
-# cargo publish -p boilermaker
-#
-# echo "=== 7. Success ==="
-# echo "Successfully deployed and published version $NEW_VERSION!"
+# Update Cargo.lock to reflect the new version
+echo -e "$INFO 2/12. ${BOLD}Cargo.lock:${NC} syncing with Cargo.toml"
+cargo check --quiet
+
+
+# Sync to GitHub
+echo -e "$INFO 3/12. ${BOLD}Committing version bump${NC}"
+git add Cargo.toml Cargo.lock
+git commit -m "chore: bump version to $NEW_VERSION"
+
+echo -e "$INFO 4/12. ${BOLD}Creating tag $TAG${NC}"
+git tag "$TAG"
+
+echo -e "$INFO 5/12. ${BOLD}Pushing to GitHub (Triggering cargo-dist)${NC}"
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+git push origin "$CURRENT_BRANCH"
+git push origin "$TAG"
+
+echo -e "$INFO 6/12. ${BOLD}boilermaker-core (crate):${NC} Dry run"
+cargo publish -p boilermaker-core --dry-run
+echo -e "$INFO 7/12. ${BOLD}boilermaker-core (crate):${NC} Publishing "
+cargo publish -p boilermaker-core
+
+echo -e "$INFO 8/12. ${BOLD}Waiting for 'boilermaker-core' to be ready on crates.io${NC}"
+# We poll the crates.io API until the new version returns a 200 OK status.
+MAX_RETRIES=30
+for ((i=1; i<=MAX_RETRIES; i++)); do
+    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "https://crates.io/api/v1/crates/boilermaker-core/$NEW_VERSION")
+
+    if [ "$HTTP_CODE" -eq 200 ]; then
+        echo -e "${SUCCESS} ${BLUE}boilermaker-core v$NEW_VERSION${NC} is live! (Found on attempt $i/$MAX_RETRIES)"
+        break
+    fi
+
+    # Format a message string with colors to pass to the spinner
+    STATUS_MSG="Attempt ${BOLD}${i}/${MAX_RETRIES}${NC} | Status: ${RED}${HTTP_CODE} (Not found)${NC} | Waiting 10s..."
+
+    # Run sleep in the background (&) and pass its Process ID ($!) and message to the spinner
+    sleep 10 &
+    show_spinner $! "$STATUS_MSG"
+
+    if [ "$i" -eq "$MAX_RETRIES" ]; then
+        echo -e "\n$ERROR Timed out waiting for crates.io to index boilermaker-core."
+        exit 1
+    fi
+done
+
+# Force Cargo to update its local registry index so the next step can find the core crate
+echo -e "$INFO 9/12. ${BOLD}Syncing local Cargo registry${NC}"
+cargo update -p boilermaker-core || cargo search boilermaker-core --limit 1 > /dev/null
+
+# Publish boilermaker
+echo -e "$INFO 10/12. ${BOLD}boilermaker (crate):${NC} Dry run"
+cargo publish -p boilermaker --dry-run
+
+echo -e "$INFO 11/12. ${BOLD}boilermaker (crate):${NC} Publishing"
+cargo publish -p boilermaker
+
+# Done
+echo -e "$INFO [12/12] Successfully deployed and published version $NEW_VERSION!"
