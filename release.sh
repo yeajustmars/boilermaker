@@ -104,12 +104,12 @@ TAG="v$NEW_VERSION"
 
 # Print config for confirmation
 echo -e "${INFO} Found the following:"
-echo -e "  ${BLUE}OLD_VERSION: ${NC}$OLD_VERSION"
-echo -e "  ${BLUE}NEW_VERSION: ${NC}$NEW_VERSION"
-echo -e "          ${BLUE}TAG: ${NC}$TAG"
+echo -e "  ${BLUE}OLD_VERSION:${NC}$OLD_VERSION"
+echo -e "  ${BLUE}NEW_VERSION:${NC}$NEW_VERSION"
+echo -e "          ${BLUE}TAG:${NC}$TAG"
 
 # Confirm accuracy of versions
-CONFIG_MSG=$(echo -e "\n${ORANGE}Continue? ${NC}(${GREEN}y${NC}/${RED}n${NC}): ")
+CONFIG_MSG=$(echo -e "\n${ORANGE}Continue?${NC}(${GREEN}y${NC}/${RED}n${NC}): ")
 read -p "$CONFIG_MSG " -n 1 -r; echo; [[ $REPLY =~ ^[Yy]$ ]] || exit 1
 
 
@@ -118,45 +118,45 @@ read -p "$CONFIG_MSG " -n 1 -r; echo; [[ $REPLY =~ ^[Yy]$ ]] || exit 1
 
 #### ________________________________________________________ START RELEASE
 
-echo -e "\n${INFO} 0. ${BOLD}Starting release:${NC} ${BLUE}${NEW_VERSION}${NC}"
+echo -e "\n${INFO} 0/12. ${BOLD}Starting release:${NC} ${BLUE}${NEW_VERSION}${NC}"
 
 # Update Cargo.toml with the new version
-echo -e "$INFO 1. ${BOLD}Cargo.toml:${NC} ${BLUE}${OLD_VERSION}${NC} --> ${BLUE}${NEW_VERSION}${NC}"
+echo -e "$INFO 1/12. ${BOLD}Cargo.toml:${NC} ${BLUE}${OLD_VERSION}${NC} --> ${BLUE}${NEW_VERSION}${NC}"
 sed -i.bak -e "s/^version = \".*\"/version = \"$NEW_VERSION\"/" Cargo.toml
 sed -i.bak -E "s/^(boilermaker_core[[:space:]]*=.*version[[:space:]]*=[[:space:]]*\")[^\"]+(\".*)$/\1$NEW_VERSION\2/" Cargo.toml
 rm Cargo.toml.bak
 
 # Update Cargo.lock to reflect the new version
-echo -e "$INFO 2. ${BOLD}Cargo.lock:${NC} syncing with Cargo.toml"
+echo -e "$INFO 2/12. ${BOLD}Cargo.lock:${NC} syncing with Cargo.toml"
 cargo check --quiet
 
 
 # Sync to GitHub
-echo -e "$INFO 3. ${BOLD}Committing version bump ${NC}"
+echo -e "$INFO 3/12. ${BOLD}Committing version bump${NC}"
 git add Cargo.toml Cargo.lock
 git commit -m "chore: bump version to $NEW_VERSION"
 
-echo -e "$INFO 4. ${BOLD}Creating tag $TAG ${NC}"
+echo -e "$INFO 4/12. ${BOLD}Creating tag $TAG${NC}"
 git tag "$TAG"
 
-echo -e "$INFO 5. ${BOLD}Pushing to GitHub (Triggering cargo-dist) ${NC}"
+echo -e "$INFO 5/12. ${BOLD}Pushing to GitHub (Triggering cargo-dist)${NC}"
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 git push origin "$CURRENT_BRANCH"
 git push origin "$TAG"
 
-echo -e "$INFO 6. ${BOLD}boilermaker-core (crate):${NC} Dry run: boilermaker-core "
+echo -e "$INFO 6/12. ${BOLD}boilermaker-core (crate):${NC} Dry run"
 cargo publish -p boilermaker-core --dry-run
-echo -e "$INFO 7. ${BOLD}boilermaker-core (crate):${NC} Publishing "
+echo -e "$INFO 7/12. ${BOLD}boilermaker-core (crate):${NC} Publishing "
 cargo publish -p boilermaker-core
 
-echo -e "$INFO 8. Waiting for 'boilermaker-core' to be ready on crates.io "
+echo -e "$INFO 8/12. ${BOLD}Waiting for 'boilermaker-core' to be ready on crates.io${NC}"
 # We poll the crates.io API until the new version returns a 200 OK status.
 MAX_RETRIES=30
 for ((i=1; i<=MAX_RETRIES; i++)); do
     HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "https://crates.io/api/v1/crates/boilermaker-core/$NEW_VERSION")
 
     if [ "$HTTP_CODE" -eq 200 ]; then
-        echo -e "    ${SUCCESS} boilermaker-core v$NEW_VERSION is live! (Found on attempt $i/$MAX_RETRIES)"
+        echo -e "${SUCCESS} ${BLUE}boilermaker-core v$NEW_VERSION${NC} is live! (Found on attempt $i/$MAX_RETRIES)"
         break
     fi
 
@@ -174,14 +174,15 @@ for ((i=1; i<=MAX_RETRIES; i++)); do
 done
 
 # Force Cargo to update its local registry index so the next step can find the core crate
-echo -e "$INFO 9. Syncing local Cargo registry"
+echo -e "$INFO 9/12. ${BOLD}Syncing local Cargo registry${NC}"
 cargo update -p boilermaker-core || cargo search boilermaker-core --limit 1 > /dev/null
 
-echo -e "$INFO 10. Publishing 'boilermaker' "
-# The dry run here will now succeed because boilermaker-core is available in the index.
-echo -e "$INFO Dry run: boilermaker"
+# Publish boilermaker
+echo -e "$INFO 10/12. ${BOLD}boilermaker (crate):${NC} Dry run"
 cargo publish -p boilermaker --dry-run
-echo -e "$INFO 11. Actual publish: boilermaker..."
+
+echo -e "$INFO 11/12. ${BOLD}boilermaker (crate):${NC} Publishing"
 cargo publish -p boilermaker
 
-echo -e "$INFO [done] Successfully deployed and published version $NEW_VERSION!"
+# Done
+echo -e "$INFO [12/12] Successfully deployed and published version $NEW_VERSION!"
